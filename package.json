@@ -6,20 +6,33 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "generate:api": "openapi --input http://localhost:8080/v3/api-docs --output ./src/api --client fetch"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.5",
+    "@mui/material": "^7.3.5",
+    "@mui/styled-engine": "^7.3.5",
+    "@mui/system": "^7.3.5",
+    "@next/font": "^14.2.15",
     "@types/node": "24.10.1",
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
-    "autoprefixer": "10.4.22",
     "eslint": "9.39.1",
     "eslint-config-next": "16.0.6",
-    "next": "16.0.6",
-    "postcss": "8.5.6",
+    "lucide-react": "^0.562.0",
+    "next": "^16.1.0",
     "react": "19.2.0",
     "react-dom": "19.2.0",
-    "tailwindcss": "4.1.17",
     "typescript": "5.9.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.17",
+    "autoprefixer": "^10.4.22",
+    "openapi-typescript-codegen": "^0.29.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.17"
   }
 }
