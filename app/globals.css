@@ -5,8 +5,13 @@
   --color-primary: #03045e;       /* darkest shade */
 
   /* Secondary colors (lighter shades of blue/cyan) */
-  --color-secondary: #0077b6;     /* medium-dark */
-  --color-secondary-mid: #0096c7; /* medium */
-  --color-secondary-light: #48cae4; /* light */
-  --color-secondary-super-light: #caf0f8; /* very light */
+  --color-secondary: #1F47E6;    
+  
+  /* medium-dark */
+  /*#0096c7*/
+  --color-secondary-mid: #1F47E6; /* medium */
+  --color-secondary-light: #E5E7EB; /* light */
+  --color-secondary-super-light: #ECF3FA; /* very light#caf0f8 */
+  --color-secondary-background:#F6F8FC;
+  --color-secondary-gray:#99a1af;
 }

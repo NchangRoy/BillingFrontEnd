@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 
 interface Props {
@@ -6,14 +8,20 @@ interface Props {
 
 const TableHeader = ({ columns }: Props) => {
   return (
-    <thead className="bg-gray-100">
-      <tr>
+    <thead className="bg-[var(--color-secondary-background)] border-b border-[var(--color-secondary-light)] w-full">
+      <tr className="flex justify-between">
         {columns.map((col) => (
           <th
             key={col}
-            className="px-4 py-2 text-left text-secondary-mid font-medium uppercase"
+            className="px-6 py-4 text-center text-[10px] font-black uppercase tracking-widest text-[var(--color-secondary-gray)]"
           >
-            {col}
+            <div className="flex items-center gap-1 group cursor-default">
+              {col}
+              {/* Optional: Add a subtle sort icon that appears on hover */}
+              <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[var(--color-secondary-mid)]">
+                ↓
+              </span>
+            </div>
           </th>
         ))}
       </tr>

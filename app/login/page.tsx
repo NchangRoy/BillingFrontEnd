@@ -1,8 +1,10 @@
 'use client'
+import { seller1,seller2 } from '@/src/api/models/UpdatedSellerResponse';
 
 import React, { useState } from 'react'
+import { useRouter } from 'next/navigation';
 import { 
-  EmailOutlined, 
+  PersonOutline, // Changed from EmailOutlined
   LockOutlined, 
   VisibilityOutlined, 
   VisibilityOffOutlined,
@@ -12,14 +14,28 @@ import {
 const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    email: '',
+    username: '', // Changed from email
     password: '',
     rememberMe: false
   });
+  const router=useRouter()
+
+  
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Login Attempt:", formData);
+
+    if(formData.username=="alice_smith"){
+      localStorage.setItem("seller",JSON.stringify(seller1))
+      router.push("/dashboard")
+    }
+    else if(formData.username=="bob_johnson"){
+      localStorage.setItem("seller",JSON.stringify(seller2))
+      router.push("/dashboard")
+    }
+   
     // Add your authentication logic here
   };
 
@@ -41,18 +57,18 @@ const LoginForm = () => {
 
         <form onSubmit={handleSubmit} className="p-8 pt-4 space-y-5">
           
-          {/* Email Field */}
+          {/* Username Field */}
           <div className="space-y-2">
-            <label className="text-[11px] font-black uppercase tracking-widest text-gray-400 ml-1">Email Address</label>
+            <label className="text-[11px] font-black uppercase tracking-widest text-gray-400 ml-1">Username</label>
             <div className={inputWrapper}>
-              <EmailOutlined className="text-gray-400" fontSize="small" />
+              <PersonOutline className="text-gray-400" fontSize="small" />
               <input 
-                type="email" 
-                placeholder="name@company.com" 
+                type="text" 
+                placeholder="johndoe123" 
                 className={inputStyle}
                 required
-                value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                value={formData.username}
+                onChange={(e) => setFormData({...formData, username: e.target.value})}
               />
             </div>
           </div>

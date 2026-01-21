@@ -1,20 +1,27 @@
 'use quotation'
 import { useRouter } from 'next/navigation'
 import React, { useEffect } from 'react'
-import TableRow from '../../components/TableRow'
+import TableRow from '../../../components/TableRow'
 import TableHeader from '@/components/TableHeader'
 import { DevisResponse } from '@/src/api'
 const columns={
  "Devis Number":"numeroDevis",
-  "quotation Name":"nomquotation",
-  "quotation Email":"emailquotation",
+  "Client Name":"nomClient",
+  "Client Email":"emailClient",
   "Creation Date":"dateCreation",
   "Valid Until":"dataValidite",
   "Created At":"createdAt",
   "Status":"statut",
-  "Total Amount":"montanTTC",
+  "Total Amount":"montantTTC",
   "Currency":"devise"
 }
+
+/* generated using openapi-typescript-codegen -- do not edit */
+/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+
+
 
 interface props{
   data:DevisResponse[]

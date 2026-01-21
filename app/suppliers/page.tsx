@@ -8,7 +8,7 @@ import DropDown from "@mui/icons-material/ArrowDropDown"
 import SearchIcon from "@mui/icons-material/Search"
 import AddIcon from "@mui/icons-material/Add"
 import SupplierTable from './SupplierTable'
-
+import SupplierFormModal from './SupplierFormModal'
 const Supplier = () => {
   const router = useRouter();
 
@@ -17,13 +17,14 @@ const Supplier = () => {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [activeOnly, setActiveOnly] = useState<boolean>(false);
   const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [isModalOpen,setIsModalOpen]=useState<boolean>(false)
 
   // 2. Filter Logic
   const filteredSuppliers = useMemo(() => {
     return MOCK_SUPPLIERS.filter((item) => {
       const matchesSearch = 
-        item.username.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        item.email.toLowerCase().includes(searchTerm.toLowerCase());
+         item.username.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        item?.email.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesStatus = !activeOnly || item.actif === true;
       const matchesType = !selectedType || item.typeFournisseur === selectedType;
@@ -34,11 +35,12 @@ const Supplier = () => {
 
   // 3. Navigation Handler
   const handleCreateNew = () => {
-    router.push('/suppliers/new');
+    setIsModalOpen(!isModalOpen)
+    console.log(isModalOpen)
   };
 
   return (
-    <div className='max-w-7xl mx-auto p-6 lg:p-10 flex flex-col gap-8 bg-secondary-super-light/20 min-h-screen'>
+    <div className='max-w-7xl mx-auto p-6 lg:p-10 flex flex-col gap-8 bg-white min-h-screen'>
 
       {/* Header Section */}
       <div className='flex flex-col md:flex-row md:items-center justify-between gap-6'>
@@ -152,6 +154,10 @@ const Supplier = () => {
           </div>
         )}
       </div>
+
+      {
+        isModalOpen && <SupplierFormModal isOpen={isModalOpen} onClose={setIsModalOpen}/>
+      }
 
     </div>
   )

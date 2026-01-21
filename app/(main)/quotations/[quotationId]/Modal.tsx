@@ -63,7 +63,8 @@ const Modal = ({ showForm, setshowForm, mainContent, setMainContent }: ModalProp
       idProduit: product.idProduit || "",
       nomProduit: product.nomProduit || "",
       prixUnitaire: product.prixVente || 0,
-      description: product.nomProduit || "", // Directly set the product name here
+      description: product.nomProduit || "", 
+      // Directly set the product name here
       remiseMontant: 0,
       remisePourcentage: 0
     }));
@@ -102,10 +103,10 @@ const Modal = ({ showForm, setshowForm, mainContent, setMainContent }: ModalProp
   if (!showForm) return null;
 
   return (
-    <div className='fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4'>
+    <div className='fixed bottom-10 right-10 z-50  p-4'>
       <div className='bg-white w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden'>
         
-        {/* Header */}
+        
         <div className='px-8 py-5 border-b flex justify-between items-center'>
           <h2 className='text-secondary text-xl font-black tracking-tight'>Quotation Line</h2>
           <button onClick={() => setshowForm(false)} className='text-gray-400 hover:text-secondary'><CloseIcon /></button>
@@ -114,7 +115,7 @@ const Modal = ({ showForm, setshowForm, mainContent, setMainContent }: ModalProp
         <form onSubmit={handleSubmit} className='p-8 overflow-y-auto'>
           <div className='grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-4'>
             
-            {/* SEARCH AREA */}
+            
             <div className='md:col-span-2 relative'>
               <label className={labelStyles}>Quick Search Product</label>
               <div className="relative">
@@ -150,18 +151,21 @@ const Modal = ({ showForm, setshowForm, mainContent, setMainContent }: ModalProp
             </div>
 
             <div>
+              
               <label className={labelStyles}>Unit Price</label>
+             
               <input 
                 required 
                 type="number" 
                 value={form.prixUnitaire} 
                 onChange={e => setForm({...form, prixUnitaire: Number(e.target.value)})} 
-                className={inputStyles} 
-              />
+                className={inputStyles} />
+
             </div>
 
             <div>
               <label className={labelStyles}>Quantity</label>
+
               <input 
                 required 
                 type="number" 
@@ -169,38 +173,50 @@ const Modal = ({ showForm, setshowForm, mainContent, setMainContent }: ModalProp
                 onChange={e => setForm({...form, quantite: Number(e.target.value)})} 
                 className={inputStyles} 
               />
+
             </div>
 
-            {/* DISCOUNT FIELDS */}
+           
             <div className="md:col-span-2 grid grid-cols-2 gap-4 border-t border-gray-50 pt-4">
               <div>
+
                 <label className={labelStyles}>Discount (%)</label>
+
                 <input 
                     type="number" 
                     value={form.remisePourcentage} 
                     onChange={e => handleDiscountPercentChange(Number(e.target.value))} 
                     className={inputStyles} 
                 />
+
               </div>
               <div>
+
                 <label className={labelStyles}>Discount Amount (XAF)</label>
+
                 <input 
                     type="number" 
                     value={form.remiseMontant} 
                     onChange={e => handleDiscountAmountChange(Number(e.target.value))} 
                     className={inputStyles} 
                 />
+
               </div>
             </div>
 
             <div className='md:col-span-2'>
+
               <label className="flex items-center gap-2 cursor-pointer group">
+
                 <input type="checkbox" name='isTaxLine' className="w-4 h-4 accent-secondary-mid" />
+
                 <span className="text-xs font-bold text-gray-500 uppercase group-hover:text-secondary-mid transition-colors">Apply Tax</span>
+
               </label>
+              
             </div>
 
-            {/* TOTAL BOX */}
+           
             <div className='md:col-span-2 bg-gray-900 text-white p-6 rounded-2xl flex justify-between items-end'>
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Final Line Total</p>

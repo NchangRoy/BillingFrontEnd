@@ -12,7 +12,7 @@ const TableRow = ({ properties, dataObject ,method}: Props) => {
   return (
     <tr 
     onClick={()=>{method?.(dataObject)}}
-    className="border-b border-gray-200 hover:bg-gray-200 transition-colors duration-200">
+    className="border-b flex justify-between border-gray-200 hover:bg-gray-200 transition-colors duration-200">
       {properties.map((prop, index) => (
         <td
           key={index}
