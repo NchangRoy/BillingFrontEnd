@@ -9,27 +9,27 @@ import CreditCardIcon from "@mui/icons-material/CreditCard";
 import HomeIcon from "@mui/icons-material/Home"; 
 import ReceiptIcon from "@mui/icons-material/Receipt"; 
 import PercentIcon from '@mui/icons-material/Percent';
-import { UpdatedDevisResponse } from '@/src/api/models/UpdatedDevisResponse';
+import type { UpdatedFactureResponse } from '@/src/api/models/UpdatedFactureResponse';
 import GroupAddIcon from '@mui/icons-material/GroupAdd'; 
 import { CheckCircle2 } from 'lucide-react';
-import { MOCK_QUOTATIONS } from '@/src/api/models/UpdatedDevisResponse';
+import { MOCK_FACTURE } from '@/src/api/models/UpdatedFactureResponse';
 import { Search } from 'lucide-react';
-import { DevisResponse } from '@/src/api';
+import { DevisResponse, FactureResponse } from '@/src/api';
 import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
 interface Props {
   clients: UpdatedClientResponse[];
   
   setMainSelectedClient: (data: UpdatedClientResponse) => void;
   selectClient?: UpdatedClientResponse;
-  quotation?: UpdatedDevisResponse;
-  setQuotation: (data: UpdatedDevisResponse) => void;
+  Invoice?: UpdatedFactureResponse;
+  setInvoice: (data: UpdatedFactureResponse) => void;
 }
 
 const inputStyles = "w-full border border-gray-200 rounded-lg outline-none py-2 px-3 focus:ring-2 focus:ring-secondary-mid/10 focus:border-secondary-mid transition-all text-sm text-gray-700 bg-white shadow-sm placeholder:text-gray-300";
 const readOnlyStyles = "w-full border border-gray-100 bg-gray-50 rounded-lg py-2 px-3 text-sm text-gray-600 cursor-not-allowed font-medium";
 const labelStyles = "text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1 block ml-0.5";
 
-const ClientHeader = ({ clients,  setMainSelectedClient, selectClient, quotation,setQuotation }: Props) => {
+const ClientHeader = ({ clients,  setMainSelectedClient, selectClient, Invoice,setInvoice }: Props) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredResults, setFilteredResults] = useState<UpdatedClientResponse[]>([]);
   const [selectedClient, setSelectedClient] = useState<UpdatedClientResponse | null>(null);
@@ -50,6 +50,14 @@ const ClientHeader = ({ clients,  setMainSelectedClient, selectClient, quotation
           setSeller(JSON.parse(stored));
         }
       }, []);
+
+       useEffect(() => {
+        if (seller) {
+          console.log("✅ Seller Loaded:", seller);
+        } else {
+          console.log("⏳ Seller is currently null (waiting for localStorage)");
+        }
+      }, [seller]); // This dependency is key
 
 
 
@@ -84,40 +92,38 @@ useEffect(() => {
 
   
   const [vosRefFilter, setVosRefFilter] = useState<string>("");
-  const [filteredQuotations, setFilteredQuotations] = useState<UpdatedDevisResponse[]>([]);
+  const [filteredInvoices, setFilteredInvoices] = useState<UpdatedFactureResponse[]>([]);
   const [showRefDropdown, setShowRefDropdown] = useState(false);
 
 
 
 
 
-  // 1. FILTER LOGIC
+ // 1. FILTER LOGIC
   useEffect(() => {
     if (vosRefFilter.trim() === "") {
-      setFilteredQuotations([]);
+      setFilteredInvoices([]);
       return;
     }
-    const filtered = MOCK_QUOTATIONS.filter((q) =>
-      q.numeroDevis.toLowerCase().includes(vosRefFilter.toLowerCase())
+    const filtered = MOCK_FACTURE.filter((q) =>
+      q.numeroFacture.toLowerCase().includes(vosRefFilter.toLowerCase())
     );
-    setFilteredQuotations(filtered);
+    setFilteredInvoices(filtered);
   }, [vosRefFilter]);
 
-  const handleSelectReference = (refQuo: UpdatedDevisResponse) => {
-  setVosRefFilter(refQuo.numeroDevis);
+  const handleSelectReference = (refQuo: UpdatedFactureResponse) => {
+  setVosRefFilter(refQuo.numeroFacture);
   setShowRefDropdown(false);
 
-  // 1. Set the main quotation state with the data from the reference
-  // We kee p the current numeroDevis if we are creating a new one based on an old one
-  console.log(refQuo)
-  setQuotation({
-
+  // 1. Set the main Invoice state with the data from the reference
+  // We keep the current numeroDevis if we are creating a new one based on an old one
+  setInvoice({
     ...refQuo,
-    numeroDevis: quotation?.numeroDevis || refQuo.numeroDevis, 
-    statut: DevisResponse.statut.BROUILLON, // Usually reset status for new drafts
+    numeroFacture: Invoice?.numeroFacture || refQuo.numeroFacture, 
+    etat: FactureResponse.etat.BROUILLON, // Usually reset status for new drafts
   });
 
-  // 2. Automatically link the client associated with that old quotation
+  // 2. Automatically link the client associated with that old Invoice
   const associatedClient = clients.find(c => c.idClient === refQuo.idClient);
   if (associatedClient) {
     setSelectedClient(associatedClient);
@@ -134,16 +140,35 @@ useEffect(() => {
 
 
 
-  // 1. ID GENERATION
+
   useEffect(() => {
-    if (!quotation?.idDevis) {
-      const agency = seller?.agency, type = "QUO";
-      const taxFlag = formData.applyVat && selectClient?.ntva ? "T" : "NT";
-      const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-      const suffix = Math.floor(Math.random() * 10000).toString().padStart(4, "0");
-      setGeneratedId(`${agency}-${type}-${taxFlag}-${date}-${suffix}`);
-    } 
-  }, [quotation, formData.applyVat]);
+  // 1. Always calculate what the "new" ID should look like based on current form state
+  const agency = seller?.agency || "HQ";
+  const type = "INV";
+  const taxFlag = (formData.applyVat && selectClient?.ntva) ? "T" : "NT";
+  const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  
+  // 2. Generate the ID base
+  // Note: If you want the suffix to stay the same for the duration of the session, 
+  // you might want to store the random suffix in a ref or state once.
+  const suffix = generatedId.split('-').pop() || Math.floor(Math.random() * 10000).toString().padStart(4, "0");
+  
+  const newId = `${agency}-${type}-${taxFlag}-${dateStr}-${suffix}`;
+
+  // 3. Only update if the calculated ID is actually different from the current one
+  // This prevents infinite loops
+  if (newId !== generatedId) {
+    setGeneratedId(newId);
+  }
+
+  // 4. Sync it back to the Invoice object so the rest of the app sees the change
+  if (Invoice && Invoice.numeroFacture !== newId) {
+    setInvoice(prev => prev ? ({ ...prev, numeroFacture: newId }) : prev);
+  }
+
+}, [formData.applyVat, selectClient, seller, generatedId, Invoice]);
+
+
 
   // 2. EXTERNAL SYNC
   useEffect(() => {
@@ -153,18 +178,20 @@ useEffect(() => {
     }
   }, [selectClient]);
 
+  
+
   // 3. BROADCAST TO PARENT (Critical Fix)
   // Alternative fix if you can't change the Props interface:
 useEffect(() => {
-  if (selectedClient && setQuotation && quotation) {
-    setQuotation({
-      ...quotation, // Use the object from props directly instead of 'prev'
+  if (selectedClient && setInvoice && Invoice) {
+    setInvoice({
+      ...Invoice, // Use the object from props directly instead of 'prev'
       idClient: selectedClient.idClient,
       nomClient: selectedClient.raisonSociale,
-      dateCreation: formData.creationDate,
-      dateValidite: formData.validityDate,
+      dateFacturation: formData.creationDate,
+      dateEcheance: formData.validityDate,
       applyVat: formData.applyVat,
-      modeReglement: formData.paymentMethod as UpdatedDevisResponse.modeReglement,
+      modeReglement: formData.paymentMethod as FactureResponse.modeReglement,
       remiseGlobalePourcentage: Number(formData.remiseGlobalePourcentage),
       nbreEcheance: Number(formData.nbreEcheance),
       nosRef: formData.nosRef,
@@ -172,7 +199,7 @@ useEffect(() => {
       referalClientId: selectedReferalClient?.idClient || undefined
     });
   }
-}, [selectedClient, formData, selectedReferalClient, setQuotation]); // Add quotation to dependencies if using this way
+}, [selectedClient, formData, selectedReferalClient, setInvoice]); // Add Invoice to dependencies if using this way
 
   // 4. SEARCH LOGIC
   useEffect(() => {
@@ -246,7 +273,7 @@ useEffect(() => {
   };
 
  return (
- <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden" ref={containerRef}>
+ <div className="bg-white rounded-2xl shadow-sm border border-gray-100 " ref={containerRef}>
   {/* SECTION 1: TOP BAR - SEARCH & PRIMARY ID */}
   <div className="p-6 border-b border-gray-50 bg-gray-50/10">
     <div className="grid grid-cols-12 gap-4">
@@ -280,7 +307,7 @@ useEffect(() => {
         </div>
       </div>
       <div className="col-span-12 md:col-span-3">
-        <label className={labelStyles}>Quotation ID</label>
+        <label className={labelStyles}>Invoice ID</label>
         <div className="relative">
           <ReceiptIcon className="absolute left-3 top-2.5 text-gray-300" sx={{ fontSize: 18 }} />
           <input readOnly value={generatedId} className={`${readOnlyStyles} pl-10 font-mono text-secondary-mid`} />
@@ -307,8 +334,8 @@ useEffect(() => {
       <input 
         type="text" 
         name="nosRef" 
-        className={`${!quotation ? inputStyles : readOnlyStyles}`} 
-        value={quotation ? (quotation.nosRef ?? "") : formData.nosRef} 
+        className={`${!Invoice ? inputStyles : readOnlyStyles}`} 
+        value={Invoice ? (Invoice.nosRef ?? "") : formData.nosRef} 
         onChange={handleInputChange}
         placeholder="e.g., BILL-2026-001"
       />
@@ -322,7 +349,7 @@ useEffect(() => {
           <Search size={14} className="text-gray-400" />
           <input 
             type="text"
-            placeholder="Link Quotation Number..."
+            placeholder="Link Invoice Number..."
             className="bg-transparent outline-none text-xs w-full font-bold text-gray-700"
             value={vosRefFilter}
             onChange={(e) => {
@@ -334,15 +361,15 @@ useEffect(() => {
         </div>
 
         {/* Dropdown for Vos Ref */}
-        {showRefDropdown && filteredQuotations.length > 0 && (
+        {showRefDropdown && filteredInvoices.length > 0 && (
           <div className="absolute z-[100] w-full mt-2 bg-white border border-gray-100 shadow-2xl rounded-xl max-h-40 overflow-auto p-1">
-            {filteredQuotations.map((q) => (
+            {filteredInvoices.map((q) => (
               <div 
-                key={q.numeroDevis}
+                key={q.numeroFacture}
                 onClick={() => handleSelectReference(q)}
                 className="px-3 py-2 hover:bg-[var(--color-secondary-super-light)] cursor-pointer flex justify-between items-center rounded-lg transition-colors group"
               >
-                <span className="text-[10px] font-black text-[var(--color-primary)] uppercase tracking-tight">{q.numeroDevis}</span>
+                <span className="text-[10px] font-black text-[var(--color-primary)] uppercase tracking-tight">{q.numeroFacture}</span>
                 <span className="text-[9px] font-bold text-[var(--color-secondary-mid)] opacity-0 group-hover:opacity-100">Select</span>
               </div>
             ))}
@@ -358,7 +385,7 @@ useEffect(() => {
         <CreditCardIcon className="absolute left-3 top-2.5 text-gray-300 z-10" sx={{ fontSize: 16 }} />
         <select name="paymentMethod" value={formData.paymentMethod} onChange={handleInputChange} className={`${inputStyles} pl-9 appearance-none`}>
           <option value="">Select Method</option>
-          {Object.entries(UpdatedDevisResponse.modeReglement || {}).map(([key, value]) => (
+          {Object.entries(FactureResponse.modeReglement || {}).map(([key, value]) => (
             <option key={key} value={value}>{value.replace(/_/g, ' ')}</option>
           ))}
         </select>
@@ -372,11 +399,11 @@ useEffect(() => {
         <input 
           type="number" 
           name="remiseGlobalePourcentage"
-          className={`${!quotation ? inputStyles : readOnlyStyles} pl-10`} 
+          className={`${!Invoice ? inputStyles : readOnlyStyles} pl-10`} 
           onChange={handleInputChange}
-          value={quotation ? (quotation.remiseGlobalePourcentage ?? 0) : formData.remiseGlobalePourcentage}
+          value={Invoice ? (Invoice.remiseGlobalePourcentage ?? 0) : formData.remiseGlobalePourcentage}
         />
-        {((quotation?.remiseGlobalePourcentage || formData.remiseGlobalePourcentage) > 0) && (
+        {((Invoice?.remiseGlobalePourcentage || formData.remiseGlobalePourcentage) > 0) && (
           <div className="absolute right-2 top-1.5 flex items-center pointer-events-none">
             <span className="text-[9px] bg-emerald-100 text-emerald-700 px-2 py-1 rounded font-black border border-emerald-200">
               OFF
@@ -391,8 +418,8 @@ useEffect(() => {
       <input 
         type="number" 
         name="nbreEcheance" 
-        className={`${!quotation ? inputStyles : readOnlyStyles}`} 
-        value={quotation ? (quotation.nbreEcheance ?? 1) : formData.nbreEcheance} 
+        className={`${!Invoice ? inputStyles : readOnlyStyles}`} 
+        value={Invoice ? (Invoice.nbreEcheance ?? 1) : formData.nbreEcheance} 
         onChange={handleInputChange}
         min="1"
       />

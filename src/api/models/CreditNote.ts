@@ -1,38 +1,48 @@
-/* generated using openapi-typescript-codegen -- do not edit */
-/* istanbul ignore file */
-/* tslint:disable */
-/* eslint-disable */
 import type { LigneFactureResponse } from './LigneFactureResponse';
-export type FactureResponse = {
-    idFacture?: string;
+
+export type CreditNoteResponse = {
+    idCNoteCredit?: string;
+    numeroNoteCredit?:string;
     numeroFacture?: string;
     dateFacturation?: string;
     dateEcheance?: string;
-    type?: string;
-    etat?: FactureResponse.etat;
-    montantTotal?: number;
-    montantRestant?: number;
+    dateSysteme?: string;
+    etat?: CreditNoteResponse.etat;
+    type?: "AVOIR"; // Marks this as a credit note
     idClient?: string;
     nomClient?: string;
     adresseClient?: string;
     emailClient?: string;
     telephoneClient?: string;
-    lignesFacture?: Array<LigneFactureResponse>;
-    montantHT?: number;
-    montantTVA?: number;
+    montantHT?: number;      // Negative amounts for reversal
+    montantTVA?: number;     // Negative amounts for reversal
     montantTTC?: number;
+    montantTotal?: number;
+    montantRestant?: number;
+    finalAmount?: number;
+    remiseGlobalePourcentage?: number;
+    remiseGlobaleMontant?: number;
+    applyVat?: boolean;
     devise?: string;
     tauxChange?: number;
+    modeReglement?: CreditNoteResponse.modeReglement;
     conditionsPaiement?: string;
-    notes?: string;
+    nbreEcheance?: number;
+    nosRef?: string;
+    vosRef?: string;
     referenceCommande?: string;
+    idDevisOrigine?: string;
+    lignesFacture?: Array<LigneFactureResponse>; // Line items, negative for returned/cancelled items
+    notes?: string;
     pdfPath?: string;
     envoyeParEmail?: boolean;
     dateEnvoiEmail?: string;
     createdAt?: string;
     updatedAt?: string;
+    referalClientId?: string;
 };
-export namespace FactureResponse {
+
+export namespace CreditNoteResponse {
     export enum etat {
         BROUILLON = 'BROUILLON',
         ENVOYE = 'ENVOYE',
@@ -49,7 +59,7 @@ export namespace FactureResponse {
         CHEQUE = 'CHEQUE',
         PRELEVEMENT = 'PRELEVEMENT',
         PAYPAL = 'PAYPAL',
-        AUTRE = 'AUTRE'
+        AUTRE = 'AUTRE',
+        BON_D_ACHAT = 'BON_D_ACHAT', // Optional: if credit is issued as store credit
     }
 }
-

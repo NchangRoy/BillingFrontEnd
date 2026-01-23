@@ -3,7 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 export type LigneFactureResponse = {
-    idLigne?: string;
+     idLigne?: string;
     quantite?: number;
     description?: string;
     debit?: number;
@@ -13,5 +13,7 @@ export type LigneFactureResponse = {
     nomProduit?: string;
     prixUnitaire?: number;
     montantTotal?: number;
+    remisePourcentage?: number;
+    remiseMontant?: number;
 };
 

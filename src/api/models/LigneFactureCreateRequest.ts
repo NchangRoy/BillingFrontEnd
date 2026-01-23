@@ -3,14 +3,17 @@
 /* tslint:disable */
 /* eslint-disable */
 export type LigneFactureCreateRequest = {
-    quantite: number;
+    idLigne?: string;
+    quantite?: number;
     description?: string;
-    debit: number;
-    credit: number;
+    debit?: number;
+    credit?: number;
     isTaxLine?: boolean;
     idProduit?: string;
     nomProduit?: string;
     prixUnitaire?: number;
     montantTotal?: number;
+    remisePourcentage?: number;
+    remiseMontant?: number;
 };
 

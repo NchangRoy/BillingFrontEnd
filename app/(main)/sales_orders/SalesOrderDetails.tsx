@@ -6,19 +6,21 @@ import SearchIcon from "@mui/icons-material/Search";
 import { Trash2, Pencil,Lock, Plus, ShoppingCart, Tag, Calculator, Receipt } from "lucide-react";
 import { UpdatedClientResponse } from '@/src/api/models/UpdatedClientResponse';
 import { UpdatedDevisResponse } from '@/src/api/models/UpdatedDevisResponse';
-import SummaryCard from '../../../components/SummaryCard';
+import SummaryCard from '@/components/SummaryCard';
 import { Permission, UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
-
+import { UpdatedSalesOrderResponse } from '@/src/api/models/UpdatedSalesOrder';
+import { SalesOrderResponse } from '@/src/api/models/UpdatedSalesOrder';
 const inputStyles = "w-full border border-gray-200 rounded-lg outline-none py-2 px-3 focus:ring-2 focus:ring-secondary-mid/10 focus:border-secondary-mid transition-all text-sm text-gray-700 bg-white shadow-sm placeholder:text-gray-300";
 const labelStyles = "text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1 block ml-0.5";
 
 interface Props {
   client: UpdatedClientResponse | undefined;
-  quotation: UpdatedDevisResponse | undefined;
-  setQuotation: (data: UpdatedDevisResponse) => void;
+  sales_order: UpdatedSalesOrderResponse| undefined;
+  setSalesOrder: (data: UpdatedSalesOrderResponse) => void;
 }
 
-const QuotationDetails = ({ client, quotation, setQuotation }: Props) => {
+const sales_orderDetails
+ = ({ client, sales_order, setSalesOrder }: Props) => {
   const [productSearch, setProductSearch] = useState("");
   const [filteredProducts, setFilteredProducts] = useState<UpdatedProductResponse[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<UpdatedProductResponse | null>(null);
@@ -76,7 +78,7 @@ const QuotationDetails = ({ client, quotation, setQuotation }: Props) => {
     }
 
     const sizeConfig = selectedProduct.allowedSaleSizes?.find(s => s.size === selectedSize);
-    const useTaxedTier = (client?.ntva && quotation?.applyVat);
+    const useTaxedTier = (client?.ntva && sales_order?.applyVat);
     
     const basePrice = useTaxedTier ? (sizeConfig?.unitPriceWithTax || 0) : (sizeConfig?.unitPrice || 0);
     let finalPrice = basePrice;
@@ -101,16 +103,16 @@ const QuotationDetails = ({ client, quotation, setQuotation }: Props) => {
 
     setSelectedPrice(finalPrice);
     setCurrentRemiseLine(discountAmount);
-  }, [selectedSize, selectedProduct, client?.ntva, quotation?.applyVat, quantity]);
+  }, [selectedSize, selectedProduct, client?.ntva, sales_order?.applyVat, quantity]);
 
   // 3. Update existing lines when VAT toggle changes
   useEffect(() => {
-    if (!quotation?.lignesDevis?.length) return;
-
-    const useTaxedTier = (quotation.applyVat && client?.ntva);
+    if (!sales_order?.lignesSalesOrder?.length) return;
+ 
+    const useTaxedTier = (sales_order.applyVat && client?.ntva);
     const now = new Date();
 
-    const updatedLines = quotation.lignesDevis.map(line => {
+    const updatedLines = sales_order.lignesSalesOrder.map(line => {
       const product = produits.find(p => p.idProduit === line.idProduit);
       const sizeStr = line.description?.split(' - ')[1];
       const sizeConfig = product?.allowedSaleSizes?.find(s => s.size === sizeStr);
@@ -144,19 +146,19 @@ const QuotationDetails = ({ client, quotation, setQuotation }: Props) => {
     });
 
     // Only update if actually different to prevent loops
-    if (JSON.stringify(updatedLines) !== JSON.stringify(quotation.lignesDevis)) {
-      setQuotation({ ...quotation, lignesDevis: updatedLines });
+    if (JSON.stringify(updatedLines) !== JSON.stringify(sales_order.lignesSalesOrder)) {
+      setSalesOrder({ ...sales_order, lignesSalesOrder: updatedLines });
     }
-  }, [quotation?.applyVat, client?.ntva]);
+  }, [sales_order?.applyVat, client?.ntva]);
 
   // 4. Totals Calculation (HT, TVA, TTC)
   useEffect(() => {
-    if (!quotation) return;
+    if (!sales_order) return;
 
-    const rawSum = (quotation.lignesDevis || []).reduce((acc, curr) => acc + (curr.montantTotal || 0), 0);
+    const rawSum = (sales_order.lignesSalesOrder || []).reduce((acc, curr) => acc + (curr.montantTotal || 0), 0);
     let ht: number, tva: number, ttc: number;
 
-    if (quotation.applyVat && client?.ntva) {
+    if (sales_order.applyVat && client?.ntva) {
       ttc = rawSum;
       ht = ttc / 1.1925;
       tva = ttc - ht;
@@ -167,36 +169,35 @@ const QuotationDetails = ({ client, quotation, setQuotation }: Props) => {
     }
 
     // 5. Global Discount Calculation (Final Amount)
-    const percentage = quotation?.remiseGlobalePourcentage || 0;
-    const globalDiscountFromPercent = ttc * (percentage / 100);
-    const totalLineDiscounts = (quotation?.lignesDevis || []).reduce((acc, line) => acc + (line.remiseMontant || 0), 0);
+   
+   
+    const totalLineDiscounts = (sales_order?.lignesSalesOrder || []).reduce((acc, line) => acc + (line.remiseMontant || 0), 0);
     
-    const totalRemiseMontant = globalDiscountFromPercent + totalLineDiscounts;
-    const finalAmount = Math.round(ttc - globalDiscountFromPercent);
-
+    
     // Check if any calculated values differ from current state
     const hasChanged = 
-      Math.round(ht) !== Math.round(quotation.montantHT || 0) ||
-      Math.round(tva) !== Math.round(quotation.montantTVA || 0) ||
-      Math.round(ttc) !== Math.round(quotation.montantTTC || 0) ||
-      Math.round(finalAmount) !== Math.round(quotation.finalAmount || 0) ||
-      Math.round(totalRemiseMontant) !== Math.round(quotation.remiseGlobaleMontant || 0);
+      Math.round(ht) !== Math.round(sales_order.montantHT || 0) ||
+      Math.round(tva) !== Math.round(sales_order.montantTVA || 0) ||
+      Math.round(ttc) !== Math.round(sales_order.montantTTC || 0) 
+   
 
     if (hasChanged) {
-      setQuotation({ 
-        ...quotation, 
+      setSalesOrder({ 
+        ...sales_order, 
         montantHT: ht, 
         montantTVA: tva, 
         montantTTC: ttc,
-        finalAmount: finalAmount,
-        remiseGlobaleMontant: Math.round(globalDiscountFromPercent)
+        
       });
     }
-  }, [quotation?.lignesDevis, quotation?.applyVat, client?.ntva, quotation?.remiseGlobalePourcentage]);
+  }, [sales_order?.lignesSalesOrder, sales_order?.applyVat, client?.ntva, ]);
 
   const addLine = () => {
-    if (!selectedProduct || !selectedSize || !quotation) return;
 
+    console.log("in add line function")
+    if (!selectedProduct || !selectedSize || !sales_order) return;
+
+    console.log("in add line function")
     const newLine = {
       idProduit: selectedProduct.idProduit,
       nomProduit: selectedProduct.nomProduit,
@@ -208,9 +209,11 @@ const QuotationDetails = ({ client, quotation, setQuotation }: Props) => {
       isTaxLine: false
     };
 
-    setQuotation({
-      ...quotation,
-      lignesDevis: [...(quotation.lignesDevis || []), newLine]
+    console.log(newLine)
+
+    setSalesOrder({
+      ...sales_order,
+      lignesSalesOrder: [...(sales_order.lignesSalesOrder || []), newLine]
     });
 
     setSelectedProduct(null);
@@ -220,10 +223,10 @@ const QuotationDetails = ({ client, quotation, setQuotation }: Props) => {
   };
 
   const removeLine = (index: number) => {
-    if (!quotation) return;
-    const newLines = [...(quotation.lignesDevis || [])];
+    if (!sales_order) return;
+    const newLines = [...(sales_order.lignesSalesOrder || [])];
     newLines.splice(index, 1);
-    setQuotation({ ...quotation, lignesDevis: newLines });
+    setSalesOrder({ ...sales_order, lignesSalesOrder: newLines });
   };
 
   const handleEdit = (line: any, index: number) => {
@@ -347,7 +350,8 @@ const QuotationDetails = ({ client, quotation, setQuotation }: Props) => {
     </div>
 
     {/* 5. Add Button */}
-    <div className="col-span-4 md:col-span-1 pt-[21px]">
+    <div className="col-span-4 md:col-span-1 pt-[21px]"
+    >
       <button
         type="button" onClick={addLine} disabled={!selectedProduct || !selectedSize}
         className="w-full bg-secondary-mid hover:bg-secondary text-white rounded-xl h-[38px] shadow-lg disabled:opacity-30 flex items-center justify-center transition-all"
@@ -423,7 +427,7 @@ const QuotationDetails = ({ client, quotation, setQuotation }: Props) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {quotation?.lignesDevis?.map((line, idx) => (
+            {sales_order?.lignesSalesOrder?.map((line, idx) => (
               <tr key={`${line.idProduit}-${idx}`} className="group hover:bg-gray-50/50 transition-colors">
                 <td className="px-6 py-4">
                   <p className="text-sm font-bold text-gray-700">{line.nomProduit}</p>
@@ -450,14 +454,14 @@ const QuotationDetails = ({ client, quotation, setQuotation }: Props) => {
 
       {/* FINANCIAL SUMMARY */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mt-8">
-        <SummaryCard title="Total HT" value={quotation?.montantHT} icon={<Calculator />} variant="default" />
-        <SummaryCard title="TVA (19.25%)" value={quotation?.montantTVA} icon={<Tag />} variant="emerald" />
-        <SummaryCard title="Total TTC" value={quotation?.montantTTC} icon={<Receipt />} variant="default" />
-        <SummaryCard title="Total Discount" value={quotation?.remiseGlobaleMontant} icon={<Tag />} variant="accent" />
-        <SummaryCard title="Final Total" value={quotation?.finalAmount} icon={<Receipt />} variant="dark" />
+        <SummaryCard title="Total HT" value={sales_order?.montantHT} icon={<Calculator />} variant="default" />
+        <SummaryCard title="TVA (19.25%)" value={sales_order?.montantTVA} icon={<Tag />} variant="emerald" />
+        <SummaryCard title="Total TTC" value={sales_order?.montantTTC} icon={<Receipt />} variant="default" />
+       
       </div>
     </div>
   );
 }
 
-export default QuotationDetails;
+export default sales_orderDetails
+;

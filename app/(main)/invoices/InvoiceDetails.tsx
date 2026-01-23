@@ -6,19 +6,20 @@ import SearchIcon from "@mui/icons-material/Search";
 import { Trash2, Pencil,Lock, Plus, ShoppingCart, Tag, Calculator, Receipt } from "lucide-react";
 import { UpdatedClientResponse } from '@/src/api/models/UpdatedClientResponse';
 import { UpdatedDevisResponse } from '@/src/api/models/UpdatedDevisResponse';
-import SummaryCard from '../../../components/SummaryCard';
+import SummaryCard from './SummaryCard';
 import { Permission, UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
-
+import { UpdatedFactureResponse } from '@/src/api/models/UpdatedFactureResponse';
 const inputStyles = "w-full border border-gray-200 rounded-lg outline-none py-2 px-3 focus:ring-2 focus:ring-secondary-mid/10 focus:border-secondary-mid transition-all text-sm text-gray-700 bg-white shadow-sm placeholder:text-gray-300";
 const labelStyles = "text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1 block ml-0.5";
 
 interface Props {
   client: UpdatedClientResponse | undefined;
-  quotation: UpdatedDevisResponse | undefined;
-  setQuotation: (data: UpdatedDevisResponse) => void;
+  invoice: UpdatedFactureResponse| undefined;
+  setInvoice: (data: UpdatedFactureResponse) => void;
 }
 
-const QuotationDetails = ({ client, quotation, setQuotation }: Props) => {
+const InvoiceDetails
+ = ({ client, invoice, setInvoice }: Props) => {
   const [productSearch, setProductSearch] = useState("");
   const [filteredProducts, setFilteredProducts] = useState<UpdatedProductResponse[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<UpdatedProductResponse | null>(null);
@@ -76,7 +77,7 @@ const QuotationDetails = ({ client, quotation, setQuotation }: Props) => {
     }
 
     const sizeConfig = selectedProduct.allowedSaleSizes?.find(s => s.size === selectedSize);
-    const useTaxedTier = (client?.ntva && quotation?.applyVat);
+    const useTaxedTier = (client?.ntva && invoice?.applyVat);
     
     const basePrice = useTaxedTier ? (sizeConfig?.unitPriceWithTax || 0) : (sizeConfig?.unitPrice || 0);
     let finalPrice = basePrice;
@@ -101,16 +102,16 @@ const QuotationDetails = ({ client, quotation, setQuotation }: Props) => {
 
     setSelectedPrice(finalPrice);
     setCurrentRemiseLine(discountAmount);
-  }, [selectedSize, selectedProduct, client?.ntva, quotation?.applyVat, quantity]);
+  }, [selectedSize, selectedProduct, client?.ntva, invoice?.applyVat, quantity]);
 
   // 3. Update existing lines when VAT toggle changes
   useEffect(() => {
-    if (!quotation?.lignesDevis?.length) return;
-
-    const useTaxedTier = (quotation.applyVat && client?.ntva);
+    if (!invoice?.lignesFacture?.length) return;
+ 
+    const useTaxedTier = (invoice.applyVat && client?.ntva);
     const now = new Date();
 
-    const updatedLines = quotation.lignesDevis.map(line => {
+    const updatedLines = invoice.lignesFacture.map(line => {
       const product = produits.find(p => p.idProduit === line.idProduit);
       const sizeStr = line.description?.split(' - ')[1];
       const sizeConfig = product?.allowedSaleSizes?.find(s => s.size === sizeStr);
@@ -144,19 +145,19 @@ const QuotationDetails = ({ client, quotation, setQuotation }: Props) => {
     });
 
     // Only update if actually different to prevent loops
-    if (JSON.stringify(updatedLines) !== JSON.stringify(quotation.lignesDevis)) {
-      setQuotation({ ...quotation, lignesDevis: updatedLines });
+    if (JSON.stringify(updatedLines) !== JSON.stringify(invoice.lignesFacture)) {
+      setInvoice({ ...invoice, lignesFacture: updatedLines });
     }
-  }, [quotation?.applyVat, client?.ntva]);
+  }, [invoice?.applyVat, client?.ntva]);
 
   // 4. Totals Calculation (HT, TVA, TTC)
   useEffect(() => {
-    if (!quotation) return;
+    if (!invoice) return;
 
-    const rawSum = (quotation.lignesDevis || []).reduce((acc, curr) => acc + (curr.montantTotal || 0), 0);
+    const rawSum = (invoice.lignesFacture || []).reduce((acc, curr) => acc + (curr.montantTotal || 0), 0);
     let ht: number, tva: number, ttc: number;
 
-    if (quotation.applyVat && client?.ntva) {
+    if (invoice.applyVat && client?.ntva) {
       ttc = rawSum;
       ht = ttc / 1.1925;
       tva = ttc - ht;
@@ -167,24 +168,24 @@ const QuotationDetails = ({ client, quotation, setQuotation }: Props) => {
     }
 
     // 5. Global Discount Calculation (Final Amount)
-    const percentage = quotation?.remiseGlobalePourcentage || 0;
+    const percentage = invoice?.remiseGlobalePourcentage || 0;
     const globalDiscountFromPercent = ttc * (percentage / 100);
-    const totalLineDiscounts = (quotation?.lignesDevis || []).reduce((acc, line) => acc + (line.remiseMontant || 0), 0);
+    const totalLineDiscounts = (invoice?.lignesFacture || []).reduce((acc, line) => acc + (line.remiseMontant || 0), 0);
     
     const totalRemiseMontant = globalDiscountFromPercent + totalLineDiscounts;
     const finalAmount = Math.round(ttc - globalDiscountFromPercent);
 
     // Check if any calculated values differ from current state
     const hasChanged = 
-      Math.round(ht) !== Math.round(quotation.montantHT || 0) ||
-      Math.round(tva) !== Math.round(quotation.montantTVA || 0) ||
-      Math.round(ttc) !== Math.round(quotation.montantTTC || 0) ||
-      Math.round(finalAmount) !== Math.round(quotation.finalAmount || 0) ||
-      Math.round(totalRemiseMontant) !== Math.round(quotation.remiseGlobaleMontant || 0);
+      Math.round(ht) !== Math.round(invoice.montantHT || 0) ||
+      Math.round(tva) !== Math.round(invoice.montantTVA || 0) ||
+      Math.round(ttc) !== Math.round(invoice.montantTTC || 0) ||
+      Math.round(finalAmount) !== Math.round(invoice.finalAmount || 0) ||
+      Math.round(totalRemiseMontant) !== Math.round(invoice.remiseGlobaleMontant || 0);
 
     if (hasChanged) {
-      setQuotation({ 
-        ...quotation, 
+      setInvoice({ 
+        ...invoice, 
         montantHT: ht, 
         montantTVA: tva, 
         montantTTC: ttc,
@@ -192,10 +193,10 @@ const QuotationDetails = ({ client, quotation, setQuotation }: Props) => {
         remiseGlobaleMontant: Math.round(globalDiscountFromPercent)
       });
     }
-  }, [quotation?.lignesDevis, quotation?.applyVat, client?.ntva, quotation?.remiseGlobalePourcentage]);
+  }, [invoice?.lignesFacture, invoice?.applyVat, client?.ntva, invoice?.remiseGlobalePourcentage]);
 
   const addLine = () => {
-    if (!selectedProduct || !selectedSize || !quotation) return;
+    if (!selectedProduct || !selectedSize || !invoice) return;
 
     const newLine = {
       idProduit: selectedProduct.idProduit,
@@ -208,9 +209,9 @@ const QuotationDetails = ({ client, quotation, setQuotation }: Props) => {
       isTaxLine: false
     };
 
-    setQuotation({
-      ...quotation,
-      lignesDevis: [...(quotation.lignesDevis || []), newLine]
+    setInvoice({
+      ...invoice,
+      lignesFacture: [...(invoice.lignesFacture || []), newLine]
     });
 
     setSelectedProduct(null);
@@ -220,10 +221,10 @@ const QuotationDetails = ({ client, quotation, setQuotation }: Props) => {
   };
 
   const removeLine = (index: number) => {
-    if (!quotation) return;
-    const newLines = [...(quotation.lignesDevis || [])];
+    if (!invoice) return;
+    const newLines = [...(invoice.lignesFacture || [])];
     newLines.splice(index, 1);
-    setQuotation({ ...quotation, lignesDevis: newLines });
+    setInvoice({ ...invoice, lignesFacture: newLines });
   };
 
   const handleEdit = (line: any, index: number) => {
@@ -423,7 +424,7 @@ const QuotationDetails = ({ client, quotation, setQuotation }: Props) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {quotation?.lignesDevis?.map((line, idx) => (
+            {invoice?.lignesFacture?.map((line, idx) => (
               <tr key={`${line.idProduit}-${idx}`} className="group hover:bg-gray-50/50 transition-colors">
                 <td className="px-6 py-4">
                   <p className="text-sm font-bold text-gray-700">{line.nomProduit}</p>
@@ -450,14 +451,15 @@ const QuotationDetails = ({ client, quotation, setQuotation }: Props) => {
 
       {/* FINANCIAL SUMMARY */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mt-8">
-        <SummaryCard title="Total HT" value={quotation?.montantHT} icon={<Calculator />} variant="default" />
-        <SummaryCard title="TVA (19.25%)" value={quotation?.montantTVA} icon={<Tag />} variant="emerald" />
-        <SummaryCard title="Total TTC" value={quotation?.montantTTC} icon={<Receipt />} variant="default" />
-        <SummaryCard title="Total Discount" value={quotation?.remiseGlobaleMontant} icon={<Tag />} variant="accent" />
-        <SummaryCard title="Final Total" value={quotation?.finalAmount} icon={<Receipt />} variant="dark" />
+        <SummaryCard title="Total HT" value={invoice?.montantHT} icon={<Calculator />} variant="default" />
+        <SummaryCard title="TVA (19.25%)" value={invoice?.montantTVA} icon={<Tag />} variant="emerald" />
+        <SummaryCard title="Total TTC" value={invoice?.montantTTC} icon={<Receipt />} variant="default" />
+        <SummaryCard title="Total Discount" value={invoice?.remiseGlobaleMontant} icon={<Tag />} variant="accent" />
+        <SummaryCard title="Final Total" value={invoice?.finalAmount} icon={<Receipt />} variant="dark" />
       </div>
     </div>
   );
 }
 
-export default QuotationDetails;
+export default InvoiceDetails
+;
