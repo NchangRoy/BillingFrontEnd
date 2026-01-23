@@ -16,7 +16,7 @@ export type UpdatedProductResponse = {
     active?: boolean;
     createdAt?: string;
     updatedAt?: string;
-
+    uom?:string;
     /** Sale sizes this client is allowed to buy (FULL CONFIG) */
     allowedSaleSizes?: ClientSaleSize[];
    

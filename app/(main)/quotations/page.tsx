@@ -212,12 +212,7 @@ const Quotation = () => {
                     </td>
                   ))}
                   <td className="px-6 py-4 text-right relative">
-                    <button 
-                      onClick={() => setActiveMenuId(activeMenuId === quotation.idDevis ? null : quotation.idDevis)}
-                      className="p-2 text-gray-300 hover:text-secondary-mid hover:bg-secondary-super-light rounded-xl transition-all"
-                    >
-                      <MoreVertical size={18} />
-                    </button>
+                  
 
                     {activeMenuId === quotation.idDevis && (
                       <div 

@@ -1,32 +1,30 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { UpdatedClientResponse } from '@/src/api/models/UpdatedClientResponse';
+import { clients, UpdatedClientResponse } from '@/src/api/models/UpdatedClientResponse';
 import SearchIcon from "@mui/icons-material/Search";
-import FactoryIcon from "@mui/icons-material/Factory"; // Changed icon for Producer
-import ScaleIcon from "@mui/icons-material/Scale";
-import CreditCardIcon from "@mui/icons-material/CreditCard"; 
+import FactoryIcon from "@mui/icons-material/Factory"; 
 import HomeIcon from "@mui/icons-material/Home"; 
 import ReceiptIcon from "@mui/icons-material/Receipt"; 
-import LocalShippingIcon from '@mui/icons-material/LocalShipping'; // For Transport
-import { Search } from 'lucide-react';
+import LocalShippingIcon from '@mui/icons-material/LocalShipping'; 
+import PersonIcon from '@mui/icons-material/Person';
+import AssignmentIcon from '@mui/icons-material/Assignment';
 import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
-import { PurcaseOrderResponse, PurchaseOrderResponse } from '@/src/api/models/PurchaseOrderLine';
-import { MOCK_PURCHASE_ORDERS } from '@/src/api/models/PurchaseOrderLine';
+import { PurchaseOrderResponse, MOCK_PURCHASE_ORDERS } from '@/src/api/models/PurchaseOrderLine';
+import { GoodsReceiptNoteResponse,GoodReceiptResponse } from '@/src/api/models/GoodsReceiptNote';
 
 interface Props {
-  producers: UpdatedClientResponse[]; // Using the clients array as producers
   setMainSelectedProducer: (data: UpdatedClientResponse) => void;
   selectedProducer?: UpdatedClientResponse;
-  purchaseOrder?: PurchaseOrderResponse;
-  setPurchaseOrder: (data: PurchaseOrderResponse) => void;
+  grn?: GoodsReceiptNoteResponse;
+  setGrn: (data: GoodsReceiptNoteResponse) => void;
 }
 
 const inputStyles = "w-full border border-gray-200 rounded-lg outline-none py-2 px-3 focus:ring-2 focus:ring-secondary-mid/10 focus:border-secondary-mid transition-all text-sm text-gray-700 bg-white shadow-sm placeholder:text-gray-300";
 const readOnlyStyles = "w-full border border-gray-100 bg-gray-50 rounded-lg py-2 px-3 text-sm text-gray-600 cursor-not-allowed font-medium";
 const labelStyles = "text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1 block ml-0.5";
 
-const ProducerHeader = ({ producers, setMainSelectedProducer, selectedProducer, purchaseOrder, setPurchaseOrder }: Props) => {
+const GRNHeader = ({  setMainSelectedProducer, selectedProducer, grn, setGrn }: Props) => {
   // --- States ---
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredResults, setFilteredResults] = useState<UpdatedClientResponse[]>([]);
@@ -34,7 +32,7 @@ const ProducerHeader = ({ producers, setMainSelectedProducer, selectedProducer, 
   const [generatedId, setGeneratedId] = useState<string>("");
   
   const [systemDate, setSystemDate] = useState<string | null>(null);
-  const [buyer, setBuyer] = useState<UpdatedSellerResponse | null>(null);
+  const [user, setUser] = useState<UpdatedSellerResponse | null>(null);
   
   const [internalRefFilter, setInternalRefFilter] = useState<string>("");
   const [filteredPOs, setFilteredPOs] = useState<PurchaseOrderResponse[]>([]);
@@ -42,20 +40,25 @@ const ProducerHeader = ({ producers, setMainSelectedProducer, selectedProducer, 
 
   const containerRef = useRef<HTMLDivElement>(null);
 
+
+  const [producers,setProducers]=useState<UpdatedClientResponse[]>(clients)
   const [formData, setFormData] = useState({
-    poDate: new Date().toISOString().split('T')[0],
-    expectedDeliveryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Default +7 days for POs
-    transportMethod: PurcaseOrderResponse.transportMethod.LIVRAISON_PROPRE as string,
-    deliveryName: "Central Warehouse",
-    deliveryAddress: "",
-    deliveryEmail: "",
+    receiptDate: new Date().toISOString().split('T')[0],
+    documentDate: new Date().toISOString().split('T')[0],
+    transporterCompanyName: "",
+    vehicleNumber: "",
+    preparedBy: "",
     remarks: "",
   });
 
   // --- Initial Setup ---
   useEffect(() => {
-    const stored = localStorage.getItem("seller"); // Use the same seller context as the buyer
-    if (stored) setBuyer(JSON.parse(stored));
+    const stored = localStorage.getItem("seller"); 
+    if (stored) {
+        const parsedUser = JSON.parse(stored);
+        setUser(parsedUser);
+        setFormData(prev => ({ ...prev, preparedBy: parsedUser.nom || "" }));
+    }
     setSystemDate(new Date().toISOString().split('T')[0]);
   }, []);
 
@@ -90,12 +93,14 @@ const ProducerHeader = ({ producers, setMainSelectedProducer, selectedProducer, 
     setInternalRefFilter(refPO.poNumber || "");
     setShowRefDropdown(false);
     
-    // Merge referenced PO data
-    setPurchaseOrder({
-      ...refPO,
-      idPO: purchaseOrder?.idPO || refPO.idPO,
-      status: PurcaseOrderResponse.statut.BROUILLON,
-    });
+    // Update GRN with PO reference
+    if (grn) {
+        setGrn({
+          ...grn,
+          purchaseOrderId: refPO.idPO,
+          purchaseOrderNumber: refPO.poNumber,
+        });
+    }
 
     const producer = producers.find(p => p.idClient === refPO.supplierId);
     if (producer) {
@@ -104,33 +109,35 @@ const ProducerHeader = ({ producers, setMainSelectedProducer, selectedProducer, 
     }
   };
 
-  // --- ID Generation (PO Format) ---
+  // --- ID Generation (GRN Format) ---
   useEffect(() => {
-    if (!purchaseOrder?.idPO) {
-      const agency = buyer?.agency || "HQ";
-      const type = "PO"; 
+    if (!grn?.idGRN) {
+      const agency = user?.agency || "WH";
+      const type = "GRN"; 
       const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
       const suffix = Math.floor(Math.random() * 10000).toString().padStart(4, "0");
       setGeneratedId(`${agency}-${type}-${date}-${suffix}`);
     } 
-  }, [buyer, selectedProducer]);
+  }, [user, selectedProducer]);
 
   // --- Final Sync to Parent ---
   useEffect(() => {
-    if (selectedProducer && setPurchaseOrder && purchaseOrder) {
-      setPurchaseOrder({
-        ...purchaseOrder,
-        supplierId: selectedProducer.idClient,
-        supplierName: selectedProducer.raisonSociale,
-        supplierAddress: selectedProducer.adresse,
-        poDate: formData.poDate,
-        expectedDeliveryDate: formData.expectedDeliveryDate,
-        transportMethod: formData.transportMethod as PurcaseOrderResponse.transportMethod,
-        deliveryName: formData.deliveryName,
+    if (setGrn && grn) {
+      setGrn({
+        ...grn,
+        grnNumber: grn.grnNumber || generatedId,
+        supplierId: selectedProducer?.idClient,
+        supplierName: selectedProducer?.raisonSociale,
+        receiptDate: formData.receiptDate,
+        documentDate: formData.documentDate,
+        transporterCompanyName: formData.transporterCompanyName,
+        vehicleNumber: formData.vehicleNumber,
+        preparedBy: formData.preparedBy,
         remarks: formData.remarks,
+        systemDate: systemDate || undefined
       });
     }
-  }, [selectedProducer, formData]);
+  }, [selectedProducer, formData, generatedId]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -145,14 +152,14 @@ const ProducerHeader = ({ producers, setMainSelectedProducer, selectedProducer, 
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 " ref={containerRef}>
-      {/* SECTION 1: PRODUCER SEARCH & PO ID */}
+      {/* SECTION 1: SUPPLIER SEARCH & GRN ID */}
       <div className="p-6 border-b border-gray-50 bg-gray-50/10">
         <div className="grid grid-cols-12 gap-4">
           <div className="col-span-12 md:col-span-5">
-            <label className={labelStyles}>Producer/Supplier Search</label>
+            <label className={labelStyles}>Supplier Search</label>
             <div className="relative">
               <SearchIcon className="absolute left-3 top-2.5 text-gray-300" sx={{ fontSize: 18 }} />
-              <input type="text" className={`${inputStyles} pl-10 font-bold`} value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setShowResults(true); }} placeholder="Search Producer..." />
+              <input type="text" className={`${inputStyles} pl-10 font-bold`} value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setShowResults(true); }} placeholder="Search Supplier..." />
               {showResults && filteredResults.length > 0 && (
                 <div className="absolute z-50 w-full mt-2 bg-white border rounded-xl shadow-xl max-h-48 overflow-auto">
                   {filteredResults.map(p => (
@@ -168,36 +175,29 @@ const ProducerHeader = ({ producers, setMainSelectedProducer, selectedProducer, 
           <div className="col-span-12 md:col-span-4">
             <label className={labelStyles}>Supplier Name</label>
             <div className="relative">
-              <HomeIcon className="absolute left-3 top-2.5 text-gray-300" sx={{ fontSize: 18 }} />
+              <FactoryIcon className="absolute left-3 top-2.5 text-gray-300" sx={{ fontSize: 18 }} />
               <input readOnly value={selectedProducer?.raisonSociale|| ""} className={`${readOnlyStyles} pl-10`} placeholder="N/A" />
             </div>
           </div>
 
-          <div className="col-span-12 md:col-span-4">
-            <label className={labelStyles}>Supplier Address</label>
-            <div className="relative">
-              <HomeIcon className="absolute left-3 top-2.5 text-gray-300" sx={{ fontSize: 18 }} />
-              <input readOnly value={selectedProducer?.adresse || ""} className={`${readOnlyStyles} pl-10`} placeholder="N/A" />
-            </div>
-          </div>
           <div className="col-span-12 md:col-span-3">
-            <label className={labelStyles}>Generated PO #</label>
+            <label className={labelStyles}>GRN Number</label>
             <div className="relative">
               <ReceiptIcon className="absolute left-3 top-2.5 text-gray-300" sx={{ fontSize: 18 }} />
-              <input readOnly value={generatedId} className={`${readOnlyStyles} pl-10 font-mono text-secondary-mid`} />
+              <input readOnly value={grn?.grnNumber || generatedId} className={`${readOnlyStyles} pl-10 font-mono text-secondary-mid`} />
             </div>
           </div>
         </div>
       </div>
 
-      {/* SECTION 2: PROCUREMENT DETAILS */}
+      {/* SECTION 2: LOGISTICS & DOCUMENTATION */}
       <div className="p-6 grid grid-cols-12 gap-x-5 gap-y-6">
         <div className="col-span-12 md:col-span-4">
-          <label className={labelStyles}>Existing PO Reference (Link)</label>
+          <label className={labelStyles}>Link Purchase Order (Ref)</label>
           <div className="relative">
             <div className="flex items-center bg-white border border-gray-200 rounded-lg">
-              <SearchIcon className="ml-3 text-gray-300" sx={{ fontSize: 18 }} />
-              <input type="text" className="w-full bg-transparent outline-none py-2 px-2 text-sm text-gray-700 font-mono" placeholder="Link previous PO..." value={internalRefFilter} onChange={(e) => { setInternalRefFilter(e.target.value); setShowRefDropdown(true); }} />
+              <AssignmentIcon className="ml-3 text-gray-300" sx={{ fontSize: 18 }} />
+              <input type="text" className="w-full bg-transparent outline-none py-2 px-2 text-sm text-gray-700 font-mono" placeholder="PO-2026-..." value={internalRefFilter} onChange={(e) => { setInternalRefFilter(e.target.value); setShowRefDropdown(true); }} />
             </div>
             {showRefDropdown && filteredPOs.length > 0 && (
               <div className="absolute z-[110] w-full mt-2 bg-white border shadow-2xl rounded-xl max-h-48 overflow-auto p-1">
@@ -213,38 +213,57 @@ const ProducerHeader = ({ producers, setMainSelectedProducer, selectedProducer, 
         </div>
 
         <div className="col-span-12 md:col-span-4">
-          <label className={labelStyles}>Transport Method</label>
+          <label className={labelStyles}>Transporter Name</label>
           <div className="relative">
             <LocalShippingIcon className="absolute left-3 top-2.5 text-gray-300 z-10" sx={{ fontSize: 16 }} />
-            <select name="transportMethod" value={formData.transportMethod} onChange={handleInputChange} className={`${inputStyles} pl-9 appearance-none`}>
-              {Object.entries(PurcaseOrderResponse.transportMethod || {}).map(([key, value]) => (
-                <option key={key} value={value}>{value.replace(/_/g, ' ')}</option>
-              ))}
-            </select>
+            <input type="text" name="transporterCompanyName" value={formData.transporterCompanyName} onChange={handleInputChange} className={`${inputStyles} pl-9`} placeholder="Logistics Co." />
           </div>
         </div>
 
-       
-
         <div className="col-span-12 md:col-span-4">
-          <label className={labelStyles}>Creation Date</label>
-          <input type="date" name="poDate" className={inputStyles} value={formData.poDate} onChange={handleInputChange} />
+          <label className={labelStyles}>Vehicle Number</label>
+          <div className="relative">
+            <LocalShippingIcon className="absolute left-3 top-2.5 text-gray-300 z-10" sx={{ fontSize: 16 }} />
+            <input type="text" name="vehicleNumber" value={formData.vehicleNumber} onChange={handleInputChange} className={`${inputStyles} pl-9`} placeholder="Plate Number" />
+          </div>
         </div>
 
-        <div className="col-span-12 md:col-span-4">
-          <label className={labelStyles}>Expected Delivery</label>
-          <input type="date" name="expectedDeliveryDate" className={`${inputStyles} border-amber-200 bg-amber-50/20`} value={formData.expectedDeliveryDate} onChange={handleInputChange} />
+        <div className="col-span-12 md:col-span-3">
+          <label className={labelStyles}>Actual Receipt Date</label>
+          <input type="date" name="receiptDate" className={inputStyles} value={formData.receiptDate} onChange={handleInputChange} />
         </div>
 
-        <div className="col-span-12 md:col-span-4">
-          <label className={labelStyles}>System  Date</label>
+        <div className="col-span-12 md:col-span-3">
+          <label className={labelStyles}>Document Date</label>
+          <input type="date" name="documentDate" className={inputStyles} value={formData.documentDate} onChange={handleInputChange} />
+        </div>
+
+        <div className="col-span-12 md:col-span-3">
+          <label className={labelStyles}>System Date</label>
           <input type="date" readOnly className={readOnlyStyles} value={systemDate || ""} />
         </div>
 
-       
+        <div className="col-span-12 md:col-span-3">
+          <label className={labelStyles}>Prepared By</label>
+          <div className="relative">
+            <PersonIcon className="absolute left-3 top-2.5 text-gray-300" sx={{ fontSize: 18 }} />
+            <input type="text" name="preparedBy" className={`${inputStyles} pl-10`} value={formData.preparedBy} onChange={handleInputChange} />
+          </div>
+        </div>
+
+        <div className="col-span-12">
+          <label className={labelStyles}>Reception Remarks</label>
+          <textarea 
+            name="remarks" 
+            className={`${inputStyles} h-20 resize-none`} 
+            value={formData.remarks} 
+            onChange={(e) => setFormData(prev => ({...prev, remarks: e.target.value}))}
+            placeholder="Condition of goods, temperature, seal checks..."
+          />
+        </div>
       </div>
     </div>
   );
 };
 
-export default ProducerHeader;
+export default GRNHeader;
