@@ -75,3 +75,76 @@ export const mapDevisToFacture = (devis: UpdatedDevisResponse): UpdatedFactureRe
     updatedAt: new Date().toISOString(),
   };
 };
+
+
+
+import { UpdatedProformaInvoiceResponse } from '../models/UpdatedProformaInvoiceResponse';
+
+/**
+ * Transforms an UpdatedDevisResponse (Quotation) into an UpdatedProformaInvoiceResponse.
+ * This is used when a client accepts a quote and you need to issue a Proforma.
+ */
+export const mapDevisToProforma = (devis: UpdatedDevisResponse): UpdatedProformaInvoiceResponse => {
+  return {
+    // Basic Identifiers
+    idProformaInvoice: devis.idDevis, 
+    numeroProformaInvoice: devis.numeroDevis,
+    
+    // Dates & System Info
+    dateCreation: devis.dateCreation,
+    dateSysteme: devis.dateSysteme || new Date().toISOString(),
+    createdAt: devis.createdAt,
+    updatedAt: new Date().toISOString(), // Marked as updated now
+    
+    // Business Logic Fields
+    type: devis.type,
+    // Map status specifically to the Proforma enum namespace
+    statut: devis.statut as unknown as UpdatedProformaInvoiceResponse.statut,
+    
+    // Client Information
+    idClient: devis.idClient,
+    nomClient: devis.nomClient,
+    adresseClient: devis.adresseClient,
+    emailClient: devis.emailClient,
+    telephoneClient: devis.telephoneClient,
+    referalClientId: devis.referalClientId,
+
+    // Financial Totals
+    montantHT: devis.montantHT,
+    montantTVA: devis.montantTVA,
+    montantTTC: devis.montantTTC,
+    montantTotal: devis.montantTotal,
+    finalAmount: devis.finalAmount,
+    
+    // Line Items (Schemas are identical for LigneDevisResponse)
+    lignesDevis: devis.lignesDevis ? [...devis.lignesDevis] : [],
+
+    // Tax & Currency
+    applyVat: devis.applyVat,
+    devise: devis.devise,
+    tauxChange: devis.tauxChange,
+    
+    // Payment & Reference Terms
+    modeReglement: devis.modeReglement as unknown as UpdatedProformaInvoiceResponse.modeReglement,
+    conditionsPaiement: devis.conditionsPaiement,
+    nbreEcheance: devis.nbreEcheance,
+    nosRef: devis.nosRef,
+    vosRef: devis.vosRef,
+    referenceExterne: devis.referenceExterne,
+    
+    // Discounts & Validity
+    remiseGlobalePourcentage: devis.remiseGlobalePourcentage,
+    remiseGlobaleMontant: devis.remiseGlobaleMontant,
+    validiteOffreJours: devis.validiteOffreJours,
+    
+    // Documentation & Audit
+    notes: devis.notes,
+    pdfPath: devis.pdfPath,
+    envoyeParEmail: devis.envoyeParEmail,
+    dateEnvoiEmail: devis.dateEnvoiEmail,
+    dateAcceptation: devis.dateAcceptation,
+    dateRefus: devis.dateRefus,
+    motifRefus: devis.motifRefus,
+    idFactureConvertie: devis.idFactureConvertie,
+  };
+};

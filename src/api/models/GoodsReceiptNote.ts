@@ -68,6 +68,53 @@ export namespace GoodReceiptResponse{
 
 export const MOCK_GOODS_RN: GoodsReceiptNoteResponse[] = [
   {
+  "idGRN": "grn-8824-2026",
+  "grnNumber": "GRN/2026/001",
+  "purchaseOrderId": "PO-2026-001",
+  "purchaseOrderNumber": "PURCH-001",
+  "supplierId": "c002",
+  "supplierName": "ABC Distributors",
+  "transporterCompanyName": "Rapid Logistics Ltd",
+  "vehicleNumber": "LT-123-AA",
+  "receiptDate": "2026-01-24T09:00:00Z",
+  "documentDate": "2026-01-24T10:30:00Z",
+  "status": GoodReceiptResponse.statut.LIVRE,
+  "preparedBy": "Warehouse Clerk",
+  "inspectedBy": "QC Lead",
+  "approvedBy": "Store Manager",
+  "remarks": "Partial delivery for Riz; Ciment received in full but 2 bags damaged.",
+  "lines": [
+    {
+      "productId": "p001",
+      "description": "Riz 25kg",
+      "uom": "SACK",
+      "orderedQuantity": 100,
+      "receivedQuantity": 80,
+      "acceptedQuantity": 80,
+      "rejectedQuantity": 0,
+      "shortQuantity": 20,
+      "damagedQuantity": 0,
+      "excessQuantity": 0,
+      "rate": 15000,
+      "lineAmount": 1200000
+    },
+    {
+      "productId": "p004",
+      "description": "Ciment 50kg",
+      "uom": "BAG",
+      "orderedQuantity": 200,
+      "receivedQuantity": 200,
+      "acceptedQuantity": 198,
+      "rejectedQuantity": 2,
+      "shortQuantity": 0,
+      "damagedQuantity": 2,
+      "excessQuantity": 0,
+      "rate": 4800,
+      "lineAmount": 960000
+    }
+  ]
+},
+  {
     idGRN: "grn-8821-2026",
     grnNumber: "GRN/2026/001",
     supplierId: "sup-445",

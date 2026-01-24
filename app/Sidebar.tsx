@@ -9,79 +9,59 @@ import {
   ShoppingCart as ShoppingCartIcon,
   Receipt as ReceiptIcon,
   AssignmentReturn as CreditNoteIcon,
-  CardMembership as StoreCreditIcon, // New icon for Store Credit
+  CardMembership as StoreCreditIcon,
+  LocalShipping as DeliveryIcon,
+  Inventory as GoodsReceiptIcon,
+  ShoppingBag as PurchaseOrderIcon,
+  Description as SupplierInvoiceIcon,
+  BusinessCenter as SalesSectionIcon,
+  Factory as PurchaseSectionIcon
 } from "@mui/icons-material";
 
-// Mapping string names to components to keep the data structure clean
 const iconMap: Record<string, React.ElementType> = {
   AssessmentIcon,
   RequestQuoteIcon,
   ShoppingCartIcon,
   ReceiptIcon,
   CreditNoteIcon,
-  StoreCreditIcon
+  StoreCreditIcon,
+  DeliveryIcon,
+  GoodsReceiptIcon,
+  PurchaseOrderIcon,
+  SupplierInvoiceIcon,
+  SalesSectionIcon,
+  PurchaseSectionIcon
 };
 
 const MENU_SECTIONS = [
   {
     id: "sales",
     label: "Sales Management",
-    icon: "AssessmentIcon",
+    icon: "SalesSectionIcon",
     items: [
-      { 
-        content: "Quotations", 
-        Icon: "RequestQuoteIcon", 
-        path: "/quotations" 
-      },
-      { 
-        content: "Sales Orders", 
-        Icon: "ShoppingCartIcon", 
-        path: "/sales_orders" 
-      },
-      { 
-        content: "Invoices", 
-        Icon: "ReceiptIcon", 
-        path: "/invoices" 
-      },
-      { 
-        content: "Credit Notes", 
-        Icon: "CreditNoteIcon", 
-        path: "/credit_notes" 
-      },
-      { 
-        content: "Store Credit Vouchers", 
-        Icon: "StoreCreditIcon", 
-        path: "/store_credit" 
-      },
-      
-       { 
-        content: "Purchase Order", 
-        Icon: "StoreCreditIcon", 
-        path: "/purchase_orders" 
-      },{ 
-        content: "Delivery Note", 
-        Icon: "StoreCreditIcon", 
-        path: "/delivery_notes" 
-      },
-      { 
-        content: "Goods Receipt Note", 
-        Icon: "StoreCreditIcon", 
-        path: "/goods_rns" 
-      },
-       { 
-        content: "Supplier Invoice", 
-        Icon: "StoreCreditIcon", 
-        path: "/supplier_invoice" 
-      },
-
+      { content: "Quotations", Icon: "RequestQuoteIcon", path: "/quotations" },
+      { content: "Proforma Invoice", Icon: "ReceiptIcon", path: "/proforma_invoices" },
+      { content: "Sales Orders", Icon: "ShoppingCartIcon", path: "/sales_orders" },
+      { content: "Invoices", Icon: "ReceiptIcon", path: "/invoices" },
+      { content: "Delivery Note", Icon: "DeliveryIcon", path: "/delivery_notes" },
+      { content: "Credit Notes", Icon: "CreditNoteIcon", path: "/credit_notes" },
+      { content: "Store Credit Vouchers", Icon: "StoreCreditIcon", path: "/store_credit" },
+    ],
+  },
+  {
+    id: "purchasing",
+    label: "Purchasing & Logistics",
+    icon: "PurchaseSectionIcon",
+    items: [
+      { content: "Purchase Order", Icon: "PurchaseOrderIcon", path: "/purchase_orders" },
+      { content: "Goods Receipt Note", Icon: "GoodsReceiptIcon", path: "/goods_rns" },
+      { content: "Supplier Invoice", Icon: "SupplierInvoiceIcon", path: "/supplier_invoice" },
     ],
   },
 ];
 
 const Sidebar = () => {
   const pathname = usePathname();
-  
-  // Since we only have one section, we can default it to open or keep it togglable
   const [openSectionId, setOpenSectionId] = useState<string | null>("sales");
 
   const handleIconClick = (id: string) => {
@@ -92,7 +72,7 @@ const Sidebar = () => {
 
   return (
     <div className="inset-y-0 left-0 z-50 flex">
-      {/* STAGE 1: The Primary Icon Rail */}
+      {/* STAGE 1: Primary Icon Rail */}
       <aside
         className="w-16 h-screen flex flex-col bg-white border-r-4 shadow-xl z-20"
         style={{ borderColor: "var(--color-secondary-mid)" }}
@@ -109,21 +89,19 @@ const Sidebar = () => {
           {MENU_SECTIONS.map((section) => {
             const Icon = iconMap[section.icon];
             const isOpen = openSectionId === section.id;
-            // Check if any sub-item is active
             const isAnyItemActive = section.items.some(item => pathname === item.path);
             
             return (
               <button
                 key={section.id}
                 onClick={() => handleIconClick(section.id)}
-                className={`w-full h-14 flex items-center justify-center transition-all relative
+                title={section.label}
+                className={`w-full h-16 flex items-center justify-center transition-all relative
                   ${isOpen ? 'bg-[var(--color-secondary-super-light)] text-[var(--color-secondary-mid)]' : 'text-gray-400 hover:bg-gray-50'}`}
               >
-                {/* Active Indicator Bar */}
                 <div className={`w-1 flex h-8 rounded-r-full absolute left-0 transition-all 
                   ${isAnyItemActive ? 'bg-[var(--color-secondary-mid)]' : 'bg-transparent'}`} 
                 />
-                
                 {Icon && <Icon fontSize="medium" />}
               </button>
             );
@@ -131,7 +109,7 @@ const Sidebar = () => {
         </nav>
       </aside>
 
-      {/* STAGE 2: The Secondary Sub-Menu Panel */}
+      {/* STAGE 2: Secondary Panel */}
       <div
         className={`h-screen bg-white shadow-2xl border-r transition-all duration-300 ease-in-out overflow-hidden no-scrollbar
           ${openSectionId ? "w-64 opacity-100" : "w-0 opacity-0 pointer-events-none"}`}
