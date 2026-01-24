@@ -22,11 +22,12 @@ import {
 import { UpdatedClientResponse, clients } from '@/src/api/models/UpdatedClientResponse'
 import { UpdatedDevisResponse, MOCK_QUOTATIONS } from '@/src/api/models/UpdatedDevisResponse'
 import { UpdatedFactureResponse } from '@/src/api/models/UpdatedFactureResponse'
-import { mapDevisToFacture } from '@/src/api/transformation/DevisTransformation'
+import { mapDevisToFacture, mapDevisToSalesOrder } from '@/src/api/transformation/DevisTransformation'
 
 // Components
 import CreateQuotationModal from './CreateQuotationModal'
 import PrintPreviewModal from './PrintPreviewModal'
+import { UpdatedSalesOrderResponse } from '@/src/api/models/UpdatedSalesOrder'
 
 const columns = {
   "Devis Number": "numeroDevis",
@@ -94,6 +95,14 @@ const Quotation = () => {
     localStorage.setItem("invoice", JSON.stringify(invoice));
     localStorage.setItem("modalOpen", "open");
     router.push("/invoices");
+  }
+
+
+  function handleTransformToSalesOrder(quotation: UpdatedDevisResponse): void {
+    const invoice: UpdatedSalesOrderResponse = mapDevisToSalesOrder(quotation);
+    localStorage.setItem("salesOrder", JSON.stringify(invoice));
+    localStorage.setItem("modalOpen", "open");
+    router.push("/sales_orders");
   }
 
   return (
@@ -253,6 +262,16 @@ const Quotation = () => {
                                   <div className="flex items-center gap-2">
                                     <FileText size={14} />
                                     <span className="text-[11px] font-bold">Proforma Invoice</span>
+                                  </div>
+                                  <ChevronRight size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                               </button>
+                                <button 
+                                 onClick={() => handleTransformToSalesOrder(quotation)}
+                                 className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-blue-50 text-blue-600 rounded-xl transition-colors group"
+                               >
+                                  <div className="flex items-center gap-2">
+                                    <FileText size={14} />
+                                    <span className="text-[11px] font-bold">Sales Order</span>
                                   </div>
                                   <ChevronRight size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
                                </button>

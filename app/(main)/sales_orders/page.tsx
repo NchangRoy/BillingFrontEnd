@@ -5,7 +5,19 @@ import { useRouter } from 'next/navigation'
 import DropDown from "@mui/icons-material/ArrowDropDown"
 import SearchIcon from "@mui/icons-material/Search"
 import AddIcon from "@mui/icons-material/Add"
-import { Pencil, Trash2, MoreVertical, Printer, Truck, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { 
+  Pencil, 
+  Trash2, 
+  MoreVertical, 
+  Printer, 
+  Truck, 
+  Clock, 
+  CheckCircle2, 
+  XCircle, 
+  ReceiptText, 
+  ChevronRight,
+  FileText 
+} from "lucide-react";
 
 // Updated Imports for Sales Orders
 import { UpdatedClientResponse, clients } from '@/src/api/models/UpdatedClientResponse'
@@ -13,8 +25,8 @@ import { UpdatedSalesOrderResponse, SalesOrderResponse } from '@/src/api/models/
 import { MOCK_SALES_ORDERS } from '@/src/api/models/UpdatedSalesOrder'
 import CreateSalesOrderModal from './CreateSalesOrderModal'
 import SalesOrderPrintPreviewModal from './SalesOrderPrintPreviewModal'
+import { mapSalesOrderToDeliveryNote, mapSalesOrderToFacture } from '@/src/api/transformation/saleorderTranformation'
 
-// Adjusting Table Columns for Sales Orders
 const columns = {
   "Order #": "numeroSalesOrder",
   "Client": "nomClient",
@@ -37,12 +49,47 @@ const SalesOrders = () => {
   const [isPrintModalOpen, setIsPrintModalOpen] = useState<boolean>(false);
   
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [showTransformSub, setShowTransformSub] = useState<boolean>(false); // Added missing state
   const [clickedOrder, setClickedOrder] = useState<UpdatedSalesOrderResponse | undefined>();
   
   const [orders, setOrders] = useState<UpdatedSalesOrderResponse[]>(MOCK_SALES_ORDERS); 
   const [client, setClient] = useState<UpdatedClientResponse | undefined>()
 
-  // 2. Filter Logic
+  // 2. Transformation Handlers
+  const handleTransformToInvoice = (order: UpdatedSalesOrderResponse) => {
+    const invoice=mapSalesOrderToFacture(order)
+    localStorage.setItem("invoice", JSON.stringify(invoice));
+    localStorage.setItem("modalOpen", "open");
+    router.push('/invoices'); // Adjust path to your actual invoices route
+  };
+
+  const handleTransformToDeliveryNote = (order: UpdatedSalesOrderResponse) => {
+      const invoice=mapSalesOrderToDeliveryNote(order)
+    localStorage.setItem("deliveryNote", JSON.stringify(invoice));
+    localStorage.setItem("modalOpen", "open");
+    router.push('/delivery_notes'); // Adjust path to your actual invoices route
+  };
+
+  // 3. Logic to load transformed data from localStorage
+  useEffect(() => {
+    const modalOpen = localStorage.getItem("modalOpen")
+    if (modalOpen === "open") {
+      setIsModalOpen(true)
+      localStorage.setItem("modalOpen", "close")
+      
+      const orderString = localStorage.getItem("salesOrder")
+      localStorage.setItem("salesOrder", "")
+      
+      if (orderString) {
+        const order: UpdatedSalesOrderResponse = JSON.parse(orderString)
+        setClickedOrder(order)
+        const orderClient = clients.find(c => c.idClient === order.idClient);
+        setClient(orderClient)
+      }
+    }
+  }, [])
+
+  // 4. Filter Logic
   const filteredOrders = useMemo(() => {
     return orders.filter((item) => {
       const matchesSearch = 
@@ -58,48 +105,12 @@ const SalesOrders = () => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setActiveMenuId(null);
+        setShowTransformSub(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
-  const actionOptions = [
-    { 
-      label: "Modify", 
-      icon: <Pencil size={14} />, 
-      action: (o: UpdatedSalesOrderResponse) => {
-        const foundClient = clients.find(c => c.idClient === o.idClient);
-        setClient(foundClient);
-        setClickedOrder(o);
-        setIsModalOpen(true);
-      },
-      color: "text-blue-600" 
-    },
-    { 
-      label: "Track Delivery", 
-      icon: <Truck size={14} />, 
-      action: (o: UpdatedSalesOrderResponse) => console.log('Tracking:', o.numeroSalesOrder),
-      color: "text-emerald-600" 
-    },
-    { 
-      label: "Print Order", 
-      icon: <Printer size={14} />, 
-      action: (o: UpdatedSalesOrderResponse) => {
-        setClickedOrder(o);
-        setIsPrintModalOpen(true);
-      },
-      color: "text-purple-800" 
-    },
-    { 
-      label: "Delete", 
-      icon: <Trash2 size={14} />, 
-      action: (o: UpdatedSalesOrderResponse) => {
-        setOrders(prev => prev.filter(item => item.idSalesOrder !== o.idSalesOrder));
-      },
-      color: "text-red-600" 
-    },
-  ];
 
   return (
     <div className='max-w-7xl mx-auto p-6 lg:p-10 flex flex-col gap-8 bg-secondary-super-light/20 min-h-screen'>
@@ -164,9 +175,7 @@ const SalesOrders = () => {
             <thead>
               <tr className="bg-gray-50/50 border-b border-gray-100">
                 {Object.keys(columns).map((col) => (
-                  <th key={col} className="px-6 py-5 font-black text-[10px] uppercase tracking-widest text-gray-400 whitespace-nowrap">
-                    {col}
-                  </th>
+                  <th key={col} className="px-6 py-5 font-black text-[10px] uppercase tracking-widest text-gray-400 whitespace-nowrap">{col}</th>
                 ))}
                 <th className="px-6 py-5"></th>
               </tr>
@@ -191,22 +200,17 @@ const SalesOrders = () => {
                             ? new Date(order.dateCreation).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) 
                             : '—'}
                         </span>
-                      ) : key === 'transportMethod' ? (
-                        <span className="text-[10px] font-bold text-secondary-mid bg-secondary-super-light px-2 py-1 rounded border border-secondary-mid/10 uppercase">
-                          {order.transportMethod?.replace(/_/g, ' ') || "Standard"}
-                        </span>
-                      ) : key === 'montantTTC' ? (
-                        <span className="font-black text-gray-900">
-                          {order.montantTTC?.toLocaleString()} <span className="text-[10px] text-gray-400">XAF</span>
-                        </span>
-                      ) : (
-                        (order as any)[key] || "—"
-                      )}
+                      ) : (order as any)[key] || "—"}
                     </td>
                   ))}
+                  
+                  {/* Actions Column */}
                   <td className="px-6 py-4 text-right relative">
                     <button 
-                      onClick={() => setActiveMenuId(activeMenuId === order.idSalesOrder ? null : (order.idSalesOrder ?? null))}
+                      onClick={() => {
+                        setActiveMenuId(activeMenuId === order.idSalesOrder ? null : (order.idSalesOrder ?? null));
+                        setShowTransformSub(false);
+                      }}
                       className="p-2 text-gray-300 hover:text-secondary-mid hover:bg-secondary-super-light rounded-xl transition-all"
                     >
                       <MoreVertical size={18} />
@@ -214,16 +218,81 @@ const SalesOrders = () => {
 
                     {activeMenuId === order.idSalesOrder && (
                       <div ref={menuRef} className="absolute right-16 top-1/2 -translate-y-1/2 z-40 bg-white border border-slate-100 rounded-2xl shadow-2xl p-1.5 flex gap-1 animate-in fade-in slide-in-from-right-2 duration-200">
-                        {actionOptions.map((opt, i) => (
-                          <button
-                            key={i}
-                            title={opt.label}
-                            onClick={() => { opt.action(order); setActiveMenuId(null); }}
-                            className={`w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 transition-all active:scale-90 ${opt.color}`}
+                        
+                        {/* Edit */}
+                        <button 
+                           onClick={() => {
+                             const foundClient = clients.find(c => c.idClient === order.idClient);
+                             setClient(foundClient);
+                             setClickedOrder(order);
+                             setIsModalOpen(true);
+                             setActiveMenuId(null);
+                           }}
+                           className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 transition-all text-blue-600"
+                           title="Edit"
+                        >
+                          <Pencil size={14} />
+                        </button>
+
+                        {/* Transform Sub-menu Logic */}
+                        <div className="relative">
+                          <button 
+                            onClick={() => setShowTransformSub(!showTransformSub)}
+                            className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${showTransformSub ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200' : 'hover:bg-emerald-50 text-emerald-600'}`}
+                            title="Transform"
                           >
-                            {opt.icon}
+                            <ReceiptText size={14} />
                           </button>
-                        ))}
+
+                          {showTransformSub && (
+                            <div className="absolute bottom-full right-0 mb-3 bg-white border border-secondary-light rounded-2xl shadow-2xl p-2 min-w-[220px] animate-in fade-in zoom-in-95 duration-150 z-50">
+                               <p className="text-[9px] font-black text-gray-400 uppercase px-3 py-2 border-b border-gray-50 mb-1 tracking-widest text-left">Transform to</p>
+                               
+                               <button 
+                                 onClick={() => handleTransformToInvoice(order)}
+                                 className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-emerald-50 text-emerald-600 rounded-xl transition-colors group"
+                               >
+                                  <div className="flex items-center gap-2">
+                                    <ReceiptText size={14} />
+                                    <span className="text-[11px] font-bold">Client Invoice</span>
+                                  </div>
+                                  <ChevronRight size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                               </button>
+
+                               <button 
+                                 onClick={() => handleTransformToDeliveryNote(order)}
+                                 className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-blue-50 text-blue-600 rounded-xl transition-colors group"
+                               >
+                                  <div className="flex items-center gap-2">
+                                    <Truck size={14} />
+                                    <span className="text-[11px] font-bold">Delivery Note</span>
+                                  </div>
+                                  <ChevronRight size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                               </button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Print */}
+                        <button 
+                          onClick={() => { setClickedOrder(order); setIsPrintModalOpen(true); setActiveMenuId(null); }}
+                          className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-purple-800 transition-all"
+                          title="Print"
+                        >
+                          <Printer size={14} />
+                        </button>
+
+                        {/* Delete */}
+                        <button 
+                          onClick={() => {
+                            setOrders(prev => prev.filter(o => o.idSalesOrder !== order.idSalesOrder));
+                            setActiveMenuId(null);
+                          }}
+                          className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-red-50 text-red-600 transition-all"
+                          title="Delete"
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       </div>
                     )}
                   </td>
@@ -234,7 +303,7 @@ const SalesOrders = () => {
         </div>
       </div>
 
-      {isModalOpen && <CreateSalesOrderModal orderData={clickedOrder} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}/>} 
+      {isModalOpen && <CreateSalesOrderModal orderData={clickedOrder} clientData={client} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}/>} 
       {isPrintModalOpen && clickedOrder && <SalesOrderPrintPreviewModal isOpen={isPrintModalOpen} data={clickedOrder} onClose={() => setIsPrintModalOpen(false)} onConfirmPrint={()=>{}}/>}
     </div>
   )

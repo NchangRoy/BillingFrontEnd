@@ -5,7 +5,18 @@ import { useRouter } from 'next/navigation'
 import DropDown from "@mui/icons-material/ArrowDropDown"
 import SearchIcon from "@mui/icons-material/Search"
 import AddIcon from "@mui/icons-material/Add"
-import { Pencil, Trash2, MoreVertical, Printer, Package, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { 
+  Pencil, 
+  Trash2, 
+  MoreVertical, 
+  Printer, 
+  ReceiptText, 
+  ChevronRight, 
+  Clock, 
+  CheckCircle2, 
+  XCircle, 
+  Package 
+} from "lucide-react";
 
 // Updated Imports for Purchase Orders
 import { UpdatedClientResponse, clients } from '@/src/api/models/UpdatedClientResponse'
@@ -15,6 +26,7 @@ import { MOCK_PURCHASE_ORDERS } from '@/src/api/models/PurchaseOrderLine'
 // Components
 import CreatePurchaseOrderModal from './CreatePurchaseOrderModal'
 import PurchaseOrderPrintPreviewModal from './PurchaseOrderPrintPreviewModal'
+import { convertPurchaseOrderToGRN } from '@/src/api/transformation/purchaseOrderTranformation'
 
 const columns = {
   "PO #": "poNumber",
@@ -30,18 +42,20 @@ const PurchaseOrders = () => {
   const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
 
+  // State Management
   const [showStatusMenu, setShowStatusMenu] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState<boolean>(false);
+  const [showTransformSub, setShowTransformSub] = useState<boolean>(false);
   
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [clickedOrder, setClickedOrder] = useState<PurchaseOrderResponse | undefined>();
-  
   const [orders, setOrders] = useState<PurchaseOrderResponse[]>(MOCK_PURCHASE_ORDERS); 
-  const [producer, setProducer] = useState<UpdatedClientResponse | undefined>()
+  const [producer, setProducer] = useState<UpdatedClientResponse | undefined>();
 
+  // Filter Logic
   const filteredOrders = useMemo(() => {
     return orders.filter((item) => {
       const matchesSearch = 
@@ -52,48 +66,28 @@ const PurchaseOrders = () => {
     });
   }, [searchTerm, selectedStatus, orders]);
 
+  // Click Outside Handler
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setActiveMenuId(null);
+        setShowTransformSub(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const actionOptions = [
-    { 
-      label: "Edit PO", 
-      icon: <Pencil size={14} />, 
-      action: (o: PurchaseOrderResponse) => {
-        const foundProducer = clients.find(c => c.idClient === o.supplierId);
-        setProducer(foundProducer);
-        setClickedOrder(o);
-        setIsModalOpen(true);
-      },
-      color: "text-blue-600" 
-    },
-    { 
-      label: "Print PO", 
-      icon: <Printer size={14} />, 
-      action: (o: PurchaseOrderResponse) => {
-        setClickedOrder(o);
-        setIsPrintModalOpen(true);
-      },
-      color: "text-purple-800" 
-    },
-    { 
-      label: "Delete", 
-      icon: <Trash2 size={14} />, 
-      action: (o: PurchaseOrderResponse) => {
-        setOrders(prev => prev.filter(item => item.idPO !== o.idPO));
-      },
-      color: "text-red-600" 
-    },
-  ];
+  // Transformation Handler
+  const handleTransformToGRN = (order: PurchaseOrderResponse) => {
 
-  // Dynamic status options from your Enum
+    const grn=convertPurchaseOrderToGRN(order)
+    localStorage.setItem("GRN", JSON.stringify(grn));
+    localStorage.setItem("modalOpen", "open");
+    // Redirect to the Goods Receipt Note page
+    router.push('goods_rns'); 
+  };
+
   const statusOptions = Object.values(PurcaseOrderResponse.statut);
 
   return (
@@ -119,8 +113,8 @@ const PurchaseOrders = () => {
           </div>
 
          <button 
-            onClick={() => {  setProducer(undefined); setClickedOrder(undefined); setIsModalOpen(true); }}
-            className="flex items-center gap-2 bg-secondary-mid text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-secondary transition-all shadow-lg shadow-secondary-mid/20"
+            onClick={() => { setProducer(undefined); setClickedOrder(undefined); setIsModalOpen(true); }}
+            className="flex items-center gap-2 bg-secondary-mid text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-secondary transition-all shadow-lg"
           >
             <AddIcon sx={{ fontSize: 18 }} /> Create Purchase Order
           </button>
@@ -159,9 +153,7 @@ const PurchaseOrders = () => {
             <thead>
               <tr className="bg-gray-50/50 border-b border-gray-100">
                 {Object.keys(columns).map((col) => (
-                  <th key={col} className="px-6 py-5 font-black text-[10px] uppercase tracking-widest text-gray-400 whitespace-nowrap">
-                    {col}
-                  </th>
+                  <th key={col} className="px-6 py-5 font-black text-[10px] uppercase tracking-widest text-gray-400 whitespace-nowrap">{col}</th>
                 ))}
                 <th className="px-6 py-5"></th>
               </tr>
@@ -172,10 +164,9 @@ const PurchaseOrders = () => {
                   {Object.values(columns).map((key, index) => (
                     <td key={index} className="px-6 py-4 text-gray-600 font-medium whitespace-nowrap">
                       {key === 'status' ? (
-                        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black tracking-tighter uppercase border ${
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase border ${
                           order.status === PurcaseOrderResponse.statut.VALIDE || order.status === PurcaseOrderResponse.statut.LIVRE ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
                           order.status === PurcaseOrderResponse.statut.ANNULE ? 'bg-red-50 text-red-600 border-red-100' : 
-                          order.status === PurcaseOrderResponse.statut.EXPEDIE ? 'bg-blue-50 text-blue-600 border-blue-100' : 
                           'bg-amber-50 text-amber-600 border-amber-100'
                         }`}>
                           {order.status}
@@ -183,29 +174,23 @@ const PurchaseOrders = () => {
                       ) : key === 'poDate' || key === 'expectedDeliveryDate' ? (
                         <span className="text-xs font-bold text-gray-500">
                           {order[key as keyof PurchaseOrderResponse] 
-                            ? new Date(order[key as keyof PurchaseOrderResponse] as string).toLocaleDateString('en-GB', {
-                                day: '2-digit',
-                                month: 'short',
-                                year: 'numeric'
-                              })
+                            ? new Date(order[key as keyof PurchaseOrderResponse] as string).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
                             : "—"}
-                        </span>
-                      ) : key === 'transportMethod' ? (
-                        <span className="text-[10px] font-bold text-secondary-mid bg-secondary-super-light px-2 py-1 rounded border border-secondary-mid/10 uppercase">
-                          {order.transportMethod?.replace(/_/g, ' ')}
                         </span>
                       ) : key === 'grandTotal' ? (
                         <span className="font-black text-gray-900">
                           {order.grandTotal?.toLocaleString()} <span className="text-[10px] text-gray-400">XAF</span>
                         </span>
-                      ) : (
-                        (order as any)[key] || "—"
-                      )}
+                      ) : (order as any)[key] || "—"}
                     </td>
                   ))}
+                  
                   <td className="px-6 py-4 text-right relative">
                     <button 
-                      onClick={() => setActiveMenuId(activeMenuId === order.idPO ? null : (order.idPO ?? null))}
+                      onClick={() => {
+                        setActiveMenuId(activeMenuId === order.idPO ? null : (order.idPO ?? null));
+                        setShowTransformSub(false);
+                      }}
                       className="p-2 text-gray-300 hover:text-secondary-mid hover:bg-secondary-super-light rounded-xl transition-all"
                     >
                       <MoreVertical size={18} />
@@ -213,16 +198,61 @@ const PurchaseOrders = () => {
 
                     {activeMenuId === order.idPO && (
                       <div ref={menuRef} className="absolute right-16 top-1/2 -translate-y-1/2 z-40 bg-white border border-slate-100 rounded-2xl shadow-2xl p-1.5 flex gap-1 animate-in fade-in slide-in-from-right-2 duration-200">
-                        {actionOptions.map((opt, i) => (
-                          <button
-                            key={i}
-                            title={opt.label}
-                            onClick={() => { opt.action(order); setActiveMenuId(null); }}
-                            className={`w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 transition-all active:scale-90 ${opt.color}`}
-                          >
-                            {opt.icon}
-                          </button>
-                        ))}
+                        
+                        {/* Edit */}
+                        <button 
+                           onClick={() => {
+                             const foundProducer = clients.find(c => c.idClient === order.supplierId);
+                             setProducer(foundProducer);
+                             setClickedOrder(order);
+                             setIsModalOpen(true);
+                             setActiveMenuId(null);
+                           }}
+                           className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-blue-600 transition-all"
+                           title="Edit"
+                        ><Pencil size={14} /></button>
+
+                        {/* Transform to GRN */}
+                        <div className="relative">
+                          <button 
+                            onClick={() => setShowTransformSub(!showTransformSub)}
+                            className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${showTransformSub ? 'bg-emerald-600 text-white' : 'hover:bg-emerald-50 text-emerald-600'}`}
+                            title="Transform"
+                          ><ReceiptText size={14} /></button>
+
+                          {showTransformSub && (
+                            <div className="absolute bottom-full right-0 mb-3 bg-white border border-secondary-light rounded-2xl shadow-2xl p-2 min-w-[220px] animate-in fade-in zoom-in-95 duration-150 z-50">
+                               <p className="text-[9px] font-black text-gray-400 uppercase px-3 py-2 border-b border-gray-50 mb-1 tracking-widest text-left">Logistics Actions</p>
+                               <button 
+                                 onClick={() => handleTransformToGRN(order)}
+                                 className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-emerald-50 text-emerald-600 rounded-xl transition-colors group"
+                               >
+                                  <div className="flex items-center gap-2">
+                                    <Package size={14} />
+                                    <span className="text-[11px] font-bold">Goods Receipt Note</span>
+                                  </div>
+                                  <ChevronRight size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                               </button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Print */}
+                        <button 
+                          onClick={() => { setClickedOrder(order); setIsPrintModalOpen(true); setActiveMenuId(null); }}
+                          className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-purple-800 transition-all"
+                          title="Print"
+                        ><Printer size={14} /></button>
+
+                        {/* Delete */}
+                        <button 
+                          onClick={() => {
+                            setOrders(prev => prev.filter(o => o.idPO !== order.idPO));
+                            setActiveMenuId(null);
+                          }}
+                          className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-red-50 text-red-600 transition-all"
+                          title="Delete"
+                        ><Trash2 size={14} /></button>
                       </div>
                     )}
                   </td>

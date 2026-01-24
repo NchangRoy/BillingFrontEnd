@@ -126,7 +126,7 @@ const CreateDeliveryNoteModal = ({ isOpen, onClose, clientData, deliveryNoteData
 
   return (
     <div className="fixed inset-0 z-[100] flex justify-end items-stretch">
-      <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => onClose(false)} />
+      <div className="absolute inset-0 " onClick={() => onClose(false)} />
 
       <div className="relative w-full max-w-5xl bg-white shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-300">
         

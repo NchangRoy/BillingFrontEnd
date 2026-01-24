@@ -79,3 +79,70 @@ export const mapProformaToFacture = (proforma: UpdatedProformaInvoiceResponse): 
     envoyeParEmail: false,
   };
 };
+
+
+import { UpdatedSalesOrderResponse,SalesOrderResponse } from '../models/UpdatedSalesOrder';
+
+/**
+ * Transforms a Proforma Invoice into a Sales Order.
+ * Primarily used when a client accepts a Proforma and the process moves to fulfillment.
+ */
+export const mapProformaToSalesOrder = (proforma: UpdatedProformaInvoiceResponse): UpdatedSalesOrderResponse => {
+  const now = new Date().toISOString();
+
+  return {
+    // New Order Identifiers
+    idSalesOrder: undefined, // Backend generated
+    numeroSalesOrder: undefined, // Backend generated
+
+    // Dates
+    dateCreation: now,
+    dateSysteme: now,
+    expectedDeliveryDate: undefined, // To be filled by logistics
+    deliveryDate: undefined,
+
+    // Initial Status
+    statut: SalesOrderResponse.statut.BROUILLON,
+
+    // Client Info Mapping
+    idClient: proforma.idClient,
+    nomClient: proforma.nomClient,
+    adresseClient: proforma.adresseClient,
+    emailClient: proforma.emailClient,
+    telephoneClient: proforma.telephoneClient,
+
+    // Recipient Defaults (Default to Client Info)
+    recipientName: proforma.nomClient,
+    recipientPhone: proforma.telephoneClient,
+    recipientAddress: proforma.adresseClient,
+    recipientCity: undefined,
+
+    // Source Reference (Tracing)
+    idDevisOrigine: proforma.idProformaInvoice,
+    numeroDevisOrigine: proforma.numeroProformaInvoice,
+
+    // Line Items (LigneDevisResponse is compatible with SO lines)
+    lignesSalesOrder: proforma.lignesDevis ? [...proforma.lignesDevis] : [],
+
+    // Financial Summary
+    montantHT: proforma.montantHT,
+    montantTVA: proforma.montantTVA,
+    montantTTC: proforma.montantTTC,
+    devise: proforma.devise || 'XAF',
+    applyVat: proforma.applyVat,
+
+    // Logistics & Metadata
+    transportMethod: undefined,
+    idAgency: undefined,
+    agencyInfo: undefined,
+    
+    // Payment Mapping (Handles potential enum differences safely)
+    modeReglement: proforma.modeReglement as unknown as SalesOrderResponse.modeReglement,
+    
+    nosRef: proforma.nosRef,
+    vosRef: proforma.vosRef,
+    notes: proforma.notes,
+    createdAt: now,
+    updatedAt: now,
+  };
+};

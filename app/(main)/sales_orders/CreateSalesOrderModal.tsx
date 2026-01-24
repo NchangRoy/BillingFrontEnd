@@ -109,7 +109,7 @@ const CreateSalesOrderModal = ({ isOpen, onClose, clientData, orderData }: Props
     <div className="fixed inset-0 z-[100] flex justify-end items-stretch">
       {/* Background Overlay */}
       <div 
-        className="absolute inset-0 bg-secondary/10 backdrop-blur-sm" 
+        className="absolute inset-0  " 
         onClick={() => onClose(false)} 
       />
 

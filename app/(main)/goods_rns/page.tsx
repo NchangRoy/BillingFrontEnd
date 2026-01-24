@@ -5,16 +5,30 @@ import { useRouter } from 'next/navigation'
 import DropDown from "@mui/icons-material/ArrowDropDown"
 import SearchIcon from "@mui/icons-material/Search"
 import AddIcon from "@mui/icons-material/Add"
-import { Pencil, Trash2, MoreVertical, Printer, ClipboardCheck, Clock, XCircle, CheckCircle2, PackageSearch } from "lucide-react";
+import { 
+  Pencil, 
+  Trash2, 
+  MoreVertical, 
+  Printer, 
+  ClipboardCheck, 
+  Clock, 
+  XCircle, 
+  CheckCircle2, 
+  PackageSearch, 
+  ReceiptText, 
+  ChevronRight 
+} from "lucide-react";
 
 // API & Models
-import { GoodReceiptResponse,GoodsReceiptNoteResponse } from '@/src/api/models/GoodsReceiptNote'
+import { GoodReceiptResponse, GoodsReceiptNoteResponse } from '@/src/api/models/GoodsReceiptNote'
 import { MOCK_GOODS_RN } from '@/src/api/models/GoodsReceiptNote'
 import { UpdatedClientResponse, clients } from '@/src/api/models/UpdatedClientResponse'
+import { MOCK_PURCHASE_ORDERS, PurchaseOrderResponse } from '@/src/api/models/PurchaseOrderLine'
 
 // Logic Components
 import CreateGRNModal from './CreateGRNModal'
 import GRNPrintPreviewModal from './GRNPrintPreviewModal'
+import { generateFactureFromPOandGRN } from '@/src/api/transformation/supplierInvoice'
 
 // Mapping Table Columns for GRN
 const columns = {
@@ -37,13 +51,38 @@ const GoodsReceiptNotes = () => {
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState<boolean>(false);
+  const [showTransformSub, setShowTransformSub] = useState<boolean>(false);
   
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [clickedGRN, setClickedGRN] = useState<GoodsReceiptNoteResponse | undefined>();
   const [grnList, setGrnList] = useState<GoodsReceiptNoteResponse[]>(MOCK_GOODS_RN);
   const [client, setClient] = useState<UpdatedClientResponse | undefined>()
+  const [purchaseOrders,setPurchaseOrders]=useState<PurchaseOrderResponse[]>(MOCK_PURCHASE_ORDERS)
 
-  // 2. Filter Logic (Structural match to your DN search)
+  // 2. Transformation Logic (Listen for incoming transformed data)
+  useEffect(() => {
+    const modalOpen = localStorage.getItem("modalOpen")
+    if (modalOpen === "open") {
+      const grnString = localStorage.getItem("GRN")
+      
+      if (grnString) {
+        setIsModalOpen(true)
+        localStorage.setItem("modalOpen", "close")
+
+        const grnData: GoodsReceiptNoteResponse = JSON.parse(grnString)
+        setClickedGRN(grnData)
+
+        // Find supplier/client info
+        const supplierInfo = clients.find(c => c.idClient === grnData.supplierId);
+        setClient(supplierInfo)
+
+        // Cleanup the actual data key
+        localStorage.removeItem("GRN")
+      }
+    }
+  }, []);
+
+  // 3. Filter Logic
   const filteredGRNs = useMemo(() => {
     return grnList.filter((item) => {
       const matchesSearch = 
@@ -60,49 +99,28 @@ const GoodsReceiptNotes = () => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setActiveMenuId(null);
+        setShowTransformSub(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const actionOptions = [
-    { 
-      label: "Modify GRN", 
-      icon: <Pencil size={14} />, 
-      action: (g: GoodsReceiptNoteResponse) => {
-        // Finding the supplier/client exactly like in your DN logic
-        const foundClient = clients.find(c => c.idClient === g.supplierId);
-        setClient(foundClient);
-        setClickedGRN(g);
-        setIsModalOpen(true);
-      },
-      color: "text-blue-600" 
-    },
-    { 
-      label: "Quality Check", 
-      icon: <ClipboardCheck size={14} />, 
-      action: (g: GoodsReceiptNoteResponse) => console.log('Inspecting:', g.grnNumber),
-      color: "text-emerald-600" 
-    },
-    { 
-      label: "Print GRN", 
-      icon: <Printer size={14} />, 
-      action: (g: GoodsReceiptNoteResponse) => {
-        setClickedGRN(g);
-        setIsPrintModalOpen(true);
-      },
-      color: "text-purple-800" 
-    },
-    { 
-      label: "Delete GRN", 
-      icon: <Trash2 size={14} />, 
-      action: (g: GoodsReceiptNoteResponse) => {
-        setGrnList(prev => prev.filter(item => item.idGRN !== g.idGRN));
-      },
-      color: "text-red-600" 
-    },
-  ];
+  // Transform handler (To Invoice)
+  const handleTransformToInvoice = (grn: GoodsReceiptNoteResponse) => {
+      //first find the associated purchase order
+      const pO=purchaseOrders.find(po=>po.poNumber===grn.purchaseOrderNumber)
+      if(pO){
+
+        //transform to supplier invoice
+        const invoice=generateFactureFromPOandGRN(pO,grn);
+
+        localStorage.setItem("supplier_invoice", JSON.stringify(invoice));
+    localStorage.setItem("modalOpen", "open");
+    router.push('/supplier_invoice'); // Adjust route as needed
+      }
+   
+  };
 
   return (
     <div className='max-w-7xl mx-auto p-6 lg:p-10 flex flex-col gap-8 bg-secondary-super-light/20 min-h-screen'>
@@ -130,15 +148,14 @@ const GoodsReceiptNotes = () => {
             onClick={() => { setClient(undefined); setClickedGRN(undefined); setIsModalOpen(true); }}
             className="flex items-center gap-2 bg-secondary-mid text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-secondary hover:shadow-lg transition-all"
           >
-            <AddIcon sx={{ fontSize: 18 }} /> 
-            Create Goods Receipt
+            <AddIcon sx={{ fontSize: 18 }} /> Create Goods Receipt
           </button>
         </div>
       </div>
 
       {/* Filter Bar */}
       <div className="p-4 bg-white rounded-2xl shadow-sm border border-secondary-light/20 flex items-center gap-4">
-        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 border-r pr-4">Receipt Status</span>
+        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 border-r pr-4">Status Filters</span>
         <div className="relative">
           <button
             onClick={() => setShowStatusMenu(!showStatusMenu)}
@@ -152,7 +169,7 @@ const GoodsReceiptNotes = () => {
 
           {showStatusMenu && (
             <div className="absolute top-full left-0 mt-2 bg-white border border-gray-100 rounded-xl shadow-2xl z-30 min-w-[200px] overflow-hidden">
-              <button onClick={() => {setSelectedStatus(null); setShowStatusMenu(false)}} className="w-full text-left px-4 py-3 text-[10px] font-black text-gray-400 border-b hover:bg-gray-50 tracking-widest uppercase">Show All</button>
+              <button onClick={() => {setSelectedStatus(null); setShowStatusMenu(false)}} className="w-full text-left px-4 py-3 text-[10px] font-black text-gray-400 border-b hover:bg-gray-50 uppercase tracking-widest">Show All</button>
               {Object.values(GoodReceiptResponse.statut).map((status) => (
                 <button 
                   key={status} 
@@ -174,9 +191,7 @@ const GoodsReceiptNotes = () => {
             <thead>
               <tr className="bg-gray-50/50 border-b border-gray-100">
                 {Object.keys(columns).map((col) => (
-                  <th key={col} className="px-6 py-5 font-black text-[10px] uppercase tracking-widest text-gray-400 whitespace-nowrap">
-                    {col}
-                  </th>
+                  <th key={col} className="px-6 py-5 font-black text-[10px] uppercase tracking-widest text-gray-400 whitespace-nowrap">{col}</th>
                 ))}
                 <th className="px-6 py-5"></th>
               </tr>
@@ -189,8 +204,7 @@ const GoodsReceiptNotes = () => {
                       {value === 'status' ? (
                         <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[10px] font-black tracking-tighter uppercase ${
                           grn.status === GoodReceiptResponse.statut.VALIDE || grn.status === GoodReceiptResponse.statut.LIVRE ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
-                          grn.status === GoodReceiptResponse.statut.ANNULE ? 'bg-red-50 text-red-600 border-red-100' : 
-                          'bg-amber-50 text-amber-600 border-amber-100'
+                          grn.status === GoodReceiptResponse.statut.ANNULE ? 'bg-red-50 text-red-600 border-red-100' : 'bg-amber-50 text-amber-600 border-amber-100'
                         }`}>
                           {(grn.status === GoodReceiptResponse.statut.VALIDE || grn.status === GoodReceiptResponse.statut.LIVRE) ? <CheckCircle2 size={12}/> : grn.status === GoodReceiptResponse.statut.ANNULE ? <XCircle size={12}/> : <Clock size={12}/>}
                           {grn.status}
@@ -199,38 +213,78 @@ const GoodsReceiptNotes = () => {
                         <span className="text-xs font-bold text-gray-500">
                            {grn.receiptDate ? new Date(grn.receiptDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '---'}
                         </span>
-                      ) : value === 'purchaseOrderNumber' ? (
-                        <span className="text-[10px] font-bold bg-secondary-super-light text-secondary-mid px-2 py-1 rounded-lg">
-                          {grn.purchaseOrderNumber || "No PO Ref"}
-                        </span>
-                      ) : (
-                        (grn as any)[value] || "—"
-                      )}
+                      ) : (grn as any)[value] || "—"}
                     </td>
                   ))}
+                  
                   <td className="px-6 py-4 text-right relative">
                     <button 
-                      onClick={() => setActiveMenuId(activeMenuId === grn.idGRN ? null : (grn.idGRN ?? null))}
+                      onClick={() => {
+                        setActiveMenuId(activeMenuId === grn.idGRN ? null : (grn.idGRN ?? null));
+                        setShowTransformSub(false);
+                      }}
                       className="p-2 text-gray-300 hover:text-secondary-mid hover:bg-secondary-super-light rounded-xl transition-all"
                     >
                       <MoreVertical size={18} />
                     </button>
 
                     {activeMenuId === grn.idGRN && (
-                      <div 
-                        ref={menuRef} 
-                        className="absolute right-16 top-1/2 -translate-y-1/2 z-40 bg-white border border-slate-100 rounded-2xl shadow-2xl p-1.5 flex gap-1 animate-in fade-in slide-in-from-right-2 duration-200"
-                      >
-                        {actionOptions.map((opt, i) => (
-                          <button
-                            key={i}
-                            title={opt.label}
-                            onClick={() => { opt.action(grn); setActiveMenuId(null); }}
-                            className={`w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 transition-all active:scale-90 ${opt.color}`}
-                          >
-                            {opt.icon}
-                          </button>
-                        ))}
+                      <div ref={menuRef} className="absolute right-16 top-1/2 -translate-y-1/2 z-40 bg-white border border-slate-100 rounded-2xl shadow-2xl p-1.5 flex gap-1 animate-in fade-in slide-in-from-right-2 duration-200">
+                        
+                        {/* Edit */}
+                        <button 
+                           onClick={() => {
+                             const foundClient = clients.find(c => c.idClient === grn.supplierId);
+                             setClient(foundClient);
+                             setClickedGRN(grn);
+                             setIsModalOpen(true);
+                             setActiveMenuId(null);
+                           }}
+                           className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 transition-all text-blue-600"
+                           title="Edit"
+                        ><Pencil size={14} /></button>
+
+                        {/* Transform */}
+                        <div className="relative">
+                          <button 
+                            onClick={() => setShowTransformSub(!showTransformSub)}
+                            className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${showTransformSub ? 'bg-emerald-600 text-white' : 'hover:bg-emerald-50 text-emerald-600'}`}
+                            title="Transform"
+                          ><ReceiptText size={14} /></button>
+
+                          {showTransformSub && (
+                            <div className="absolute bottom-full right-0 mb-3 bg-white border border-secondary-light rounded-2xl shadow-2xl p-2 min-w-[220px] animate-in fade-in zoom-in-95 duration-150 z-50">
+                               <p className="text-[9px] font-black text-gray-400 uppercase px-3 py-2 border-b border-gray-50 mb-1 tracking-widest text-left">Generate Document</p>
+                               <button 
+                                 onClick={() => handleTransformToInvoice(grn)}
+                                 className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-emerald-50 text-emerald-600 rounded-xl transition-colors group"
+                               >
+                                  <div className="flex items-center gap-2">
+                                    <ReceiptText size={14} />
+                                    <span className="text-[11px] font-bold">Supplier Invoice</span>
+                                  </div>
+                                  <ChevronRight size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                               </button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Print */}
+                        <button 
+                          onClick={() => { setClickedGRN(grn); setIsPrintModalOpen(true); setActiveMenuId(null); }}
+                          className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-purple-800 transition-all"
+                          title="Print"
+                        ><Printer size={14} /></button>
+
+                        {/* Delete */}
+                        <button 
+                          onClick={() => {
+                            setGrnList(prev => prev.filter(g => g.idGRN !== grn.idGRN));
+                            setActiveMenuId(null);
+                          }}
+                          className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-red-50 text-red-600 transition-all"
+                          title="Delete"
+                        ><Trash2 size={14} /></button>
                       </div>
                     )}
                   </td>
@@ -248,23 +302,9 @@ const GoodsReceiptNotes = () => {
         )}
       </div>
 
-      {isModalOpen && (
-        <CreateGRNModal 
-          grnData={clickedGRN}  
-          clientData={client} 
-          isOpen={isModalOpen} 
-          onClose={() => setIsModalOpen(false)}
-        />
-      )}
-
-      {isPrintModalOpen && clickedGRN && (
-        <GRNPrintPreviewModal 
-          isOpen={isPrintModalOpen} 
-          data={clickedGRN} 
-          onClose={() => setIsPrintModalOpen(false)}
-          onConfirmPrint={()=>{}}
-        />
-      )}
+      {/* Modals */}
+      {isModalOpen && <CreateGRNModal grnData={clickedGRN} clientData={client} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />}
+      {isPrintModalOpen && clickedGRN && <GRNPrintPreviewModal isOpen={isPrintModalOpen} data={clickedGRN} onClose={() => setIsPrintModalOpen(false)} onConfirmPrint={()=>{}} />}
     </div>
   )
 }

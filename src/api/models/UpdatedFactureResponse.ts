@@ -60,35 +60,35 @@ export namespace FactureResponse {
         PAYPAL = 'PAYPAL',
         AUTRE = 'AUTRE'
     }
-}
-export const MOCK_FACTURE: UpdatedFactureResponse[] = [
+}export const MOCK_FACTURE: UpdatedFactureResponse[] = [
   {
     idFacture: "FACT-2026-001",
     numeroFacture: "INV/2026/001",
     dateFacturation: "2026-01-15",
     dateEcheance: "2026-02-15",
     dateSysteme: "2026-01-15T10:00:00Z",
-    // Replaced Enum with String
-    etat: "PAYE" as FactureResponse.etat,
+    etat: FactureResponse.etat.PAYE,
     type: "VENTE",
     idClient: "c001",
     nomClient: "John Doe Retail",
     adresseClient: "Douala, Akwa",
     emailClient: "john@example.com",
     telephoneClient: "+237690000001",
+    
+    // Logic: 18,000 * 19.25% = 3,465. Total = 21,465
     montantHT: 18000,
-    montantTVA: 3465,
+    montantTVA: 3465, 
     montantTTC: 21465,
     montantTotal: 21465,
-    montantRestant: 0,
+    montantRestant: 0, // Coherent with status 'PAYE'
     finalAmount: 21465,
+    
     remiseGlobalePourcentage: 0,
     remiseGlobaleMontant: 0,
     applyVat: true,
     devise: "XAF",
     tauxChange: 1,
-    // Replaced Enum with String
-    modeReglement: "ESPECES" as FactureResponse.modeReglement,
+    modeReglement: FactureResponse.modeReglement.ESPECES,
     conditionsPaiement: "Paiement à la réception",
     nbreEcheance: 1,
     lignesFacture: [
@@ -116,27 +116,30 @@ export const MOCK_FACTURE: UpdatedFactureResponse[] = [
     dateFacturation: "2026-01-20",
     dateEcheance: "2026-03-20",
     dateSysteme: "2026-01-20T14:30:00Z",
-    // Replaced Enum with String
-    etat: "BROUILLON" as FactureResponse.etat,
+    etat: FactureResponse.etat.BROUILLON,
     type: "GROS_VENTE",
     idClient: "c002",
     nomClient: "ABC Distributors",
     adresseClient: "Yaoundé, Bastos",
     emailClient: "contact@abc-distributors.cm",
     telephoneClient: "+237690000002",
+
+    // Logic: HT = 160,000. TVA (19.25%) = 30,800. TTC = 190,800.
+    // Remise 10% on 190,800 = 19,080.
+    // Final Amount = 171,720.
     montantHT: 160000,
     montantTVA: 30800,
     montantTTC: 190800,
-    montantTotal: 171720,
-    montantRestant: 171720,
+    montantTotal: 171720, // Value after global discount
+    montantRestant: 171720, // Coherent with status 'BROUILLON' (nothing paid)
     finalAmount: 171720,
+    
     remiseGlobalePourcentage: 10,
     remiseGlobaleMontant: 19080,
     applyVat: true,
     devise: "XAF",
     tauxChange: 1,
-    // Replaced Enum with String
-    modeReglement: "VIREMENT" as FactureResponse.modeReglement,
+    modeReglement: FactureResponse.modeReglement.VIREMENT,
     conditionsPaiement: "Net 60",
     referenceCommande: "PO-ABC-992",
     lignesFacture: [

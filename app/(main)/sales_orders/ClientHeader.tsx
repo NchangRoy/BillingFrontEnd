@@ -32,7 +32,7 @@ const ClientHeader = ({ clients, setMainSelectedClient, selectClient, sales_orde
   // --- States ---
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredResults, setFilteredResults] = useState<UpdatedClientResponse[]>([]);
-  const [selectedClient, setSelectedClient] = useState<UpdatedClientResponse | null>(null);
+  const [selectedClient, setSelectedClient] = useState<UpdatedClientResponse | null>(selectClient);
   const [showResults, setShowResults] = useState(false);
   const [generatedId, setGeneratedId] = useState<string>("");
   
@@ -68,6 +68,7 @@ const ClientHeader = ({ clients, setMainSelectedClient, selectClient, sales_orde
     isReferral: false,
     remiseGlobalePourcentage: 0,
     nbreEcheance: 1,
+    nomClient:1,
   });
 
   // --- Initial Setup ---
@@ -250,6 +251,13 @@ const ClientHeader = ({ clients, setMainSelectedClient, selectClient, sales_orde
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+          <div className="col-span-12 md:col-span-4">
+            <label className={labelStyles}>Client Name</label>
+            <div className="relative">
+              <HomeIcon className="absolute left-3 top-2.5 text-gray-300" sx={{ fontSize: 18 }} />
+              <input readOnly value={selectedClient?.raisonSociale || ""} className={`${readOnlyStyles} pl-10`} placeholder="N/A" />
             </div>
           </div>
           <div className="col-span-12 md:col-span-4">

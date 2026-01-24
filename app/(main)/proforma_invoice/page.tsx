@@ -27,7 +27,8 @@ import { UpdatedProformaInvoiceResponse,MOCK_PROFORMA_INVOICE } from '@/src/api/
 // Components
 import CreateProformaInvoiceModal from './CreateProformaInvoiceModal'
 import PrintPreviewModal from './PrintPreviewModal'
-import { mapProformaToFacture } from '@/src/api/transformation/ProformaTransformation'
+import { mapProformaToFacture, mapProformaToSalesOrder } from '@/src/api/transformation/ProformaTransformation'
+import { UpdatedSalesOrderResponse } from '@/src/api/models/UpdatedSalesOrder'
 
 const columns = {
   "Devis Number": "numeroProformaInvoice",
@@ -66,6 +67,7 @@ const ProformaInvoice = () => {
           localStorage.setItem("modalOpen","close")
           //load the invoice 
           const invoiceString=localStorage.getItem("proforma_invoice")
+          localStorage.setItem("proforma_invoice","")
           if(invoiceString){
             const invoice:UpdatedProformaInvoiceResponse=JSON.parse(invoiceString)
             setClickedProformaInvoice(invoice)
@@ -120,7 +122,13 @@ const ProformaInvoice = () => {
     localStorage.setItem("modalOpen", "open");
     router.push("/invoices");
   }
-
+  
+   function handleTransformToProformaSalesOrder(ProformaInvoice: UpdatedProformaInvoiceResponse): void {
+    const invoice: UpdatedSalesOrderResponse = mapProformaToSalesOrder(ProformaInvoice);
+    localStorage.setItem("salesOrder", JSON.stringify(invoice));
+    localStorage.setItem("modalOpen", "open");
+    router.push("/sales_orders");
+  }
   return (
     <div className='max-w-7xl mx-auto p-6 lg:p-10 flex flex-col gap-8 bg-secondary-super-light/20 min-h-screen'>
       
@@ -270,6 +278,18 @@ const ProformaInvoice = () => {
                                   </div>
                                   <ChevronRight size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
                                </button>
+
+                               <button 
+                                 onClick={() => handleTransformToProformaSalesOrder(ProformaInvoice)}
+                                 className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-emerald-50 text-emerald-600 rounded-xl transition-colors group"
+                               >
+                                  <div className="flex items-center gap-2">
+                                    <ReceiptText size={14} />
+                                    <span className="text-[11px] font-bold">Sales Order</span>
+                                  </div>
+                                  <ChevronRight size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                               </button>
+
 
                             </div>
                           )}
