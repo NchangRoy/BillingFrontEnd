@@ -96,13 +96,13 @@ useEffect(() => {
       return;
     }
     const filtered = MOCK_PROFORMA_INVOICE.filter((q) =>
-      q.numeroProformaInvoice.toLowerCase().includes(vosRefFilter.toLowerCase())
+     ( q.numeroProformaInvoice??"").toLowerCase().includes(vosRefFilter.toLowerCase())
     );
     setFilteredProformaInvoices(filtered);
   }, [vosRefFilter]);
 
   const handleSelectReference = (refQuo: UpdatedProformaInvoiceResponse) => {
-  setVosRefFilter(refQuo.numeroProformaInvoice);
+  setVosRefFilter(refQuo?.numeroProformaInvoice??"");
   setShowRefDropdown(false);
 
   // 1. Set the main ProformaInvoice state with the data from the reference

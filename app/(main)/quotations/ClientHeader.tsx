@@ -98,13 +98,13 @@ useEffect(() => {
       return;
     }
     const filtered = MOCK_QUOTATIONS.filter((q) =>
-      q.numeroDevis.toLowerCase().includes(vosRefFilter.toLowerCase())
+      (q.numeroDevis??"").toLowerCase().includes(vosRefFilter.toLowerCase())
     );
     setFilteredQuotations(filtered);
   }, [vosRefFilter]);
 
   const handleSelectReference = (refQuo: UpdatedDevisResponse) => {
-  setVosRefFilter(refQuo.numeroDevis);
+  setVosRefFilter(refQuo.numeroDevis??"");
   setShowRefDropdown(false);
 
   // 1. Set the main quotation state with the data from the reference

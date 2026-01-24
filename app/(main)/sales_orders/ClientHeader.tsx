@@ -32,7 +32,8 @@ const ClientHeader = ({ clients, setMainSelectedClient, selectClient, sales_orde
   // --- States ---
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredResults, setFilteredResults] = useState<UpdatedClientResponse[]>([]);
-  const [selectedClient, setSelectedClient] = useState<UpdatedClientResponse | null>(selectClient);
+
+const [selectedClient, setSelectedClient] = useState<UpdatedClientResponse | null>(selectClient ?? null);
   const [showResults, setShowResults] = useState(false);
   const [generatedId, setGeneratedId] = useState<string>("");
   

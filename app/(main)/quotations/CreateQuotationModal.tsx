@@ -90,34 +90,44 @@ const QuotationFormModal = ({ isOpen, onClose,clientData,quotationData}: Props) 
 
   if(quotationData==undefined){}
     // Combine everything for the API request
-    const finalPayload: UpdatedDevisResponse = {
-    ...quotation, // Existing lines, totals, and ID if editing
+    // 1. Ensure we have a valid quotation object to work with
+if (!quotation) return;
+
+const finalPayload: UpdatedDevisResponse = {
+  ...quotation,
+
+  // String Fallbacks: Ensuring required strings aren't undefined
+  idClient: selectedClient?.idClient || "",
+  nomClient: selectedClient?.raisonSociale || "Unknown Client",
+  emailClient: selectedClient?.email || "",
+
+  // Date Safety: Only call .toISOString() if the date exists, otherwise use current date
+  dateCreation: headerData?.creationDate?.toISOString() ?? new Date().toISOString(),
+  dateValidite: headerData?.validityDate?.toISOString() ?? new Date().toISOString(),
+
+  // VAT Toggle Logic
+  applyVat: headerData?.applyVat ?? false,
+
+  // Enum/Metadata Safety
+  statut: quotation.statut || UpdatedDevisResponse.statut.BROUILLON,
+  devise: quotation.devise || "XAF",
+
+  // Numerical Safety: Using ?? 0 to satisfy 'number' requirement
+  // We use the local 'quotation' values which were calculated in your state
+  montantHT: quotation.montantHT ?? 0,
+  finalAmount: quotation.finalAmount ?? 0,
+
+  montantTTC: headerData?.applyVat 
+    ? (quotation.montantTTC ?? 0) 
+    : (quotation.montantHT ?? 0),
     
-    // Header Data Overrides
-    idClient: selectedClient?.idClient,
-    nomClient: selectedClient?.raisonSociale,
-    emailClient: selectedClient?.email,
+  montantTVA: headerData?.applyVat 
+    ? (quotation.montantTVA ?? 0) 
+    : 0,
     
-    // Convert Dates to ISO Strings for the API
-    dateCreation: headerData?.creationDate.toISOString(),
-    dateValidite: headerData?.validityDate.toISOString(),
-    
-    // VAT Toggle Logic
-    applyVat: headerData?.applyVat ?? false,
-    
-    // Default metadata if new
-    statut: quotation?.statut || DevisResponse.statut.BROUILLON,
-    devise: quotation?.devise || "XAF",
-    
-    // Ensure totals are synced with the applyVat logic
-    // If applyVat is false, TTC should equal HT
-    montantTTC: headerData?.applyVat 
-      ? quotation?.montantTTC 
-      : quotation?.montantHT,
-    montantTVA: headerData?.applyVat 
-      ? quotation?.montantTVA 
-      : 0,
-  };
+  // Ensure lines are always an array
+  lignesDevis: quotation.lignesDevis || [],
+};
 
     console.log("Saving Quotation Payload:", finalPayload);
     // Add your API call here (e.g., mutate(finalPayload))

@@ -127,9 +127,9 @@ const ProformaInvoiceDetails = ({ client, ProformaInvoice, setProformaInvoice }:
       if (activePromo) {
         if (activePromo.promotionalPrice) {
           newPrice = activePromo.promotionalPrice;
-          remise = (basePrice - newPrice) * line.quantite;
+          remise = (basePrice - newPrice) * (line.quantite??0);
         } else if (activePromo.discountPercentage) {
-          remise = (basePrice * (activePromo.discountPercentage / 100)) * line.quantite;
+          remise = (basePrice * (activePromo.discountPercentage / 100)) * (line.quantite??0);
           newPrice = basePrice * (1 - activePromo.discountPercentage / 100);
         }
       }
@@ -137,7 +137,7 @@ const ProformaInvoiceDetails = ({ client, ProformaInvoice, setProformaInvoice }:
       return {
         ...line,
         prixUnitaire: newPrice,
-        montantTotal: Math.round(line.quantite * newPrice),
+        montantTotal: Math.round((line.quantite??0)* newPrice),
         remiseMontant: remise
       };
     });

@@ -93,33 +93,29 @@ const CreateProformaInvoiceModal = ({ isOpen, onClose,clientData,ProformaInvoice
   if(ProformaInvoiceData==undefined){}
     // Combine everything for the API request
     const finalPayload: UpdatedProformaInvoiceResponse = {
-    ...ProformaInvoice, // Existing lines, totals, and ID if editing
+    ...ProformaInvoice,
     
-    // Header Data Overrides
     idClient: selectedClient?.idClient,
     nomClient: selectedClient?.raisonSociale,
     emailClient: selectedClient?.email,
-    
-    // Convert Dates to ISO Strings for the API
     dateCreation: headerData?.creationDate.toISOString(),
-  
-    
-    // VAT Toggle Logic
     applyVat: headerData?.applyVat ?? false,
     
-    // Default metadata if new
     statut: ProformaInvoice?.statut || DevisResponse.statut.BROUILLON,
     devise: ProformaInvoice?.devise || "XAF",
-    
-    // Ensure totals are synced with the applyVat logic
-    // If applyVat is false, TTC should equal HT
+
+    // FIX: Add fallbacks for numbers to satisfy the interface
+    finalAmount: ProformaInvoice?.finalAmount ?? 0,
+    montantHT: ProformaInvoice?.montantHT ?? 0,
+
     montantTTC: headerData?.applyVat 
-      ? ProformaInvoice?.montantTTC 
-      : ProformaInvoice?.montantHT,
+      ? (ProformaInvoice?.montantTTC ?? 0)
+      : (ProformaInvoice?.montantHT ?? 0),
+      
     montantTVA: headerData?.applyVat 
-      ? ProformaInvoice?.montantTVA 
+      ? (ProformaInvoice?.montantTVA ?? 0)
       : 0,
-  };
+};
 
     console.log("Saving ProformaInvoice Payload:", finalPayload);
     // Add your API call here (e.g., mutate(finalPayload))
