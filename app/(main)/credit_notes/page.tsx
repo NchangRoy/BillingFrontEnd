@@ -214,13 +214,18 @@ const CreditNote = () => {
                     </td>
                   ))}
                   <td className="px-6 py-4 text-right relative">
-                    <button 
-                      onClick={() => setActiveMenuId(activeMenuId === note.idCreditNote ? null : note.idCreditNote)}
-                      className="p-2 text-gray-300 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
-                    >
-                      <MoreVertical size={18} />
-                    </button>
-
+                  <button 
+                    onClick={() => 
+                      setActiveMenuId(
+                        activeMenuId === note.idCreditNote 
+                          ? null 
+                          : (note.idCreditNote ?? null) // This handles the 'undefined' case
+                      )
+                    }
+                    className="p-2 text-gray-300 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
+                  >
+                    <MoreVertical size={18} />
+                  </button>
                     {activeMenuId === note.idCreditNote && (
                       <div 
                         ref={menuRef} 

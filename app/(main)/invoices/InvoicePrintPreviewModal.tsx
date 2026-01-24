@@ -1,13 +1,13 @@
 'use client';
 
 import React from 'react';
+import { DeliveryNoteResponse } from '@/src/api/models/DeliveryNoteResponse';
 import { Truck, Package, MapPin, User, Calendar, ClipboardCheck, Phone } from 'lucide-react';
-import { UpdatedFactureResponse } from '@/src/api/models/UpdatedFactureResponse';
 
 interface PrintPreviewProps {
   isOpen: boolean;
   onClose: () => void;
-  data: UpdatedFactureResponse;
+  data: DeliveryNoteResponse;
   onConfirmPrint: () => void;
 }
 

@@ -106,13 +106,13 @@ useEffect(() => {
       return;
     }
     const filtered = MOCK_FACTURE.filter((q) =>
-      q.numeroFacture.toLowerCase().includes(vosRefFilter.toLowerCase())
+      q.numeroFacture?.toLowerCase().includes(vosRefFilter.toLowerCase())
     );
     setFilteredInvoices(filtered);
   }, [vosRefFilter]);
 
   const handleSelectReference = (refQuo: UpdatedFactureResponse) => {
-  setVosRefFilter(refQuo.numeroFacture);
+  setVosRefFilter(refQuo.numeroFacture ?? "");
   setShowRefDropdown(false);
 
   // 1. Set the main Invoice state with the data from the reference
@@ -163,7 +163,7 @@ useEffect(() => {
 
   // 4. Sync it back to the Invoice object so the rest of the app sees the change
   if (Invoice && Invoice.numeroFacture !== newId) {
-    setInvoice(prev => prev ? ({ ...prev, numeroFacture: newId }) : prev);
+    setInvoice({ ...Invoice, numeroFacture: newId });
   }
 
 }, [formData.applyVat, selectClient, seller, generatedId, Invoice]);

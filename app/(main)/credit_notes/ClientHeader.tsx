@@ -124,19 +124,22 @@ const Invoice_To_CreditNote = (invoice: UpdatedFactureResponse): UpdatedCreditNo
         isReferral: false,
         systemDate:new Date().toISOString().split('T')[0],
     });
+useEffect(() => {
+  if (!invoices) return; // Exit early if data hasn't arrived
 
-    useEffect(() => {
-    const term = invoiceSearch.toLowerCase().trim();
-    if (!term) {
-        setFilteredInvoices([]);
-        return;
-    }
-        const matches = invoices?.filter(inv => 
-            inv.numeroFacture?.toLowerCase().includes(term) ||
-            inv.idFacture?.toLowerCase().includes(term)
-        );
-        setFilteredInvoices(matches);
-    }, [invoiceSearch, invoices]);
+  const term = invoiceSearch.toLowerCase().trim();
+  if (!term) {
+    setFilteredInvoices([]);
+    return;
+  }
+
+  const matches = invoices.filter(inv => 
+    inv.numeroFacture?.toLowerCase().includes(term) ||
+    inv.idFacture?.toLowerCase().includes(term)
+  );
+  
+  setFilteredInvoices(matches);
+}, [invoiceSearch, invoices]);
 
 
 
@@ -157,22 +160,27 @@ const Invoice_To_CreditNote = (invoice: UpdatedFactureResponse): UpdatedCreditNo
 
     // 1. ID GENERATION (Type: CREN for Credit Note)
     useEffect(() => {
-        if (!credit_note?.idCreditNote && seller) {
-            const agency = seller.agency || "HQ";
-            const type = "CRN";
-            const taxFlag = formData.applyVat ? "T" : "NT";
-            const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-            const suffix = Math.floor(Math.random() * 10000).toString().padStart(4, "0");
-            const newId = `${agency}-${type}-${taxFlag}-${date}-${suffix}`;
-            setGeneratedId(newId);
-            
-            // Set initial ID in parent if creating new
-            setCreditNote({ ...credit_note!, idCreditNote: newId });
-        }
-        else{
-            setGeneratedId(credit_note?.numeroCreditNote)
-        }
-    }, [formData.applyVat, seller]);
+    // 1. If we are creating a new Credit Note (no ID exists yet)
+    if (!credit_note?.idCreditNote && seller) {
+        const agency = seller.agency || "HQ";
+        const type = "CRN";
+        const taxFlag = formData.applyVat ? "T" : "NT";
+        const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+        const suffix = Math.floor(Math.random() * 10000).toString().padStart(4, "0");
+        const newId = `${agency}-${type}-${taxFlag}-${date}-${suffix}`;
+        
+        setGeneratedId(newId);
+        
+        // Use a functional update to avoid the '!' operator and handle null safely
+        setCreditNote({ ...credit_note, idCreditNote: newId });
+    } 
+    // 2. If an ID already exists, sync the display state
+    else {
+        // Use ?? "" to provide a fallback string if the value is undefined
+        setGeneratedId(credit_note?.numeroCreditNote ?? "");
+    }
+}, [formData.applyVat, seller, credit_note?.idCreditNote]); 
+// Added credit_note?.idCreditNote to dependency array to ensure sync
 
     // 2. EXTERNAL SYNC
     useEffect(() => {
