@@ -45,7 +45,7 @@ const MENU_SECTIONS = [
       { content: "Invoices", Icon: "ReceiptIcon", path: "/invoices" },
       { content: "Delivery Note", Icon: "DeliveryIcon", path: "/delivery_notes" },
       { content: "Credit Notes", Icon: "CreditNoteIcon", path: "/credit_notes" },
-      { content: "Store Credit Vouchers", Icon: "StoreCreditIcon", path: "/store_credit" },
+     
     ],
   },
   {

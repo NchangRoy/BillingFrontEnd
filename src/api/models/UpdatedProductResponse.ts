@@ -273,5 +273,61 @@ export const produits: UpdatedProductResponse[] = [
         active: true
       }
     ]
-  }
+  },
+  {
+    "idProduit": "8b2f9a1c-7e34-4d81-9b45-f02a6c8e3d12",
+    "nomProduit": "Cartouche d'encre HP 652 Noir",
+    "typeProduit": "INFORMATIQUE",
+    "prixVente": 12500,
+    "cout": 9500,
+    "categorie": "Consommables",
+    "reference": "HP-652-BK",
+    "codeBarre": "8432109876541",
+    "photo": "hp652_black.png",
+    "active": true,
+    "createdAt": "2024-05-10T09:15:00Z",
+    "updatedAt": "2025-01-20T11:30:00Z",
+    "stockQuantity": 42,
+     allowedSaleSizes: [
+      { size: ClientSaleSize.size.DETAIL, unitPrice: 3500, unitPriceWithTax: 4173.75, isNegotiable: false, minNegotiationPercentage: 0 },
+      { size: ClientSaleSize.size.GROS, unitPrice: 3300, unitPriceWithTax: 3935.25, minQuantity: 10, isNegotiable: true, minNegotiationPercentage: 5 }
+    ],
+    activePromotions: [
+      {
+        saleSize: ClientResponse.SaleSize.GROS,
+        startDate: "2026-01-01",
+        endDate: "2026-02-28",
+        discountPercentage: 20,
+        active: true
+      }
+    ]
+},
+{
+    "idProduit": "8b2f9a1c-7e34-4d81-9b45-f02a6c8e3d22",
+    "nomProduit": "Bon Bon Alcolisee",
+    "typeProduit": "INFORMATIQUE",
+    "prixVente": 12500,
+    "cout": 9500,
+    "categorie": "Consommables",
+    "reference": "HP-652-BK",
+    "codeBarre": "8432109876541",
+    "photo": "hp652_black.png",
+    "active": true,
+    "createdAt": "2024-05-10T09:15:00Z",
+    "updatedAt": "2025-01-20T11:30:00Z",
+    "stockQuantity": 42,
+     allowedSaleSizes: [
+      { size: ClientSaleSize.size.DETAIL, unitPrice: 3500, unitPriceWithTax: 4173.75, isNegotiable: false, minNegotiationPercentage: 0 },
+      { size: ClientSaleSize.size.GROS, unitPrice: 3300, unitPriceWithTax: 3935.25, minQuantity: 10, isNegotiable: true, minNegotiationPercentage: 5 }
+    ],
+    activePromotions: [
+      {
+        saleSize: ClientResponse.SaleSize.GROS,
+        startDate: "2026-01-01",
+        endDate: "2026-02-28",
+        discountPercentage: 20,
+        active: true
+      }
+    ]
+}
 ];

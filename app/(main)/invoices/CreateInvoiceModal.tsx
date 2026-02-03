@@ -12,18 +12,22 @@ import { UpdatedFactureResponse } from "@/src/api/models/UpdatedFactureResponse"
 import ClientHeader from "./ClientHeader"; // Ensure this handles UpdatedFactureResponse
 import InvoiceDetails from "./InvoiceDetails";
 import InvoicePrintPreviewModal from "./InvoicePrintPreviewModal";
+import { mapUpdatedFactureToCreateRequest } from "@/src/Mappers/FactureMapper";
+import { FactureService } from "@/src/src2/api/services/FactureService";
+import { useRouter } from "next/navigation";
 
 interface Props {
   isOpen: boolean;
   onClose: (param: boolean) => void;
   clientData?: UpdatedClientResponse;
   factureData?: UpdatedFactureResponse;
+  
 }
 
 const CreateInvoiceModal = ({ isOpen, onClose, clientData, factureData }: Props) => {
   const [selectedClient, setSelectedClient] = useState<UpdatedClientResponse | undefined>(clientData);
   const [facture, setFacture] = useState<UpdatedFactureResponse | undefined>();
-
+  const router=useRouter()
   // 1. INITIALIZATION LOGIC
   useEffect(() => {
     if (isOpen) {
@@ -35,20 +39,19 @@ const CreateInvoiceModal = ({ isOpen, onClose, clientData, factureData }: Props)
         setSelectedClient(clientData);
       } else {
         // Mode: CREATE
-        const newFacture: Partial<UpdatedFactureResponse> = {
-          numeroFacture: `INV-${new Date().getTime()}`,
-          etat: FactureResponse.etat.BROUILLON,
-          devise: "XAF",
-          tauxChange: 1,
-          lignesFacture: [],
-          montantHT: 0,
-          montantTVA: 0,
-          montantTTC: 0,
-          montantRestant: 0,
-          applyVat: true,
-          dateFacturation: new Date().toISOString().split('T')[0], // YYYY-MM-DD
-          dateEcheance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // +30 days
-        };
+        // Dans votre useEffect, section Mode: CREATE
+      const newFacture: Partial<UpdatedFactureResponse> = {
+        // ... reste du code
+        lignesFacture: [],
+        montantHT: 0,
+        montantTVA: 0,
+        montantTTC: 0,
+        montantRestant: 0,
+        applyVat: true,
+        // CORRECTION : On garde le format complet avec l'heure
+        dateFacturation: new Date().toISOString(), 
+        dateEcheance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      };
         setFacture(newFacture as UpdatedFactureResponse);
         setSelectedClient(clientData);
       }
@@ -60,8 +63,13 @@ const CreateInvoiceModal = ({ isOpen, onClose, clientData, factureData }: Props)
   }, [isOpen, factureData, clientData]);
 
   // 2. SAVE LOGIC
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!selectedClient || !facture) return;
+
+    const formatToLocalDateTime = (dateStr?: string) => {
+    if (!dateStr) return new Date().toISOString();
+    return dateStr.includes('T') ? dateStr : `${dateStr}T00:00:00Z`;
+  };
 
     const finalPayload: UpdatedFactureResponse = {
       ...facture,
@@ -71,10 +79,11 @@ const CreateInvoiceModal = ({ isOpen, onClose, clientData, factureData }: Props)
       emailClient: selectedClient.email,
       adresseClient: selectedClient.adresse,
       telephoneClient: selectedClient.telephone,
-      
+      dateFacturation: formatToLocalDateTime(facture.dateFacturation),
+      dateEcheance: formatToLocalDateTime(facture.dateEcheance),
       // Ensure financials are finalized
       montantTotal: facture.montantTTC,
-      montantRestant: facture.etat === FactureResponse.etat.PAYE ? 0 : facture.montantTTC,
+      montantRestant:  facture.montantTTC,
       
       // Metadata
       updatedAt: new Date().toISOString()
@@ -82,12 +91,21 @@ const CreateInvoiceModal = ({ isOpen, onClose, clientData, factureData }: Props)
 
     console.log("Saving Facture Payload:", finalPayload);
 
-    if (!factureData) {
+    const tranformed=mapUpdatedFactureToCreateRequest(finalPayload)
+
+
+
+    if (!factureData?.idFacture) {
       console.log("API CALL: Creating new Invoice...");
+      await FactureService.createFacture(tranformed);
+
     } else {
       console.log("API CALL: Updating existing Invoice...");
+      if (factureData.idFacture) {
+        await FactureService.updateFacture(factureData.idFacture, tranformed);
+      }
     }
-
+    router.refresh()
     onClose(false);
   };
 

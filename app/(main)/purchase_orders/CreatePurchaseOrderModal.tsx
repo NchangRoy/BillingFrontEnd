@@ -13,6 +13,8 @@ import ProducerHeader from "./ClientHeader";
 import PurchaseOrderDetails from "./PurchaseOrderDetails";       // Handles Line Items and Totals
 import POPaintPreviewModal from "./PurchaseOrderPrintPreviewModal";
 import PurchaseOrderLogistics from "./PurchaseOrderLogistics";
+import { mapPurchaseOrderToBonAchatRequest } from "@/src/Mappers/BonAchatMapper";
+import { BonDAchatService } from "@/src/src2/api";
 interface Props {
   isOpen: boolean;
   onClose: (param: boolean) => void;
@@ -36,7 +38,7 @@ const CreatePurchaseOrderModal = ({ isOpen, onClose, producerData, orderData }: 
       } else {
         // Mode: CREATE
         const newPO: Partial<PurchaseOrderResponse> = {
-          poNumber: `PO-${new Date().getTime()}`,
+      
           status: PurcaseOrderResponse.statut.BROUILLON,
           poDate: new Date().toISOString(),
           expectedDeliveryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Default +7 days
@@ -58,7 +60,7 @@ const CreatePurchaseOrderModal = ({ isOpen, onClose, producerData, orderData }: 
   }, [isOpen, orderData, producerData]);
 
   // 2. SAVE LOGIC
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!selectedProducer || !purchaseOrder) return;
 
     const finalPayload: PurchaseOrderResponse = {
@@ -78,10 +80,17 @@ const CreatePurchaseOrderModal = ({ isOpen, onClose, producerData, orderData }: 
 
     console.log("Saving PO Payload:", finalPayload);
 
+    const apiPayload=mapPurchaseOrderToBonAchatRequest(finalPayload)
+
+
     if (!orderData) {
       console.log("API CALL: Creating new Purchase Order...");
+      await BonDAchatService.createBonAchat(apiPayload)
     } else {
       console.log("API CALL: Updating existing Purchase Order...");
+      if(orderData.idPO){
+        await BonDAchatService.updateBonAchatById(orderData.idPO,apiPayload)
+      }
     }
 
     onClose(false);

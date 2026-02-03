@@ -13,6 +13,8 @@ import CreateInvoicePrintModal from './InvoicePrintPreviewModal'
 import { UpdatedClientResponse, clients } from '@/src/api/models/UpdatedClientResponse'
 import { FactureResponse, UpdatedFactureResponse } from '@/src/api/models/UpdatedFactureResponse'
 import { MOCK_FACTURE } from '@/src/api/models/UpdatedFactureResponse'
+import { mapBackendFactureArrayToUpdatedArray } from '@/src/Mappers/FactureMapper'
+import { FactureService } from '@/src/src2/api/services/FactureService'
 // Adjusting Table Columns for Invoices
 const columns = {
   "Invoice #": "numeroFacture",
@@ -39,9 +41,31 @@ const Factures = () => {
   const [clickedFacture, setClickedFacture] = useState<UpdatedFactureResponse | undefined>();
   const [factures, setFactures] = useState<UpdatedFactureResponse[]>(MOCK_FACTURE);
   const [client, setClient] = useState<UpdatedClientResponse | undefined>()
-
+  const [onsuccess,setOnSuccess]=useState<boolean>(false)
 
   //logic to load the tranformed invoice from local storage
+  useEffect(()=>{
+    const findFactures = async () => {
+  try {
+    // 1. Appel au service API généré
+    const data = await FactureService.getAllFactures();
+    
+    // 2. Transformation des données Backend -> UI via le mapper
+    // Nous utilisons la version 'Array' pour traiter toute la liste d'un coup
+    const transformed = mapBackendFactureArrayToUpdatedArray(data);
+    
+    console.log("Factures chargées et mappées:", transformed);
+    
+    // 3. Mise à jour de l'état local (ex: setInvoices ou setFactures)
+    setFactures(transformed);
+    
+  } catch (error) {
+    console.error("Erreur lors du chargement des factures:", error);
+    // Ici, vous pourriez ajouter un toast de notification pour l'utilisateur
+  }
+};
+findFactures()
+  },[isModalOpen])
 
     useEffect(()=>{
       //read if the modal should be opend
@@ -243,7 +267,7 @@ const Factures = () => {
 
       {/* Modals - Ensure you update these components or pass the new props correctly */}
       {
-        isModalOpen && <CreateInvoiceModal factureData={clickedFacture} clientData={client} isOpen={isModalOpen} onClose={setIsModalOpen}></CreateInvoiceModal>
+        isModalOpen && <CreateInvoiceModal  factureData={clickedFacture} clientData={client} isOpen={isModalOpen} onClose={setIsModalOpen}></CreateInvoiceModal>
       }
       {
         isPrintModalOpen && clickedFacture && <CreateInvoicePrintModal data={clickedFacture} isOpen={isPrintModalOpen} onClose={()=>setIsPrintModalOpen(false)}  onConfirmPrint={()=>{}}></CreateInvoicePrintModal>

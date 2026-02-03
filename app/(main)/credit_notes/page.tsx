@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import DropDown from "@mui/icons-material/ArrowDropDown"
 import SearchIcon from "@mui/icons-material/Search"
 import AddIcon from "@mui/icons-material/Add"
-import { Pencil, Trash2, MoreVertical, Printer, ReceiptText, Undo2 } from "lucide-react";
+import { Pencil, Trash2, MoreVertical, Printer, Mail } from "lucide-react";
 
 // Updated API Imports
 import { UpdatedCreditNoteResponse, CreditNoteResponse, MOCK_CREDIT_NOTES } from '@/src/api/models/UpdatedCreditNoteResponse'
@@ -14,6 +14,8 @@ import { UpdatedClientResponse, clients } from '@/src/api/models/UpdatedClientRe
 // Logic Components
 import CreateCreditNoteModal from './CreateCreditNoteModal'
 import PrintPreviewModal from './CreditNotePrintPreviewModal'
+import { NoteCreditControllerService } from '@/src/src2/api'
+import { mapCreditNoteArrayToInternalArray } from '@/src/Mappers/CreditNoteMapper'
 
 const columns = {
   "Note Number": "numeroCreditNote",
@@ -40,8 +42,23 @@ const CreditNote = () => {
   const [clickedNote, setClickedNote] = useState<UpdatedCreditNoteResponse | undefined>();
   const [creditNotes, setCreditNotes] = useState<UpdatedCreditNoteResponse[]>(MOCK_CREDIT_NOTES);
   const [client, setClient] = useState<UpdatedClientResponse | undefined>()
+  const [showMenu,setShowMenu]=useState<boolean>(false)
 
-  // 2. Filter Logic
+  // Load Data from API
+  useEffect(() => {
+    const findFactures = async () => {
+      try {
+        const data = await NoteCreditControllerService.getAllNoteCredits()
+        const transformed = mapCreditNoteArrayToInternalArray(data)
+        setCreditNotes(transformed);
+      } catch (error) {
+        console.error("Erreur lors du chargement des factures:", error);
+      }
+    };
+    findFactures()
+  }, [isModalOpen])
+
+  // Filter Logic
   const filteredNotes = useMemo(() => {
     return creditNotes.filter((item) => {
       const matchesSearch = 
@@ -53,7 +70,7 @@ const CreditNote = () => {
     });
   }, [searchTerm, selectedStatus, creditNotes]);
 
-  // Close menus when clicking outside
+  // Handle Click Outside to close menus
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -64,40 +81,24 @@ const CreditNote = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Action Menu Options
   const actionOptions = [
     { 
-      label: "Modify Note", 
+      label: "Modify", 
       icon: <Pencil size={14} />, 
       action: (n: UpdatedCreditNoteResponse) => {
-        // Find specific client if available
         const foundClient = clients.find(c => c.idClient === n.idClient);
-        if (foundClient) {
-          setClient(foundClient);
-        } else {
-          setClient({
-            id: n.idClient,
-            nom: n.nomClient,
-            email: n.emailClient,
-          } as UpdatedClientResponse);
-        }
+        setClient(foundClient || ({ id: n.idClient, nom: n.nomClient, email: n.emailClient } as any));
         setClickedNote(n);
         setIsModalOpen(true);
       },
       color: "text-blue-600" 
     },
     { 
-      label: "View Invoice", 
-      icon: <ReceiptText size={14} />, 
-      action: (n: UpdatedCreditNoteResponse) => console.log('Viewing Invoice:', n.idFactureOrigine),
+      label: "Send Email", 
+      icon: <Mail size={14} />, 
+      action: (n: UpdatedCreditNoteResponse) => console.log('Emailing Note:', n.numeroCreditNote),
       color: "text-emerald-600" 
-    },
-    { 
-      label: "Cancel Note", 
-      icon: <Trash2 size={14} />, 
-      action: (n: UpdatedCreditNoteResponse) => {
-        setCreditNotes(prev => prev.filter(item => item.idCreditNote !== n.idCreditNote));
-      },
-      color: "text-red-600" 
     },
     { 
       label: "Print PDF", 
@@ -107,6 +108,16 @@ const CreditNote = () => {
         setIsPrintModalOpen(true);
       },
       color: "text-purple-800" 
+    },
+    { 
+      label: "Delete", 
+      icon: <Trash2 size={14} />, 
+      action: (n: UpdatedCreditNoteResponse) => {
+        if(confirm("Are you sure you want to delete this note?")) {
+            setCreditNotes(prev => prev.filter(item => item.idCreditNote !== n.idCreditNote));
+        }
+      },
+      color: "text-red-600" 
     },
   ];
 
@@ -133,15 +144,10 @@ const CreditNote = () => {
           </div>
 
           <button 
-            onClick={() => {
-              setClient(undefined);
-              setClickedNote(undefined);
-              setIsModalOpen(true);
-            }}
+            onClick={() => { setClient(undefined); setClickedNote(undefined); setIsModalOpen(true); }}
             className="flex items-center gap-2 bg-white border-2 border-secondary-mid text-secondary-mid px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-secondary-mid hover:text-white transition-all duration-300 shadow-sm"
           >
-            <AddIcon sx={{ fontSize: 18 }} /> 
-            Create Credit Note
+            <AddIcon sx={{ fontSize: 18 }} /> Create Credit Note
           </button>
         </div>
       </div>
@@ -164,13 +170,7 @@ const CreditNote = () => {
             <div className="absolute top-full left-0 mt-2 bg-white border border-gray-100 rounded-xl shadow-xl z-30 min-w-[200px] overflow-hidden">
               <button onClick={() => {setSelectedStatus(null); setShowStatusMenu(false)}} className="w-full text-left px-4 py-2 text-[10px] font-bold text-gray-400 border-b hover:bg-gray-50">CLEAR FILTER</button>
               {Object.values(CreditNoteResponse.etat).map((status) => (
-                <button 
-                  key={status} 
-                  onClick={() => {setSelectedStatus(status); setShowStatusMenu(false)}} 
-                  className="w-full text-left px-4 py-3 text-xs font-bold text-gray-600 hover:bg-secondary-super-light hover:text-secondary-mid transition-colors"
-                >
-                  {status}
-                </button>
+                <button key={status} onClick={() => {setSelectedStatus(status); setShowStatusMenu(false)}} className="w-full text-left px-4 py-3 text-xs font-bold text-gray-600 hover:bg-secondary-super-light hover:text-secondary-mid transition-colors">{status}</button>
               ))}
             </div>
           )}
@@ -184,9 +184,7 @@ const CreditNote = () => {
             <thead>
               <tr className="bg-gray-50/50 border-b border-gray-100">
                 {Object.keys(columns).map((col) => (
-                  <th key={col} className="px-6 py-4 font-black text-[10px] uppercase tracking-widest text-gray-400 whitespace-nowrap">
-                    {col}
-                  </th>
+                  <th key={col} className="px-6 py-4 font-black text-[10px] uppercase tracking-widest text-gray-400 whitespace-nowrap">{col}</th>
                 ))}
                 <th className="px-6 py-4"></th>
               </tr>
@@ -201,48 +199,43 @@ const CreditNote = () => {
                           note.etat === 'APPLIQUÉ' ? 'bg-blue-50 text-blue-600' : 
                           note.etat === 'REMBOURSÉ' ? 'bg-emerald-50 text-emerald-600' : 
                           note.etat === 'ANNULÉ' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600'
-                        }`}>
-                          {note.etat}
-                        </span>
+                        }`}>{note.etat}</span>
                       ) : value === 'montantTTC' ? (
-                        <span className="font-bold text-secondary">
-                          {note.montantTTC?.toLocaleString()}
-                        </span>
+                        <span className="font-bold text-secondary">{note.montantTTC?.toLocaleString()}</span>
                       ) : (
                         (note as any)[value] || "—"
                       )}
                     </td>
                   ))}
                   <td className="px-6 py-4 text-right relative">
-                  <button 
-                    onClick={() => 
-                      setActiveMenuId(
-                        activeMenuId === note.idCreditNote 
-                          ? null 
-                          : (note.idCreditNote ?? null) // This handles the 'undefined' case
-                      )
-                    }
-                    className="p-2 text-gray-300 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
-                  >
-                    <MoreVertical size={18} />
-                  </button>
-                    {activeMenuId === note.idCreditNote && (
-                      <div 
-                        ref={menuRef} 
-                        className="absolute right-16 top-1/2 -translate-y-1/2 z-40 bg-white border border-slate-100 rounded-2xl shadow-2xl p-1.5 animate-in fade-in slide-in-from-right-2 duration-200"
-                      >
-                        <div className="flex items-center gap-1">
-                          {actionOptions.map((opt, i) => (
-                            <button
-                              key={i}
-                              title={opt.label}
-                              onClick={() => { opt.action(note); setActiveMenuId(null); }}
-                              className={`w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 transition-all active:scale-90 ${opt.color}`}
-                            >
-                              {opt.icon}
-                            </button>
-                          ))}
-                        </div>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveMenuId(activeMenuId === note.idCreditNote ? null : (note.idCreditNote ?? null));
+                        setShowMenu(!showMenu)
+                      }}
+                      className="p-2 text-gray-300 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
+                    >
+                      <MoreVertical size={18} />
+                    </button>
+
+                    {activeMenuId === note.idCreditNote  && showMenu && (
+                      <div ref={menuRef} className="absolute right-16 top-1/2 -translate-y-1/2 z-40 bg-white border border-slate-100 rounded-2xl shadow-2xl p-1.5 flex gap-1 animate-in fade-in slide-in-from-right-2 duration-200">
+                        {actionOptions.map((opt, i) => (
+                          <button
+                            key={i}
+                            title={opt.label}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                opt.action(note); 
+                                setActiveMenuId(null); 
+                                
+                            }}
+                            className={`w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 transition-all active:scale-90 ${opt.color}`}
+                          >
+                            {opt.icon}
+                          </button>
+                        ))}
                       </div>
                     )}
                   </td>
@@ -251,15 +244,9 @@ const CreditNote = () => {
             </tbody>
           </table>
         </div>
-
-        {filteredNotes.length === 0 && (
-          <div className='py-20 text-center'>
-            <SearchIcon sx={{ fontSize: 48 }} className="text-gray-200 mb-2" />
-            <p className='text-gray-400 font-bold uppercase tracking-widest text-[10px]'>No records found</p>
-          </div>
-        )}
       </div>
 
+      {/* Modals */}
       {isModalOpen && (
         <CreateCreditNoteModal 
           creditNoteData={clickedNote}  

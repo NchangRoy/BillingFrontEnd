@@ -13,6 +13,9 @@ import { UpdatedClientResponse, clients } from "@/src/api/models/UpdatedClientRe
 import ClientHeader from "./ClientHeader";
 import DeliveryNoteDetails from "./DeliveryNoteDetails"; 
 import DeliveryNoteLogistics from "./DeliveryNoteLogistics";
+import { mapSalesOrderToBonCommandeRequest } from "@/src/Mappers/BonCommandeMapper";
+import { BonDeLivraisonService } from "@/src/src2/api";
+import { mapDeliveryNoteToRequest } from "@/src/Mappers/DeliveryNoteMapper";
 
 interface Props {
   isOpen: boolean;
@@ -37,7 +40,7 @@ const CreateDeliveryNoteModal = ({ isOpen, onClose, clientData, deliveryNoteData
       } else {
         // Mode: CREATE
         const newNote: Partial<DeliveryNoteResponse> = {
-          deliveryNoteNumber: `BL-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000)}`,
+         
           etat: DeliveryNoteResponse.etat.BROUILLON,
           deliveryDate: new Date().toISOString().split('T')[0],
           lines: [],
@@ -57,7 +60,7 @@ const CreateDeliveryNoteModal = ({ isOpen, onClose, clientData, deliveryNoteData
   }, [isOpen, deliveryNoteData, clientData]);
 
   // 2. SAVE LOGIC
-  const handleSave = () => {
+  const handleSave = async () => {
     // Basic Validation: Ensure we have a client and at least one item
     if (!selectedClient || !deliveryNote || (deliveryNote.lines?.length ?? 0) === 0) {
       console.error("Missing required data: Client or Items");
@@ -94,15 +97,21 @@ const CreateDeliveryNoteModal = ({ isOpen, onClose, clientData, deliveryNoteData
     };
 
     console.log("Final Delivery Note Payload for API:", finalPayload);
-
+    const apiPayload=mapDeliveryNoteToRequest(finalPayload)
+    console.log(apiPayload)
     // Simulation of API Call
     try {
-      if (!deliveryNoteData) {
+      if (!deliveryNoteData?.idDN) {
         // CALL POST /delivery-notes
         console.log("Creating new entry in Database...");
+        await BonDeLivraisonService.createBonLivraison(apiPayload)
       } else {
         // CALL PUT /delivery-notes/${deliveryNoteData.idDN}
         console.log("Updating existing entry...");
+        if(deliveryNoteData.idDN){
+          await BonDeLivraisonService.updateLivraison(deliveryNoteData.idDN,apiPayload)
+        }
+
       }
       
       // Close modal on success

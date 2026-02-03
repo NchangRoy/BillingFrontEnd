@@ -15,6 +15,8 @@ import { clients } from '@/src/api/models/UpdatedClientResponse'
 // Logic Components
 import CreateSupplierInvoiceModal from './CreateSupplierInvoiceModal'
 import SupplierInvoicePrintPreviewModal from './SupplierInvoicePrintPreviewModal'
+import { FactureFournisseurControllerService } from '@/src/src2/api'
+import { mapBackendFactureFournisseurArrayToInternal } from '@/src/Mappers/SupplierFactureMapper'
 
 // Helper for date formatting
 const formatDate = (dateString?: string) => {
@@ -52,6 +54,25 @@ const SupplierFactures = () => {
   const [clickedFacture, setClickedFacture] = useState<UpdatedSupplierFactureResponse | undefined>();
   const [factures, setFactures] = useState<UpdatedSupplierFactureResponse[]>(MOCK_SUPPLIER_FACTURES);
   const [selectedSupplier, setSelectedSupplier] = useState<any | undefined>();
+
+
+
+    useEffect(() => {
+    const findDevis = async () => {
+      try {
+        const data = await FactureFournisseurControllerService.getFactures()
+        // Utilisation de votre mapper pour transformer les données backend -> UI
+        const transformed = mapBackendFactureFournisseurArrayToInternal(data)
+        console.log(transformed)
+        setFactures(transformed);
+      } catch (error) {
+        console.error("Erreur lors du chargement des devis:", error);
+        // Optionnel : afficher une notification d'erreur ici
+      }
+    };
+  
+    findDevis(); 
+  }, [isModalOpen]);
 
   // 2. Transformation Effect (Combined & Fixed)
   useEffect(() => {

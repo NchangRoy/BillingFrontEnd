@@ -16,6 +16,10 @@ import { MOCK_GOODS_RN, GoodsReceiptNoteResponse } from '@/src/api/models/GoodsR
 
 import { MOCK_PURCHASE_ORDERS, PurchaseOrderResponse } from '@/src/api/models/PurchaseOrderLine';
 import { generateFactureFromPOandGRN } from '@/src/api/transformation/supplierInvoice';
+import { BondeReceptionControllerService } from '@/src/src2/api/services/BondeReceptionControllerService';
+import { mapGRNArrayToInternalArray } from '@/src/Mappers/GRNMapper';
+import { BonDAchatService } from '@/src/src2/api/services/BonDAchatService';
+import { mapBackendBAArrayToUIArray } from '@/src/Mappers/BonAchatMapper';
 
 interface Props {
   suppliers: UpdatedClientResponse[]; 
@@ -37,11 +41,35 @@ const SupplierHeader = ({ suppliers, setSelectedSupplier, selectedSupplier, invo
   const [systemDate, setSystemDate] = useState<string>("");
   const [seller, setSeller] = useState<UpdatedSellerResponse | null>(null);
 
+ 
+
+
   // GRN Filter State
   const [grnSearch, setGrnSearch] = useState("");
   const [filteredGRNs, setFilteredGRNs] = useState<GoodsReceiptNoteResponse[]>([]);
   const [showGRNDropdown, setShowGRNDropdown] = useState(false);
   const [purchaseOrders,setPurchaseOrders]=useState<PurchaseOrderResponse[]>(MOCK_PURCHASE_ORDERS)
+  const [grns,setGRNS]=useState<GoodsReceiptNoteResponse[]>()
+
+
+   useEffect(() => {
+       const findFactures = async () => {
+         try {
+           const data = await BondeReceptionControllerService.getBons()
+           const transformed = mapGRNArrayToInternalArray(data)
+  
+           //aslo felct the purchase orders
+           const purchase_order=await BonDAchatService.getAllBonsAchat()
+           const trans=mapBackendBAArrayToUIArray(purchase_order)
+           setPurchaseOrders(trans)
+           setGRNS(transformed)
+         } catch (error) {
+           console.error("Erreur lors du chargement des factures:", error);
+         }
+       };
+       findFactures()
+     }, [])
+
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -70,10 +98,10 @@ const SupplierHeader = ({ suppliers, setSelectedSupplier, selectedSupplier, invo
       setFilteredGRNs([]);
       return;
     }
-    const filtered = MOCK_GOODS_RN.filter((g) =>
+    const filtered = grns?.filter((g) =>
       g.grnNumber?.toLowerCase().includes(grnSearch.toLowerCase())
     );
-    setFilteredGRNs(filtered);
+    setFilteredGRNs(filtered??[]);
   }, [grnSearch]);
 
   // 3. Supplier Search Logic
@@ -108,6 +136,7 @@ const SupplierHeader = ({ suppliers, setSelectedSupplier, selectedSupplier, invo
     if (selectedSupplier && invoice) {
       setInvoice((prev: any) => ({
         ...prev,
+        numeroFacture:invoice.numeroFacture??generatedId,
         idFournisseur: selectedSupplier.idClient,
         nomFournisseru: selectedSupplier.raisonSociale,
         adresseFournisseur: selectedSupplier.adresse,
@@ -125,7 +154,7 @@ const SupplierHeader = ({ suppliers, setSelectedSupplier, selectedSupplier, invo
         referenceCommande: formData.purchaseOrderNumber
       }));
     }
-  }, [selectedSupplier, formData, systemDate]);
+  }, [selectedSupplier, formData, systemDate,generatedId]);
 
   const handleSelectGRN = (grn: GoodsReceiptNoteResponse) => {
     // 1. Identify the linked Purchase Order using the PO number from the GRN

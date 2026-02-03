@@ -8,7 +8,7 @@ export const transformDevisToSalesOrder = (devis: UpdatedDevisResponse): Updated
     return {
         // We generate a temporary ID or leave it for the backend, 
         // but we definitely link the source quotation.
-        numeroSalesOrder: `ORD-${now.slice(0, 10).replace(/-/g, '')}-${Math.floor(Math.random() * 1000)}`,
+        
         
         // Dates
         dateCreation: now.split('T')[0],
@@ -170,7 +170,7 @@ export const mapSalesOrderToFacture = (order: UpdatedSalesOrderResponse): Update
         // Metadata
         dateFacturation: new Date().toISOString().split('T')[0], // Today's date
         dateSysteme: new Date().toISOString(),
-        etat: initialEtat,
+        etat: initialEtat as FactureResponse.etat,
         type: "VENTE",
 
         // Client Info

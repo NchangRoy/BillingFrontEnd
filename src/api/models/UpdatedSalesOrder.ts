@@ -111,13 +111,35 @@ export type AgencyResponse = {
 
 // This replaces the previous enum for static choices
 export const MOCK_AGENCIES: AgencyResponse[] = [
-    { idAgency: "1", name: "Buca Voyages", shortName: "BUCA", telephone: "+237...", isActive: true },
-    { idAgency: "2", name: "Finexs Voyages", shortName: "FINEXS", telephone: "+237...", isActive: true },
-    { idAgency: "3", name: "Touristique Express", shortName: "TOURISTIQUE", telephone: "+237...", isActive: true },
-    { idAgency: "4", name: "DHL Cameroon", shortName: "DHL", telephone: "+237...", isActive: true },
+    { 
+        idAgency: "550e8400-e29b-41d4-a716-446655440000", 
+        name: "Buca Voyages", 
+        shortName: "BUCA", 
+        telephone: "+237670000001", 
+        isActive: true 
+    },
+    { 
+        idAgency: "6ba7b810-9dad-11d1-80b4-00c04fd430c8", 
+        name: "Finexs Voyages", 
+        shortName: "FINEXS", 
+        telephone: "+237670000002", 
+        isActive: true 
+    },
+    { 
+        idAgency: "f47ac10b-58cc-4372-a567-0e02b2c3d479", 
+        name: "Touristique Express", 
+        shortName: "TOURISTIQUE", 
+        telephone: "+237670000003", 
+        isActive: true 
+    },
+    { 
+        idAgency: "2d543501-1433-4f91-8935-4309859f139d", 
+        name: "DHL Cameroon", 
+        shortName: "DHL", 
+        telephone: "+237670000004", 
+        isActive: true 
+    },
 ];
-
-
 
 
 export const MOCK_SALES_ORDERS: UpdatedSalesOrderResponse[] = [

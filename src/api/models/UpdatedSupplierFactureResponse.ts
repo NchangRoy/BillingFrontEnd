@@ -36,7 +36,7 @@ export type UpdatedSupplierFactureResponse = {
     lignesFacture?: Array<LigneSupplierFactureResponse>;
     notes?: string;
     
-   
+   createdBy?:string;
     createdAt?: string;
     updatedAt?: string;
     

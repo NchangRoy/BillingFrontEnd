@@ -29,6 +29,9 @@ import { MOCK_PURCHASE_ORDERS, PurchaseOrderResponse } from '@/src/api/models/Pu
 import CreateGRNModal from './CreateGRNModal'
 import GRNPrintPreviewModal from './GRNPrintPreviewModal'
 import { generateFactureFromPOandGRN } from '@/src/api/transformation/supplierInvoice'
+import { BonDAchatService, BondeReceptionControllerService } from '@/src/src2/api'
+import { mapGRNArrayToInternalArray } from '@/src/Mappers/GRNMapper'
+import { mapBackendBAArrayToUIArray } from '@/src/Mappers/BonAchatMapper'
 
 // Mapping Table Columns for GRN
 const columns = {
@@ -37,8 +40,7 @@ const columns = {
   "PO Reference": "purchaseOrderNumber",
   "Receipt Date": "receiptDate",
   "Status": "status",
-  "Inspector": "inspectedBy",
-  "Vehicle": "vehicleNumber"
+ 
 }
 
 const GoodsReceiptNotes = () => {
@@ -58,6 +60,25 @@ const GoodsReceiptNotes = () => {
   const [grnList, setGrnList] = useState<GoodsReceiptNoteResponse[]>(MOCK_GOODS_RN);
   const [client, setClient] = useState<UpdatedClientResponse | undefined>()
   const [purchaseOrders,setPurchaseOrders]=useState<PurchaseOrderResponse[]>(MOCK_PURCHASE_ORDERS)
+
+  // Load Data from API
+   useEffect(() => {
+     const findFactures = async () => {
+       try {
+         const data = await BondeReceptionControllerService.getBons()
+         const transformed = mapGRNArrayToInternalArray(data)
+
+         //aslo felct the purchase orders
+         const purchase_order=await BonDAchatService.getAllBonsAchat()
+         const trans=mapBackendBAArrayToUIArray(purchase_order)
+         setPurchaseOrders(trans)
+         setGrnList(transformed)
+       } catch (error) {
+         console.error("Erreur lors du chargement des factures:", error);
+       }
+     };
+     findFactures()
+   }, [isModalOpen])
 
   // 2. Transformation Logic (Listen for incoming transformed data)
   useEffect(() => {
@@ -203,12 +224,24 @@ const GoodsReceiptNotes = () => {
                     <td key={index} className="px-6 py-4 text-gray-600 font-medium whitespace-nowrap">
                       {value === 'status' ? (
                         <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[10px] font-black tracking-tighter uppercase ${
-                          grn.status === GoodReceiptResponse.statut.VALIDE || grn.status === GoodReceiptResponse.statut.LIVRE ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
-                          grn.status === GoodReceiptResponse.statut.ANNULE ? 'bg-red-50 text-red-600 border-red-100' : 'bg-amber-50 text-amber-600 border-amber-100'
-                        }`}>
-                          {(grn.status === GoodReceiptResponse.statut.VALIDE || grn.status === GoodReceiptResponse.statut.LIVRE) ? <CheckCircle2 size={12}/> : grn.status === GoodReceiptResponse.statut.ANNULE ? <XCircle size={12}/> : <Clock size={12}/>}
-                          {grn.status}
-                        </div>
+                        grn.status === GoodReceiptResponse.statut.RECEIVED ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
+                        grn.status === GoodReceiptResponse.statut.PARTIALLY_RECEIVED ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                        grn.status === GoodReceiptResponse.statut.REJECTED || grn.status === GoodReceiptResponse.statut.ANNULE ? 'bg-red-50 text-red-600 border-red-100' : 
+                        'bg-amber-50 text-amber-600 border-amber-100'
+                      }`}>
+                        {/* Icon Logic */}
+                        {grn.status === GoodReceiptResponse.statut.RECEIVED ? (
+                          <CheckCircle2 size={12}/>
+                        ) : grn.status === GoodReceiptResponse.statut.PARTIALLY_RECEIVED ? (
+                          <Clock size={12}/> 
+                        ) : (grn.status === GoodReceiptResponse.statut.REJECTED || grn.status === GoodReceiptResponse.statut.ANNULE) ? (
+                          <XCircle size={12}/>
+                        ) : (
+                          <Pencil size={12}/> /* For DRAFT / Brouillon */
+                        )}
+
+                        {grn.status}
+</div>
                       ) : value === 'receiptDate' ? (
                         <span className="text-xs font-bold text-gray-500">
                            {grn.receiptDate ? new Date(grn.receiptDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '---'}

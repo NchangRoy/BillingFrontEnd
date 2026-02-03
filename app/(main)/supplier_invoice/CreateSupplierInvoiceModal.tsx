@@ -11,6 +11,9 @@ import { UpdatedClientResponse, clients } from "@/src/api/models/UpdatedClientRe
 // Sub-components
 import SupplierHeader from "./SupplierHeader";
 import SupplierInvoiceDetails from "./SupplierInvoiceDetails";
+import { mapInternalToFactureFournisseurCreateRequest } from "@/src/Mappers/SupplierFactureMapper";
+import { FactureFournisseurControllerService } from "@/src/src2/api";
+import { UpdatedSellerResponse } from "@/src/api/models/UpdatedSellerResponse";
 
 interface Props {
   isOpen: boolean;
@@ -22,7 +25,12 @@ interface Props {
 const CreateSupplierInvoiceModal = ({ isOpen, onClose, supplierData, factureData }: Props) => {
   const [selectedSupplier, setSelectedSupplier] = useState<UpdatedClientResponse | undefined>(supplierData);
   const [facture, setFacture] = useState<UpdatedSupplierFactureResponse | undefined>();
-
+  const [seller, setSeller] = useState<UpdatedSellerResponse | null>(null);
+    useEffect(() => {
+        const stored = localStorage.getItem("seller");
+        if (stored) setSeller(JSON.parse(stored));
+        
+      }, []);
   // Helper for consistent date strings
   const getTodayStr = () => new Date().toISOString().split('T')[0];
   const getDueDateStr = (days: number) => new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
@@ -50,7 +58,8 @@ const CreateSupplierInvoiceModal = ({ isOpen, onClose, supplierData, factureData
           applyVat: true,
           dateFacturation: getTodayStr(),
           dateEcheance: getDueDateStr(30),
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          createdBy:seller?.Id
         };
         setFacture(newFacture as UpdatedSupplierFactureResponse);
         setSelectedSupplier(supplierData);
@@ -61,11 +70,15 @@ const CreateSupplierInvoiceModal = ({ isOpen, onClose, supplierData, factureData
     return () => { document.body.style.overflow = "unset"; };
   }, [isOpen, factureData, supplierData]);
 
-  const handleSave = () => {
+
+   
+
+  const handleSave = async () => {
     if (!selectedSupplier || !facture) return;
 
     const finalPayload: UpdatedSupplierFactureResponse = {
       ...facture,
+      
       idFournisseur: selectedSupplier.idClient,
       nomFournisseru: selectedSupplier.raisonSociale || selectedSupplier.username,
       emailFournisseur: selectedSupplier.email,
@@ -74,10 +87,27 @@ const CreateSupplierInvoiceModal = ({ isOpen, onClose, supplierData, factureData
       montantTotal: facture.montantTTC,
       montantRestant: facture.etat === FactureResponse.etat.PAYE ? 0 : facture.montantTTC,
       finalAmount: facture.montantTTC,
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      
     };
 
     console.log("Saving Payload:", finalPayload);
+
+    const apiPayload=mapInternalToFactureFournisseurCreateRequest(finalPayload)
+    if(!factureData?.idFacture){
+      console.log("Creating facture founisseur")
+      await FactureFournisseurControllerService.createFacture1(apiPayload)
+    }
+    else{
+      if(factureData?.idFacture){
+        await FactureFournisseurControllerService.updateFacture1(factureData.idFacture,apiPayload)
+      }
+
+    }
+
+    
+
+
     onClose(false);
   };
 

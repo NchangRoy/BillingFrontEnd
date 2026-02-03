@@ -1,33 +1,21 @@
 export type GoodsReceiptNoteResponse = {
   idGRN?: string;
   grnNumber?: string;
-
   supplierId?: string;
   supplierName?: string;
-
-
-
   transporterCompanyName?: string;
   vehicleNumber?: string;
-
   purchaseOrderId?: string;
   purchaseOrderNumber?: string;
-
-   receiptDate?: string;        // Actual date goods received
+  receiptDate?: string;        // Actual date goods received
   documentDate?: string;       // GRN creation date
-
   systemDate?: string;
-
   status?: GoodReceiptResponse.statut;
-
   lines?: GoodsReceiptLineResponse[];
-
   preparedBy?: string;
   inspectedBy?: string;
   approvedBy?: string;
-
   remarks?: string;
-
   createdAt?: string;
   updatedAt?: string;
 };
@@ -35,8 +23,7 @@ export type GoodsReceiptNoteResponse = {
 export type GoodsReceiptLineResponse = {
   productId?: string;
   description?: string;
-  uom?: string;//unit of measure e.g Litre..
-
+  uom?: string; // unit of measure
   orderedQuantity?: number;
   receivedQuantity?: number;
   acceptedQuantity?: number;
@@ -44,76 +31,68 @@ export type GoodsReceiptLineResponse = {
   shortQuantity?: number;
   damagedQuantity?: number;
   excessQuantity?: number;
-
   rate?: number;
-  
   lineAmount?: number;
-
- 
 };
 
-
-export namespace GoodReceiptResponse{
-   export enum statut {
-        BROUILLON = 'BROUILLON',
-        VALIDE = 'VALIDE',           // Confirmed by client
-        EN_COURS = 'EN_COURS',       // In preparation
-        EXPEDIE = 'EXPEDIE',         // Left the warehouse
-        LIVRE = 'LIVRE',             // Final delivery confirmed
-        ANNULE = 'ANNULE'
-    }
+export namespace GoodReceiptResponse {
+  export enum statut {
+    DRAFT = "Brouillon",
+    PARTIALLY_RECEIVED = "Reçu partiellement",
+    RECEIVED = "Reçu",
+    REJECTED = "Rejeté",
+    ANNULE = "Annulé",
+  }
 }
-
-
 
 export const MOCK_GOODS_RN: GoodsReceiptNoteResponse[] = [
   {
-  "idGRN": "grn-8824-2026",
-  "grnNumber": "GRN/2026/001",
-  "purchaseOrderId": "PO-2026-001",
-  "purchaseOrderNumber": "PURCH-001",
-  "supplierId": "c002",
-  "supplierName": "ABC Distributors",
-  "transporterCompanyName": "Rapid Logistics Ltd",
-  "vehicleNumber": "LT-123-AA",
-  "receiptDate": "2026-01-24T09:00:00Z",
-  "documentDate": "2026-01-24T10:30:00Z",
-  "status": GoodReceiptResponse.statut.LIVRE,
-  "preparedBy": "Warehouse Clerk",
-  "inspectedBy": "QC Lead",
-  "approvedBy": "Store Manager",
-  "remarks": "Partial delivery for Riz; Ciment received in full but 2 bags damaged.",
-  "lines": [
-    {
-      "productId": "p001",
-      "description": "Riz 25kg",
-      "uom": "SACK",
-      "orderedQuantity": 100,
-      "receivedQuantity": 80,
-      "acceptedQuantity": 80,
-      "rejectedQuantity": 0,
-      "shortQuantity": 20,
-      "damagedQuantity": 0,
-      "excessQuantity": 0,
-      "rate": 15000,
-      "lineAmount": 1200000
-    },
-    {
-      "productId": "p004",
-      "description": "Ciment 50kg",
-      "uom": "BAG",
-      "orderedQuantity": 200,
-      "receivedQuantity": 200,
-      "acceptedQuantity": 198,
-      "rejectedQuantity": 2,
-      "shortQuantity": 0,
-      "damagedQuantity": 2,
-      "excessQuantity": 0,
-      "rate": 4800,
-      "lineAmount": 960000
-    }
-  ]
-},
+    idGRN: "grn-8824-2026",
+    grnNumber: "GRN/2026/001",
+    purchaseOrderId: "PO-2026-001",
+    purchaseOrderNumber: "PURCH-001",
+    supplierId: "c002",
+    supplierName: "ABC Distributors",
+    transporterCompanyName: "Rapid Logistics Ltd",
+    vehicleNumber: "LT-123-AA",
+    receiptDate: "2026-01-24T09:00:00Z",
+    documentDate: "2026-01-24T10:30:00Z",
+    status: GoodReceiptResponse.statut.RECEIVED,
+    preparedBy: "Warehouse Clerk",
+    inspectedBy: "QC Lead",
+    approvedBy: "Store Manager",
+    remarks: "Partial delivery for Riz; Ciment received in full but 2 bags damaged.",
+    lines: [
+      {
+        productId: "p001",
+        description: "Riz 25kg",
+        uom: "SACK",
+        orderedQuantity: 100,
+        receivedQuantity: 80,
+        acceptedQuantity: 80,
+        rejectedQuantity: 0,
+        shortQuantity: 20,
+        damagedQuantity: 0,
+        excessQuantity: 0,
+        rate: 15000,
+        lineAmount: 1200000,
+      },
+      {
+        productId: "p004",
+        description: "Ciment 50kg",
+        uom: "BAG",
+        orderedQuantity: 200,
+        receivedQuantity: 200,
+        acceptedQuantity: 198,
+        rejectedQuantity: 2,
+        shortQuantity: 0,
+        damagedQuantity: 2,
+        excessQuantity: 0,
+        rate: 4800,
+        lineAmount: 960000,
+      },
+    ],
+  },
   {
     idGRN: "grn-8821-2026",
     grnNumber: "GRN/2026/001",
@@ -126,7 +105,7 @@ export const MOCK_GOODS_RN: GoodsReceiptNoteResponse[] = [
     receiptDate: "2026-01-22T10:30:00Z",
     documentDate: "2026-01-23T08:15:00Z",
     systemDate: "2026-01-23T08:15:00Z",
-    status: GoodReceiptResponse.statut.LIVRE,
+    status: GoodReceiptResponse.statut.RECEIVED,
     preparedBy: "John Doe",
     inspectedBy: "Sarah Connor",
     approvedBy: "Robert Smith",
@@ -144,25 +123,11 @@ export const MOCK_GOODS_RN: GoodsReceiptNoteResponse[] = [
         damagedQuantity: 5,
         excessQuantity: 0,
         rate: 1200,
-        lineAmount: 600000
+        lineAmount: 600000,
       },
-      {
-        productId: "prod-202",
-        description: "Refined Palm Oil",
-        uom: "Litre",
-        orderedQuantity: 200,
-        receivedQuantity: 205,
-        acceptedQuantity: 205,
-        rejectedQuantity: 0,
-        shortQuantity: 0,
-        damagedQuantity: 0,
-        excessQuantity: 5,
-        rate: 950,
-        lineAmount: 194750
-      }
     ],
     createdAt: "2026-01-23T08:15:00Z",
-    updatedAt: "2026-01-23T14:20:00Z"
+    updatedAt: "2026-01-23T14:20:00Z",
   },
   {
     idGRN: "grn-8822-2026",
@@ -176,10 +141,8 @@ export const MOCK_GOODS_RN: GoodsReceiptNoteResponse[] = [
     receiptDate: "2026-01-23T14:00:00Z",
     documentDate: "2026-01-23T15:00:00Z",
     systemDate: "2026-01-23T15:16:00Z",
-    status: GoodReceiptResponse.statut.BROUILLON,
+    status: GoodReceiptResponse.statut.DRAFT,
     preparedBy: "Alice Mballa",
-    inspectedBy: undefined, // Changed from null to undefined to match optional types
-    approvedBy: undefined,
     remarks: "Pending quality control signature.",
     lines: [
       {
@@ -194,46 +157,10 @@ export const MOCK_GOODS_RN: GoodsReceiptNoteResponse[] = [
         damagedQuantity: 0,
         excessQuantity: 0,
         rate: 25000,
-        lineAmount: 1200000
-      }
+        lineAmount: 1200000,
+      },
     ],
     createdAt: "2026-01-23T15:16:00Z",
-    updatedAt: "2026-01-23T15:16:00Z"
+    updatedAt: "2026-01-23T15:16:00Z",
   },
-  {
-    idGRN: "grn-8823-2026",
-    grnNumber: "GRN/2026/003",
-    supplierId: "sup-900",
-    supplierName: "Industrial Tools SA",
-    transporterCompanyName: "Cameroon Rail",
-    vehicleNumber: "WAGON-77",
-    purchaseOrderId: "po-1001",
-    purchaseOrderNumber: "PO-2026-905",
-    receiptDate: "2026-01-23T11:00:00Z",
-    documentDate: "2026-01-23T12:00:00Z",
-    systemDate: "2026-01-23T12:00:00Z",
-    status: GoodReceiptResponse.statut.VALIDE,
-    preparedBy: "Emma Watson",
-    inspectedBy: "Kevin Hart",
-    approvedBy: "Dwayne Johnson",
-    remarks: "Full shipment received and validated.",
-    lines: [
-      {
-        productId: "prod-99",
-        description: "Protective Gloves",
-        uom: "Pair",
-        orderedQuantity: 100,
-        receivedQuantity: 100,
-        acceptedQuantity: 100,
-        rejectedQuantity: 0,
-        shortQuantity: 0,
-        damagedQuantity: 0,
-        excessQuantity: 0,
-        rate: 500,
-        lineAmount: 50000
-      }
-    ],
-    createdAt: "2026-01-23T12:00:00Z",
-    updatedAt: "2026-01-23T13:00:00Z"
-  }
 ];

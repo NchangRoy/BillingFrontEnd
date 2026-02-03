@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState ,useCallback} from "react";
-import { DevisCreateRequest } from "@/src/api";
+
 import CloseIcon from "@mui/icons-material/Close";
 import { useRouter } from "next/navigation";
 import ClientHeader from "./ClientHeader";
@@ -10,6 +10,8 @@ import { CheckCircle2, Save,Receipt } from "lucide-react";
 import { DevisResponse } from "@/src/api";
 import { clients, UpdatedClientResponse } from "@/src/api/models/UpdatedClientResponse";
 import { UpdatedProformaInvoiceResponse,MOCK_PROFORMA_INVOICE } from "@/src/api/models/UpdatedProformaInvoiceResponse";
+import { mapUIToProformaRequest } from "@/src/Mappers/ProformaMapper";
+import { FacturesProformaService } from "@/src/src2/api";
 interface Props {
   isOpen: boolean;
   onClose: (param: boolean) => void;
@@ -87,7 +89,7 @@ const CreateProformaInvoiceModal = ({ isOpen, onClose,clientData,ProformaInvoice
     else document.body.style.overflow = "unset";
     return () => { document.body.style.overflow = "unset"; };
   }, [isOpen]);
- const handleSave = () => {
+ const handleSave =async  () => {
 
 
   if(ProformaInvoiceData==undefined){}
@@ -117,15 +119,20 @@ const CreateProformaInvoiceModal = ({ isOpen, onClose,clientData,ProformaInvoice
       : 0,
 };
 
+  const apiPayload=mapUIToProformaRequest(finalPayload)
     console.log("Saving ProformaInvoice Payload:", finalPayload);
     // Add your API call here (e.g., mutate(finalPayload))
 
-    if(ProformaInvoiceData==undefined){
+    if(ProformaInvoiceData?.idProformaInvoice==undefined){
       //call method to create new quotataion
       console.log("creating")
+      await FacturesProformaService.createProforma(apiPayload)
     }else{
       //call method to update new ProformaInvoice
       console.log("updating")
+      if(ProformaInvoice?.idProformaInvoice){
+        await FacturesProformaService.updateFactureProforma(ProformaInvoice.idProformaInvoice,apiPayload)
+      }
     }
 
     onClose(false)
@@ -218,7 +225,7 @@ const CreateProformaInvoiceModal = ({ isOpen, onClose,clientData,ProformaInvoice
               className="flex items-center gap-2 bg-secondary-mid hover:bg-secondary text-white px-8 py-3 rounded-xl font-black text-sm shadow-lg disabled:opacity-50 disabled:grayscale transition-all active:scale-95"
             >
               <Save size={18} />
-              {ProformaInvoiceData ? "UPDATE ProformaInvoice" : "SAVE & GENERATE DEVIS"}
+              {ProformaInvoiceData?.idProformaInvoice ? "UPDATE ProformaInvoice" : "SAVE & GENERATE DEVIS"}
             </button>
          </div>
       </div>

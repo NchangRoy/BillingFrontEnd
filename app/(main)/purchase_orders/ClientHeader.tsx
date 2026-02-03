@@ -13,6 +13,8 @@ import { Search } from 'lucide-react';
 import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
 import { PurcaseOrderResponse, PurchaseOrderResponse } from '@/src/api/models/PurchaseOrderLine';
 import { MOCK_PURCHASE_ORDERS } from '@/src/api/models/PurchaseOrderLine';
+import { BonDAchatService } from '@/src/src2/api/services/BonDAchatService';
+import { mapBackendBAArrayToUIArray } from '@/src/Mappers/BonAchatMapper';
 
 interface Props {
   producers: UpdatedClientResponse[]; // Using the clients array as producers
@@ -40,7 +42,30 @@ const ProducerHeader = ({ producers, setMainSelectedProducer, selectedProducer, 
   const [filteredPOs, setFilteredPOs] = useState<PurchaseOrderResponse[]>([]);
   const [showRefDropdown, setShowRefDropdown] = useState(false);
 
+  const [orders,setOrders]=useState<PurchaseOrderResponse[]>();
   const containerRef = useRef<HTMLDivElement>(null);
+   useEffect(()=>{
+        const findFactures = async () => {
+      try {
+        // 1. Appel au service API généré
+        const data = await BonDAchatService.getAllBonsAchat()
+        
+        // 2. Transformation des données Backend -> UI via le mapper
+        // Nous utilisons la version 'Array' pour traiter toute la liste d'un coup
+        const transformed = mapBackendBAArrayToUIArray(data);
+        
+        console.log("Factures chargées et mappées:", transformed);
+        
+        // 3. Mise à jour de l'état local (ex: setInvoices ou setFactures)
+        setOrders(transformed);
+        
+      } catch (error) {
+        console.error("Erreur lors du chargement des factures:", error);
+        // Ici, vous pourriez ajouter un toast de notification pour l'utilisateur
+      }
+    };
+    findFactures()
+      },[])
 
   const [formData, setFormData] = useState({
     poDate: new Date().toISOString().split('T')[0],
@@ -80,10 +105,10 @@ const ProducerHeader = ({ producers, setMainSelectedProducer, selectedProducer, 
       setFilteredPOs([]);
       return;
     }
-    const filtered = MOCK_PURCHASE_ORDERS.filter((po) =>
+    const filtered = orders?.filter((po) =>
       po.poNumber?.toLowerCase().includes(internalRefFilter.toLowerCase())
     );
-    setFilteredPOs(filtered);
+    setFilteredPOs(filtered??[]);
   }, [internalRefFilter]);
 
   const handleSelectReference = (refPO: PurchaseOrderResponse) => {
@@ -123,7 +148,12 @@ const ProducerHeader = ({ producers, setMainSelectedProducer, selectedProducer, 
         supplierId: selectedProducer.idClient,
         supplierName: selectedProducer.raisonSociale,
         supplierAddress: selectedProducer.adresse,
+        deliveryAddress:selectedProducer.adresse,
+        deliveryContact:selectedProducer.telephone,
+        deliveryEmail:selectedProducer.telephone,
+        
         poDate: formData.poDate,
+        poNumber:purchaseOrder.poNumber??generatedId,
         expectedDeliveryDate: formData.expectedDeliveryDate,
         transportMethod: formData.transportMethod as PurcaseOrderResponse.transportMethod,
         deliveryName: formData.deliveryName,
@@ -184,7 +214,7 @@ const ProducerHeader = ({ producers, setMainSelectedProducer, selectedProducer, 
             <label className={labelStyles}>Generated PO #</label>
             <div className="relative">
               <ReceiptIcon className="absolute left-3 top-2.5 text-gray-300" sx={{ fontSize: 18 }} />
-              <input readOnly value={generatedId} className={`${readOnlyStyles} pl-10 font-mono text-secondary-mid`} />
+              <input readOnly value={purchaseOrder?.poNumber??generatedId} className={`${readOnlyStyles} pl-10 font-mono text-secondary-mid`} />
             </div>
           </div>
         </div>

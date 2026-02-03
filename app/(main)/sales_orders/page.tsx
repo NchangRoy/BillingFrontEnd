@@ -26,6 +26,8 @@ import { MOCK_SALES_ORDERS } from '@/src/api/models/UpdatedSalesOrder'
 import CreateSalesOrderModal from './CreateSalesOrderModal'
 import SalesOrderPrintPreviewModal from './SalesOrderPrintPreviewModal'
 import { mapSalesOrderToDeliveryNote, mapSalesOrderToFacture } from '@/src/api/transformation/saleorderTranformation'
+import { BonCommandeService } from '@/src/src2/api'
+import { mapBonCommandeListToSalesOrderList } from '@/src/Mappers/BonCommandeMapper'
 
 const columns = {
   "Order #": "numeroSalesOrder",
@@ -54,6 +56,23 @@ const SalesOrders = () => {
   
   const [orders, setOrders] = useState<UpdatedSalesOrderResponse[]>(MOCK_SALES_ORDERS); 
   const [client, setClient] = useState<UpdatedClientResponse | undefined>()
+
+   useEffect(() => {
+    const findDevis = async () => {
+      try {
+        const data = await BonCommandeService.getAllBonCommandes()
+        // Utilisation de votre mapper pour transformer les données backend -> UI
+        const transformed = mapBonCommandeListToSalesOrderList(data)
+        console.log(transformed)
+        setOrders(transformed)
+      } catch (error) {
+        console.error("Erreur lors du chargement des devis:", error);
+        // Optionnel : afficher une notification d'erreur ici
+      }
+    };
+  
+    findDevis(); 
+  }, [isModalOpen]);
 
   // 2. Transformation Handlers
   const handleTransformToInvoice = (order: UpdatedSalesOrderResponse) => {

@@ -15,6 +15,8 @@ import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
 import { UpdatedFactureResponse } from '@/src/api/models/UpdatedFactureResponse';
 
 import { MOCK_FACTURE } from '@/src/api/models/UpdatedFactureResponse';
+import { FactureService } from '@/src/src2/api/services/FactureService';
+import { mapBackendFactureArrayToUpdatedArray } from '@/src/Mappers/FactureMapper';
 
 interface Props {
     clients: UpdatedClientResponse[];
@@ -105,6 +107,10 @@ const Invoice_To_CreditNote = (invoice: UpdatedFactureResponse): UpdatedCreditNo
     };
 };
 
+
+
+
+    
     // Initial load
     useEffect(() => {
         const stored = localStorage.getItem("seller");
@@ -112,8 +118,26 @@ const Invoice_To_CreditNote = (invoice: UpdatedFactureResponse): UpdatedCreditNo
         setSystemDate(new Date().toISOString().split('T')[0]);
 
 
-        //set the invoices
-        setInvoices(MOCK_FACTURE)
+          const findFactures = async () => {
+      try {
+        // 1. Appel au service API généré
+        const data = await FactureService.getAllFactures();
+        
+        // 2. Transformation des données Backend -> UI via le mapper
+        // Nous utilisons la version 'Array' pour traiter toute la liste d'un coup
+        const transformed = mapBackendFactureArrayToUpdatedArray(data);
+        
+        console.log("Factures chargées et mappées:", transformed);
+        
+        // 3. Mise à jour de l'état local (ex: setInvoices ou setFactures)
+        setInvoices(transformed);
+        
+      } catch (error) {
+        console.error("Erreur lors du chargement des factures:", error);
+        // Ici, vous pourriez ajouter un toast de notification pour l'utilisateur
+      }
+    };
+    findFactures()
     }, []);
 
     const [formData, setFormData] = useState({
@@ -195,6 +219,7 @@ useEffect(() => {
         if (selectedClient && credit_note) {
             setCreditNote({
                 ...credit_note,
+                numeroCreditNote:credit_note.idCreditNote??generatedId,
                 idClient: selectedClient.idClient,
                 nomClient: selectedClient.raisonSociale,
                 adresseClient: selectedClient.adresse,
@@ -272,7 +297,7 @@ useEffect(() => {
                         <label className={labelStyles}>Generated Credit Note ID</label>
                         <div className="relative">
                             <ReceiptIcon className="absolute left-3 top-2.5 text-gray-300" sx={{ fontSize: 18 }} />
-                            <input readOnly value={generatedId} className={`${readOnlyStyles} pl-10 font-mono text-amber-600 border-amber-100 bg-amber-50/30`} />
+                            <input readOnly value={credit_note?.numeroCreditNote??generatedId} className={`${readOnlyStyles} pl-10 font-mono text-amber-600 border-amber-100 bg-amber-50/30`} />
                         </div>
                     </div>
 

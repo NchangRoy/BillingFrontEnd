@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState ,useCallback} from "react";
-import { DevisCreateRequest } from "@/src/api";
+
 import CloseIcon from "@mui/icons-material/Close";
 import { useRouter } from "next/navigation";
 import ClientHeader from "./ClientHeader";
@@ -11,6 +11,8 @@ import { DevisResponse } from "@/src/api";
 import { clients, UpdatedClientResponse } from "@/src/api/models/UpdatedClientResponse";
 import { UpdatedDevisResponse } from "@/src/api/models/UpdatedDevisResponse";
 import { MOCK_QUOTATIONS } from "@/src/api/models/UpdatedDevisResponse";
+import { mapUpdatedResponseToCreateRequest } from "@/src/Mappers/DevisMapper";
+import { DevisService } from "@/src/src2/api";
 interface Props {
   isOpen: boolean;
   onClose: (param: boolean) => void;
@@ -32,6 +34,7 @@ interface headerData {
 }
 
 const QuotationFormModal = ({ isOpen, onClose,clientData,quotationData}: Props) => {
+  const router=useRouter()
   const [selectedClient, setSelectedClient] = useState<UpdatedClientResponse|undefined>(clientData);
   
   const [headerData, setHeaderData] = useState<headerData>();
@@ -56,7 +59,6 @@ const QuotationFormModal = ({ isOpen, onClose,clientData,quotationData}: Props) 
       } else {
         // Mode: CREATE (Initialize with defaults)
         const newQuo: Partial<UpdatedDevisResponse> = {
-          numeroDevis: `QUO-${new Date().getTime()}`, // Temporary ID or call gen function
           
           statut: DevisResponse.statut.BROUILLON,
           devise: "XAF",
@@ -85,7 +87,7 @@ const QuotationFormModal = ({ isOpen, onClose,clientData,quotationData}: Props) 
     else document.body.style.overflow = "unset";
     return () => { document.body.style.overflow = "unset"; };
   }, [isOpen]);
- const handleSave = () => {
+ const handleSave =async () => {
 
 
   if(quotationData==undefined){}
@@ -129,18 +131,30 @@ const finalPayload: UpdatedDevisResponse = {
   lignesDevis: quotation.lignesDevis || [],
 };
 
-    console.log("Saving Quotation Payload:", finalPayload);
-    // Add your API call here (e.g., mutate(finalPayload))
+    const request = mapUpdatedResponseToCreateRequest(finalPayload);
 
-    if(quotationData==undefined){
-      //call method to create new quotataion
-      console.log("creating")
-    }else{
-      //call method to update new quotation
-      console.log("updating")
+  try {
+    if (!quotationData) {
+      // MODE CRÉATION
+      await DevisService.createDevis(request);
+      console.log("Devis créé");
+    } else {
+      // MODE ÉDITION
+      if (quotationData.idDevis) {
+        await DevisService.updateDevis(quotationData.idDevis, request);
+        console.log("Devis mis à jour");
+      }
     }
-
-    onClose(false)
+    
+    // On ne rafraîchit et ferme QUE si l'appel a réussi
+    router.refresh();
+    onClose(false);
+  } catch (error) {
+    console.error("Erreur lors de la sauvegarde :", error);
+    alert("Erreur lors de l'enregistrement. Veuillez réessayer.");
+  } finally {
+   // setIsSaving(false); // Déverrouille le bouton dans tous les cas
+  }
   };
 
  const handleQuotationDataChange = useCallback((param: Partial<UpdatedDevisResponse>) => {

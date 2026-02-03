@@ -16,6 +16,9 @@ import { MOCK_QUOTATIONS } from '@/src/api/models/UpdatedDevisResponse';
 import { Search } from 'lucide-react';
 import { DevisResponse } from '@/src/api';
 import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
+import { UpdatedFactureResponse } from '@/src/api/models/UpdatedFactureResponse';
+import { DevisService } from '@/src/src2/api/services/DevisService';
+import { mapBackendArrayToUpdatedDevisArray } from '@/src/Mappers/DevisMapper';
 interface Props {
   clients: UpdatedClientResponse[];
   
@@ -86,7 +89,24 @@ useEffect(() => {
   const [vosRefFilter, setVosRefFilter] = useState<string>("");
   const [filteredQuotations, setFilteredQuotations] = useState<UpdatedDevisResponse[]>([]);
   const [showRefDropdown, setShowRefDropdown] = useState(false);
+  const [quoattions,setQuotations]=useState<UpdatedDevisResponse[]>()
 
+   useEffect(() => {
+    const findDevis = async () => {
+      try {
+        const data = await DevisService.getAllDevis();
+        // Utilisation de votre mapper pour transformer les données backend -> UI
+        const transformed = mapBackendArrayToUpdatedDevisArray(data);
+        console.log(transformed)
+        setQuotations(transformed);
+      } catch (error) {
+        console.error("Erreur lors du chargement des devis:", error);
+        // Optionnel : afficher une notification d'erreur ici
+      }
+    };
+  
+    findDevis(); 
+  }, []);
 
 
 
@@ -97,10 +117,10 @@ useEffect(() => {
       setFilteredQuotations([]);
       return;
     }
-    const filtered = MOCK_QUOTATIONS.filter((q) =>
+    const filtered = quoattions?.filter((q) =>
       (q.numeroDevis??"").toLowerCase().includes(vosRefFilter.toLowerCase())
     );
-    setFilteredQuotations(filtered);
+    setFilteredQuotations(filtered??[]);
   }, [vosRefFilter]);
 
   const handleSelectReference = (refQuo: UpdatedDevisResponse) => {
@@ -159,6 +179,7 @@ useEffect(() => {
   if (selectedClient && setQuotation && quotation) {
     setQuotation({
       ...quotation, // Use the object from props directly instead of 'prev'
+      numeroDevis:quotation.numeroDevis??generatedId,
       idClient: selectedClient.idClient,
       nomClient: selectedClient.raisonSociale,
       dateCreation: formData.creationDate,
@@ -283,7 +304,7 @@ useEffect(() => {
         <label className={labelStyles}>Quotation ID</label>
         <div className="relative">
           <ReceiptIcon className="absolute left-3 top-2.5 text-gray-300" sx={{ fontSize: 18 }} />
-          <input readOnly value={generatedId} className={`${readOnlyStyles} pl-10 font-mono text-secondary-mid`} />
+          <input readOnly value={quotation?.numeroDevis??generatedId} className={`${readOnlyStyles} pl-10 font-mono text-secondary-mid`} />
         </div>
       </div>
     </div>

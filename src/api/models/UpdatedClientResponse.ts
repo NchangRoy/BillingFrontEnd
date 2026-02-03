@@ -153,5 +153,29 @@ export const clients: UpdatedClientResponse[] = [
       ClientSaleSize.size.DETAIL,
       ClientSaleSize.size.DEMIS_GROS
     ]
-  }
+  },
+  {
+  "idClient": "d5e8f4a2-9b3c-4e1a-8f6d-7c2a1b0e9f4a",
+  "username": "horizon_logistics",
+  "categorie": "Wholesale",
+  "siteWeb": "https://horizon-logistics.cm",
+  "adresse": "Douala, Akwa - Rue des Écoles",
+  "telephone": "+237677123456",
+  "email": "logistics@horizon-group.cm",
+  "typeClient":ClientResponse.typeClient.PARTICULIER,
+  "raisonSociale": "Horizon Logistics & Trading",
+  "numeroTva": "NIU-P0123456789",
+  "codeClient": "CLI-2026-088",
+  "limiteCredit": 10000000,
+  "soldeCourant": 4500000,
+  "actif": true,
+  "ntva": true,
+  "createdAt": "2025-01-15T08:30:00Z",
+  "updatedAt": "2026-02-02T10:00:00Z",
+  
+    allowedSaleSizes: [
+      ClientSaleSize.size.DETAIL,
+      ClientSaleSize.size.DEMIS_GROS
+    ]
+}
 ];

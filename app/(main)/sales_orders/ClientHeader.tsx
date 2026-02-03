@@ -12,9 +12,13 @@ import GroupAddIcon from '@mui/icons-material/GroupAdd';
 import { Search } from 'lucide-react';
 import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
 import { UpdatedSalesOrderResponse, SalesOrderResponse } from '@/src/api/models/UpdatedSalesOrder';
-import { MOCK_QUOTATIONS } from '@/src/api/models/UpdatedDevisResponse';
+import { MOCK_QUOTATIONS, UpdatedDevisResponse } from '@/src/api/models/UpdatedDevisResponse';
 import { MOCK_SALES_ORDERS } from '@/src/api/models/UpdatedSalesOrder';
 import { transformDevisToSalesOrder } from '@/src/api/transformation/saleorderTranformation';
+import { DevisService } from '@/src/src2/api/services/DevisService';
+import { mapBackendArrayToUpdatedDevisArray } from '@/src/Mappers/DevisMapper';
+import { BonCommandeService } from '@/src/src2/api';
+import { mapBonCommandeListToSalesOrderList } from '@/src/Mappers/BonCommandeMapper';
 
 interface Props {
   clients: UpdatedClientResponse[];
@@ -52,6 +56,47 @@ const [selectedClient, setSelectedClient] = useState<UpdatedClientResponse | nul
   const [quoSearchTerm, setQuoSearchTerm] = useState("");
   const [filteredQuos, setFilteredQuos] = useState<any[]>([]);
   const [showQuoDropdown, setShowQuoDropdown] = useState(false);
+
+  const [quotations,setQuotations]=useState<UpdatedDevisResponse[]>(MOCK_QUOTATIONS)
+
+
+   const [orders, setOrders] = useState<UpdatedSalesOrderResponse[]>(MOCK_SALES_ORDERS); 
+    
+  
+     useEffect(() => {
+      const findDevis = async () => {
+        try {
+          const data = await BonCommandeService.getAllBonCommandes()
+          // Utilisation de votre mapper pour transformer les données backend -> UI
+          const transformed = mapBonCommandeListToSalesOrderList(data)
+          console.log(transformed)
+          setOrders(transformed)
+        } catch (error) {
+          console.error("Erreur lors du chargement des devis:", error);
+          // Optionnel : afficher une notification d'erreur ici
+        }
+      };
+    
+      findDevis(); 
+    }, []);
+
+
+   useEffect(() => {
+    const findDevis = async () => {
+      try {
+        const data = await DevisService.getAllDevis();
+        // Utilisation de votre mapper pour transformer les données backend -> UI
+        const transformed = mapBackendArrayToUpdatedDevisArray(data);
+        console.log(transformed)
+        setQuotations(transformed);
+      } catch (error) {
+        console.error("Erreur lors du chargement des devis:", error);
+        // Optionnel : afficher une notification d'erreur ici
+      }
+    };
+  
+    findDevis(); 
+  }, []);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -113,7 +158,7 @@ const [selectedClient, setSelectedClient] = useState<UpdatedClientResponse | nul
       setFilteredQuos([]);
       return;
     }
-    const matches = MOCK_QUOTATIONS.filter((q) =>
+    const matches = quotations.filter((q) =>
       q.numeroDevis?.toLowerCase().includes(quoSearchTerm.toLowerCase())
     );
     setFilteredQuos(matches);
@@ -124,9 +169,15 @@ const [selectedClient, setSelectedClient] = useState<UpdatedClientResponse | nul
     setQuoSearchTerm(quo.numeroDevis);
     setShowQuoDropdown(false);
     
-    setSalesOrder(transformed);
+    setSalesOrder({
+      ...transformed,
+      numeroSalesOrder:generatedId,
+
+      
+    });
     setFormData(prev => ({
       ...prev,
+    
       applyVat: transformed.applyVat ?? prev.applyVat,
       paymentMethod: transformed.modeReglement || "",
       transportMethod: transformed.transportMethod || prev.transportMethod,
@@ -150,7 +201,7 @@ const [selectedClient, setSelectedClient] = useState<UpdatedClientResponse | nul
       setFilteredsales_orders([]);
       return;
     }
-    const filtered = MOCK_SALES_ORDERS.filter((q) =>
+    const filtered = orders.filter((q) =>
       q.numeroSalesOrder?.toLowerCase().includes(vosRefFilter.toLowerCase())
     );
     setFilteredsales_orders(filtered);
@@ -196,9 +247,12 @@ const [selectedClient, setSelectedClient] = useState<UpdatedClientResponse | nul
   // --- Final Sync to Parent ---
   useEffect(() => {
     if (selectedClient && setSalesOrder && sales_order) {
+
+      console.log(generatedId)
       setSalesOrder({
         ...sales_order,
         idClient: selectedClient.idClient,
+        numeroSalesOrder:sales_order.numeroSalesOrder??generatedId,
         nomClient: selectedClient.raisonSociale,
         dateCreation: formData.creationDate,
         applyVat: formData.applyVat,
@@ -211,7 +265,7 @@ const [selectedClient, setSelectedClient] = useState<UpdatedClientResponse | nul
         vosRef: formData.vosRef,
       });
     }
-  }, [selectedClient, formData]);
+  }, [selectedClient, formData,generatedId]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -272,7 +326,7 @@ const [selectedClient, setSelectedClient] = useState<UpdatedClientResponse | nul
             <label className={labelStyles}>Sales Order ID</label>
             <div className="relative">
               <ReceiptIcon className="absolute left-3 top-2.5 text-gray-300" sx={{ fontSize: 18 }} />
-              <input readOnly value={generatedId} className={`${readOnlyStyles} pl-10 font-mono text-secondary-mid`} />
+              <input readOnly value={sales_order?.numeroSalesOrder??generatedId} className={`${readOnlyStyles} pl-10 font-mono text-secondary-mid`} />
             </div>
           </div>
         </div>

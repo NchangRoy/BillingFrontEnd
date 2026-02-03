@@ -10,7 +10,7 @@ export type UpdatedCreditNoteResponse = {
     etat?: CreditNoteResponse.etat;
     reason?: CreditNoteResponse.reason; 
     
-    // Client Info
+    // Client Infoimport { UpdatedCreditNoteResponse, CreditNoteResponse } from './path-to-credit-note-response';
     idClient?: string;
     nomClient?: string;
     adresseClient?: string;

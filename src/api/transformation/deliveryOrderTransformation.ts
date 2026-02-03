@@ -10,8 +10,7 @@ export const transformSalesOrderToDeliveryNote = (
 ): DeliveryNoteResponse => {
   return {
     // Unique ID for the new document
-    idDN: `DN-${Date.now()}`, 
-    deliveryNoteNumber: `BL-${new Date().getFullYear()}-${so.numeroSalesOrder?.split('/').pop() || 'TEMP'}`,
+   
     
     // Status defaults to BROUILLON
     etat: DeliveryNoteResponse.etat.BROUILLON,

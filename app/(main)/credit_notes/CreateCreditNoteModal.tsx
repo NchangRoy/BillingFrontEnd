@@ -11,6 +11,8 @@ import { UpdatedClientResponse, clients } from "@/src/api/models/UpdatedClientRe
 // Equivalent UI Components (You'll need to adapt these or use your existing ones)
 import ClientHeader from "./ClientHeader"; 
 import CreditNoteDetails from "./CreditNoteDetails"; // Similar to InvoiceDetails but handles reasons
+import { mapCreditNoteToRequest } from "@/src/Mappers/CreditNoteMapper";
+import { NoteCreditControllerService } from "@/src/src2/api";
 
 interface Props {
   isOpen: boolean;
@@ -35,7 +37,7 @@ const CreateCreditNoteModal = ({ isOpen, onClose, clientData, creditNoteData }: 
       } else {
         // Mode: CREATE
         const newNote: Partial<UpdatedCreditNoteResponse> = {
-          numeroCreditNote: `AV-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000)}`,
+         
           etat: CreditNoteResponse.etat.BROUILLON,
           reason: CreditNoteResponse.reason.RETOUR_MARCHANDISE, // Default reason
           modeReglement: CreditNoteResponse.modeReglement.CREDIT_CLIENT, // Default for credit notes
@@ -59,7 +61,7 @@ const CreateCreditNoteModal = ({ isOpen, onClose, clientData, creditNoteData }: 
   }, [isOpen, creditNoteData, clientData]);
 
   // 2. SAVE LOGIC
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!selectedClient || !creditNote) return;
 
     const finalPayload: UpdatedCreditNoteResponse = {
@@ -78,12 +80,19 @@ const CreateCreditNoteModal = ({ isOpen, onClose, clientData, creditNoteData }: 
       updatedAt: new Date().toISOString()
     };
 
+
+    const apiPayload=mapCreditNoteToRequest(finalPayload)
+
     console.log("Saving Credit Note Payload:", finalPayload);
 
     if (!creditNoteData) {
       console.log("API CALL: Creating new Credit Note...");
+      await NoteCreditControllerService.createNoteCredit(apiPayload)
     } else {
       console.log("API CALL: Updating existing Credit Note...");
+      if(creditNoteData.idCreditNote){
+        await NoteCreditControllerService.updateNoteCredit(creditNoteData.idCreditNote,apiPayload)
+      }
     }
 
     onClose(false);
@@ -167,7 +176,7 @@ return (
                 className="flex items-center gap-3 bg-secondary-mid hover:bg-primary text-white px-10 py-4 rounded-xl font-black text-sm shadow-xl shadow-secondary/20 transition-all active:scale-95 disabled:opacity-30"
               >
                 <Save size={20} />
-                SAVEV CREDIT NOTE
+                SAVE CREDIT NOTE
               </button>
            </div>
         </div>

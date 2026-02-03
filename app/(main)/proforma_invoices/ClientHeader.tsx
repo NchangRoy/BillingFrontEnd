@@ -15,6 +15,8 @@ import { Search } from 'lucide-react';
 import { DevisResponse } from '@/src/api';
 import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
 import { UpdatedProformaInvoiceResponse,MOCK_PROFORMA_INVOICE } from '@/src/api/models/UpdatedProformaInvoiceResponse';
+import { FacturesProformaService } from '@/src/src2/api';
+import { mapProformaArrayToUI } from '@/src/Mappers/ProformaMapper';
 interface Props {
   clients: UpdatedClientResponse[];
   
@@ -41,6 +43,7 @@ const ClientHeader = ({ clients,  setMainSelectedClient, selectClient, ProformaI
   const [showReferalResults, setShowReferalResults] = useState(false);
   const [systemDate, setSystemDate] = useState<string | null>(null);
   const [seller, setSeller] = useState<UpdatedSellerResponse | null>(null);
+      const [ProformaInvoices, setProformaInvoices] = useState<UpdatedProformaInvoiceResponse[]>(MOCK_PROFORMA_INVOICE);
     
       useEffect(() => {
         // Ensuring code runs only on client
@@ -49,6 +52,24 @@ const ClientHeader = ({ clients,  setMainSelectedClient, selectClient, ProformaI
           setSeller(JSON.parse(stored));
         }
       }, []);
+
+
+       useEffect(() => {
+          const findDevis = async () => {
+            try {
+              const data = await FacturesProformaService.getAllProformas()
+              // Utilisation de votre mapper pour transformer les données backend -> UI
+              const transformed = mapProformaArrayToUI(data);
+              console.log(transformed)
+              setProformaInvoices(transformed);
+            } catch (error) {
+              console.error("Erreur lors du chargement des devis:", error);
+              // Optionnel : afficher une notification d'erreur ici
+            }
+          };
+        
+          findDevis(); 
+        }, []);
 
 
 
@@ -95,7 +116,7 @@ useEffect(() => {
       setFilteredProformaInvoices([]);
       return;
     }
-    const filtered = MOCK_PROFORMA_INVOICE.filter((q) =>
+    const filtered =ProformaInvoices.filter((q) =>
      ( q.numeroProformaInvoice??"").toLowerCase().includes(vosRefFilter.toLowerCase())
     );
     setFilteredProformaInvoices(filtered);
@@ -158,6 +179,7 @@ useEffect(() => {
     setProformaInvoice({
       ...ProformaInvoice, // Use the object from props directly instead of 'prev'
       idClient: selectedClient.idClient,
+      numeroProformaInvoice:ProformaInvoice.numeroProformaInvoice??generatedId,
       nomClient: selectedClient.raisonSociale,
       dateCreation: formData.creationDate,
      

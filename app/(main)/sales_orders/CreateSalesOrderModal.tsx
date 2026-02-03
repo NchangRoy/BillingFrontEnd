@@ -13,6 +13,8 @@ import { UpdatedSalesOrderResponse } from "@/src/api/models/UpdatedSalesOrder";
 // Sub-components (Assuming you have these adapted for Sales Orders)
 import ClientHeader from "./ClientHeader";
 import SalesOrderDetails from "./SalesOrderDetails"; 
+import { mapSalesOrderToBonCommandeRequest } from "@/src/Mappers/BonCommandeMapper";
+import { BonCommandeService } from "@/src/src2/api";
 
 interface Props {
   isOpen: boolean;
@@ -37,7 +39,7 @@ const CreateSalesOrderModal = ({ isOpen, onClose, clientData, orderData }: Props
       } else {
         // Mode: CREATE
         const newOrder: Partial<UpdatedSalesOrderResponse> = {
-          numeroSalesOrder: `ORD-${new Date().getTime()}`,
+          
           statut: SalesOrderResponse.statut.BROUILLON,
           devise: "XAF",
           lignesSalesOrder: [],
@@ -60,7 +62,7 @@ const CreateSalesOrderModal = ({ isOpen, onClose, clientData, orderData }: Props
   }, [isOpen, orderData, clientData]);
 
   // 2. SAVE LOGIC
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!selectedClient || !salesOrder) return;
 
     const finalPayload: UpdatedSalesOrderResponse = {
@@ -81,12 +83,21 @@ const CreateSalesOrderModal = ({ isOpen, onClose, clientData, orderData }: Props
       updatedAt: new Date().toISOString()
     };
 
-    console.log("Saving Sales Order Payload:", finalPayload);
+    const apiPayload=mapSalesOrderToBonCommandeRequest(finalPayload)
 
-    if (!orderData) {
+    console.log("Saving Sales Order Payload:", finalPayload);
+    console.log(salesOrder)
+    
+
+    if (!orderData?.idSalesOrder) {
       console.log("API CALL: Creating new Sales Order...");
+
+      await BonCommandeService.createBonCommande(apiPayload)
     } else {
       console.log("API CALL: Updating existing Sales Order...");
+      if(orderData.idSalesOrder){
+        await BonCommandeService.updateBonCommandeById(orderData.idSalesOrder,apiPayload)
+      }
     }
 
     onClose(false);

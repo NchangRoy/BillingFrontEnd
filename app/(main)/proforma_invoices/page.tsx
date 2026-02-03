@@ -29,6 +29,8 @@ import CreateProformaInvoiceModal from './CreateProformaInvoiceModal'
 import PrintPreviewModal from './PrintPreviewModal'
 import { mapProformaToFacture, mapProformaToSalesOrder } from '@/src/api/transformation/ProformaTransformation'
 import { UpdatedSalesOrderResponse } from '@/src/api/models/UpdatedSalesOrder'
+import { FacturesProformaService } from '@/src/src2/api'
+import { mapProformaArrayToUI } from '@/src/Mappers/ProformaMapper'
 
 const columns = {
   "Devis Number": "numeroProformaInvoice",
@@ -56,6 +58,24 @@ const ProformaInvoice = () => {
 
 
 
+   useEffect(() => {
+    const findDevis = async () => {
+      try {
+        const data = await FacturesProformaService.getAllProformas()
+        // Utilisation de votre mapper pour transformer les données backend -> UI
+        const transformed = mapProformaArrayToUI(data);
+        console.log(transformed)
+        setProformaInvoices(transformed);
+      } catch (error) {
+        console.error("Erreur lors du chargement des devis:", error);
+        // Optionnel : afficher une notification d'erreur ici
+      }
+    };
+  
+    findDevis(); 
+  }, [isModalOpen]);
+
+
   //load the proforma from local storage 
   useEffect(()=>{
         //read if the modal should be opend
@@ -69,7 +89,10 @@ const ProformaInvoice = () => {
           const invoiceString=localStorage.getItem("proforma_invoice")
           localStorage.setItem("proforma_invoice","")
           if(invoiceString){
+
             const invoice:UpdatedProformaInvoiceResponse=JSON.parse(invoiceString)
+
+            console.log(invoice)
             setClickedProformaInvoice(invoice)
   
             //find the client in invoice

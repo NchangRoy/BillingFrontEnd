@@ -26,6 +26,8 @@ import { UpdatedClientResponse, clients } from '@/src/api/models/UpdatedClientRe
 // Logic Components
 import CreateDeliveryNoteModal from './CreateDeliveryNoteModal'
 import DeliveryNotePrintPreviewModal from './DeliveryNotePrintPreviewModal'
+import { BonDeLivraisonService } from '@/src/src2/api'
+import { mapBackendArrayToDeliveryNoteList } from '@/src/Mappers/DeliveryNoteMapper'
 
 const columns = {
   "DN Number": "deliveryNoteNumber",
@@ -53,6 +55,26 @@ const DeliveryNotes = () => {
   const [clickedNote, setClickedNote] = useState<DeliveryNoteResponse | undefined>();
   const [deliveryNotes, setDeliveryNotes] = useState<DeliveryNoteResponse[]>(MOCK_DELIVERY_NOTES);
   const [client, setClient] = useState<UpdatedClientResponse | undefined>()
+
+
+
+   useEffect(() => {
+    const findDevis = async () => {
+      try {
+        const data = await BonDeLivraisonService.getAllBonLivraisons()
+        // Utilisation de votre mapper pour transformer les données backend -> UI
+        const transformed = mapBackendArrayToDeliveryNoteList(data)
+        console.log(transformed)
+        setDeliveryNotes(transformed);
+      } catch (error) {
+        console.error("Erreur lors du chargement des devis:", error);
+        // Optionnel : afficher une notification d'erreur ici
+      }
+    };
+  
+    findDevis(); 
+  }, [isModalOpen]);
+
 
   // 2. Transformation / LocalStorage Effect
   useEffect(() => {

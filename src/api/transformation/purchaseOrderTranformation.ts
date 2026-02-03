@@ -12,8 +12,8 @@ export const convertPurchaseOrderToGRN = (
 
   return {
     // Generate a temporary GRN ID and Number (usually handled by backend, but good for UI)
-    idGRN: `grn-temp-${Date.now()}`,
-    grnNumber: `GRN-FROM-${po.poNumber}`,
+    
+    
 
     // Mapping Supplier Info
     supplierId: po.supplierId,
@@ -29,7 +29,7 @@ export const convertPurchaseOrderToGRN = (
     systemDate: now,
 
     // Initial Status
-    status: GoodReceiptResponse.statut.BROUILLON,
+    status: GoodReceiptResponse.statut.DRAFT,
 
     // Map Line Items
     lines: (po.lines || []).map((line): GoodsReceiptLineResponse => {

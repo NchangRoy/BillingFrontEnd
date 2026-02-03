@@ -11,6 +11,8 @@ import { UpdatedClientResponse, clients } from "@/src/api/models/UpdatedClientRe
 // GRN Sub-components
 import ClientHeader from "./ClientHeader";
 import GRNDetails from "./GRNDetails";
+import { mapInternalToBondeReceptionCreateRequest } from "@/src/Mappers/GRNMapper";
+import { BondeReceptionControllerService } from "@/src/src2/api";
 interface Props {
   isOpen: boolean;
   onClose: (param: boolean) => void;
@@ -34,8 +36,8 @@ const CreateGRNModal = ({ isOpen, onClose, clientData, grnData }: Props) => {
       } else {
         // Mode: CREATE
         const newGRN: Partial<GoodsReceiptNoteResponse> = {
-          grnNumber: `GRN-${new Date().getTime()}`,
-          status: GoodReceiptResponse.statut.BROUILLON,
+        
+          status: GoodReceiptResponse.statut.DRAFT,
           lines: [],
           receiptDate: new Date().toISOString(),
           documentDate: new Date().toISOString(),
@@ -53,7 +55,7 @@ const CreateGRNModal = ({ isOpen, onClose, clientData, grnData }: Props) => {
   }, [isOpen, grnData, clientData]);
 
   // 2. SAVE LOGIC
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!selectedClient || !grn) return;
 
     const finalPayload: GoodsReceiptNoteResponse = {
@@ -67,12 +69,19 @@ const CreateGRNModal = ({ isOpen, onClose, clientData, grnData }: Props) => {
       createdAt: grn.createdAt || new Date().toISOString()
     };
 
+    const apiPayload=mapInternalToBondeReceptionCreateRequest(finalPayload)
+
     console.log("Saving GRN Payload:", finalPayload);
 
-    if (!grnData) {
+    if (!grnData?.idGRN) {
       console.log("API CALL: Creating new Goods Receipt Note...");
+      await BondeReceptionControllerService.createBon(apiPayload)
+
     } else {
       console.log("API CALL: Updating existing Goods Receipt Note...");
+     if(grnData.idGRN){
+       await BondeReceptionControllerService.updateBon(grnData.idGRN,apiPayload)
+     }
     }
 
     onClose(false);

@@ -27,6 +27,8 @@ import { MOCK_PURCHASE_ORDERS } from '@/src/api/models/PurchaseOrderLine'
 import CreatePurchaseOrderModal from './CreatePurchaseOrderModal'
 import PurchaseOrderPrintPreviewModal from './PurchaseOrderPrintPreviewModal'
 import { convertPurchaseOrderToGRN } from '@/src/api/transformation/purchaseOrderTranformation'
+import { BonDAchatService } from '@/src/src2/api'
+import { mapBackendBAArrayToUIArray } from '@/src/Mappers/BonAchatMapper'
 
 const columns = {
   "PO #": "poNumber",
@@ -54,6 +56,30 @@ const PurchaseOrders = () => {
   const [clickedOrder, setClickedOrder] = useState<PurchaseOrderResponse | undefined>();
   const [orders, setOrders] = useState<PurchaseOrderResponse[]>(MOCK_PURCHASE_ORDERS); 
   const [producer, setProducer] = useState<UpdatedClientResponse | undefined>();
+
+
+  useEffect(()=>{
+      const findFactures = async () => {
+    try {
+      // 1. Appel au service API généré
+      const data = await BonDAchatService.getAllBonsAchat()
+      
+      // 2. Transformation des données Backend -> UI via le mapper
+      // Nous utilisons la version 'Array' pour traiter toute la liste d'un coup
+      const transformed = mapBackendBAArrayToUIArray(data);
+      
+      console.log("Factures chargées et mappées:", transformed);
+      
+      // 3. Mise à jour de l'état local (ex: setInvoices ou setFactures)
+      setOrders(transformed);
+      
+    } catch (error) {
+      console.error("Erreur lors du chargement des factures:", error);
+      // Ici, vous pourriez ajouter un toast de notification pour l'utilisateur
+    }
+  };
+  findFactures()
+    },[isModalOpen])
 
   // Filter Logic
   const filteredOrders = useMemo(() => {

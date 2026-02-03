@@ -22,12 +22,13 @@ import {
 import { UpdatedClientResponse, clients } from '@/src/api/models/UpdatedClientResponse'
 import { UpdatedDevisResponse, MOCK_QUOTATIONS } from '@/src/api/models/UpdatedDevisResponse'
 import { UpdatedFactureResponse } from '@/src/api/models/UpdatedFactureResponse'
-import { mapDevisToFacture, mapDevisToSalesOrder } from '@/src/api/transformation/DevisTransformation'
-
+import { mapDevisToFacture, mapDevisToProforma, mapDevisToSalesOrder } from '@/src/api/transformation/DevisTransformation'
+import { DevisService } from '@/src/src2/api'
 // Components
 import CreateQuotationModal from './CreateQuotationModal'
 import PrintPreviewModal from './PrintPreviewModal'
 import { UpdatedSalesOrderResponse } from '@/src/api/models/UpdatedSalesOrder'
+import { mapBackendArrayToUpdatedDevisArray } from '@/src/Mappers/DevisMapper'
 
 const columns = {
   "Devis Number": "numeroDevis",
@@ -52,6 +53,26 @@ const Quotation = () => {
   const [clickedQuotation, setClickedQuotation] = useState<UpdatedDevisResponse | undefined>();
   const [quotations, setQuotations] = useState<UpdatedDevisResponse[]>(MOCK_QUOTATIONS);
   const [client, setClient] = useState<UpdatedClientResponse | undefined>()
+
+
+  //first initialize the quoattions array by fetching fromthe backend
+
+  useEffect(() => {
+  const findDevis = async () => {
+    try {
+      const data = await DevisService.getAllDevis();
+      // Utilisation de votre mapper pour transformer les données backend -> UI
+      const transformed = mapBackendArrayToUpdatedDevisArray(data);
+      console.log(transformed)
+      setQuotations(transformed);
+    } catch (error) {
+      console.error("Erreur lors du chargement des devis:", error);
+      // Optionnel : afficher une notification d'erreur ici
+    }
+  };
+
+  findDevis(); 
+}, [isModalOpen]);
   
   const filteredQuotations = useMemo(() => {
     return quotations.filter((item) => {
@@ -81,10 +102,11 @@ const Quotation = () => {
     router.push("/invoices");
   };
 
-  const statusOptions = Array.from(new Set(MOCK_QUOTATIONS.map(q => q.statut)));
+  const statusOptions = Array.from(new Set(quotations.map(q => q.statut)));
 
   function handleTransformToProforma(quotation: UpdatedDevisResponse): void {
-    const invoice: UpdatedFactureResponse = mapDevisToFacture(quotation);
+    const invoice: UpdatedFactureResponse = mapDevisToProforma(quotation);
+    console.log(invoice)
     localStorage.setItem("proforma_invoice", JSON.stringify(invoice));
     localStorage.setItem("modalOpen", "open");
     router.push("/proforma_invoices");

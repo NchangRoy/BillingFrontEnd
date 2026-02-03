@@ -47,7 +47,7 @@ export namespace FactureResponse {
         ENVOYE = 'ENVOYE',
         PAYE = 'PAYE',
         PARTIELLEMENT_PAYE = 'PARTIELLEMENT_PAYE',
-        EN_RETARD = 'EN_RETARD',
+        EN_RETARD = 'EaN_RETARD',
         ANNULE = 'ANNULE',
     }
 
@@ -60,7 +60,8 @@ export namespace FactureResponse {
         PAYPAL = 'PAYPAL',
         AUTRE = 'AUTRE'
     }
-}export const MOCK_FACTURE: UpdatedFactureResponse[] = [
+}
+export const MOCK_FACTURE: UpdatedFactureResponse[] = [
   {
     idFacture: "FACT-2026-001",
     numeroFacture: "INV/2026/001",

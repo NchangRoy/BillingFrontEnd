@@ -207,8 +207,10 @@ const PurchaseOrderDetails = ({ producer, purchaseOrder, setPurchaseOrder }: Pro
           <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
               <th className="px-6 py-4 text-[10px] font-black uppercase text-gray-400">Product Code & Name</th>
+               <th className="px-6 py-4 text-[10px] font-black uppercase text-gray-400 text-right">Apply Tax</th>
               <th className="px-6 py-4 text-[10px] font-black uppercase text-gray-400 text-center">Qty (UOM)</th>
               <th className="px-6 py-4 text-[10px] font-black uppercase text-gray-400 text-right">Unit Price</th>
+              
               <th className="px-6 py-4 text-[10px] font-black uppercase text-gray-400 text-right">VAT</th>
               <th className="px-6 py-4 text-[10px] font-black uppercase text-gray-400 text-right">Total (HT)</th>
               <th className="px-6 py-4 text-right w-24">Actions</th>
@@ -220,6 +222,11 @@ const PurchaseOrderDetails = ({ producer, purchaseOrder, setPurchaseOrder }: Pro
                 <td className="px-6 py-4">
                   <p className="text-sm font-bold text-gray-700">{line.productName}</p>
                   <p className="text-[10px] text-gray-400 font-mono">{line.productCode}</p>
+                </td>
+                 <td className="px-6 py-4 text-center font-bold text-gray-600">
+                 <input type="checkbox"
+                 checked={line.taxable}
+                 />
                 </td>
                 <td className="px-6 py-4 text-center font-bold text-gray-600">
                   {line.orderedQuantity} <span className="text-[9px] text-gray-400 ml-1">{line.uom}</span>

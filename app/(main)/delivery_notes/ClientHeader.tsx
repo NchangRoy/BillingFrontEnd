@@ -7,9 +7,11 @@ import HomeIcon from "@mui/icons-material/Home";
 import ReceiptIcon from "@mui/icons-material/Receipt"; 
 import { Truck, MapPin, Phone, User, Building2 } from 'lucide-react';
 import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
-import { MOCK_SALES_ORDERS } from '@/src/api/models/UpdatedSalesOrder';
+import { MOCK_SALES_ORDERS, UpdatedSalesOrderResponse } from '@/src/api/models/UpdatedSalesOrder';
 import { DeliveryNoteResponse } from '@/src/api/models/DeliveryNoteResponse';
 import { transformSalesOrderToDeliveryNote } from '@/src/api/transformation/deliveryOrderTransformation';
+import { BonCommandeService } from '@/src/src2/api/services/BonCommandeService';
+import { mapBonCommandeListToSalesOrderList } from '@/src/Mappers/BonCommandeMapper';
 
 interface Props {
   clients: UpdatedClientResponse[];
@@ -34,6 +36,23 @@ const ClientHeader = ({ clients, setMainSelectedClient, selectClient, deliveryNo
   const [soSearchTerm, setSoSearchTerm] = useState("");
   const [filteredSOs, setFilteredSOs] = useState<any[]>([]);
   const [showSoDropdown, setShowSoDropdown] = useState(false);
+  const [orders,setOrders]=useState<UpdatedSalesOrderResponse[]>()
+  useEffect(() => {
+      const findDevis = async () => {
+        try {
+          const data = await BonCommandeService.getAllBonCommandes()
+          // Utilisation de votre mapper pour transformer les données backend -> UI
+          const transformed = mapBonCommandeListToSalesOrderList(data)
+          console.log(transformed)
+          setOrders(transformed)
+        } catch (error) {
+          console.error("Erreur lors du chargement des devis:", error);
+          // Optionnel : afficher une notification d'erreur ici
+        }
+      };
+    
+      findDevis(); 
+    }, []);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -84,10 +103,10 @@ const ClientHeader = ({ clients, setMainSelectedClient, selectClient, deliveryNo
       setFilteredSOs([]);
       return;
     }
-    const matches = MOCK_SALES_ORDERS.filter((so) =>
+    const matches = orders?.filter((so) =>
       so.numeroSalesOrder?.toLowerCase().includes(soSearchTerm.toLowerCase())
     );
-    setFilteredSOs(matches);
+    setFilteredSOs(matches??[]);
   }, [soSearchTerm]);
 
   const handleSelectSalesOrder = (so: any) => {
@@ -117,6 +136,7 @@ const ClientHeader = ({ clients, setMainSelectedClient, selectClient, deliveryNo
     if (selectedClient && deliveryNote) {
       setDeliveryNote({
         ...deliveryNote,
+        
         idClient: selectedClient.idClient,
         nomClient: selectedClient.raisonSociale,
         recipientName: formData.recipientName,
@@ -124,7 +144,7 @@ const ClientHeader = ({ clients, setMainSelectedClient, selectClient, deliveryNo
         recipientAddress: formData.recipientAddress,
         recipientCity: formData.recipientCity,
         deliveryDate: formData.deliveryDate,
-        deliveryNoteNumber: generatedId
+        deliveryNoteNumber: deliveryNote.deliveryNoteNumber??generatedId
       });
     }
   }, [selectedClient, formData, generatedId]);
