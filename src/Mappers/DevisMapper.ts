@@ -16,7 +16,7 @@ import { DevisCreateRequest } from '../src2/api';
  */
 export const mapUpdatedResponseToCreateRequest = (
     response: UpdatedDevisResponse,
-    organizationId?: string
+    
 ): DevisCreateRequest => {
     return {
         // --- Identification & Scope ---
@@ -24,7 +24,7 @@ export const mapUpdatedResponseToCreateRequest = (
         nosRef: response.nosRef,
         vosRef: response.vosRef,
         referenceExterne: response.referenceExterne,
-        organizationId: organizationId,
+        
 
         // --- Dates (Format ISO requis par le Backend) ---
         dateCreation: response.dateCreation || new Date().toISOString(),
@@ -80,7 +80,9 @@ export const mapUpdatedResponseToCreateRequest = (
 
         // --- Metadata ---
         notes: response.notes,
-        pdfPath: response.pdfPath
+        pdfPath: response.pdfPath,
+        createdBy:response.createdBy,
+        organizationId:response.organizationId
     };
 };
 
@@ -111,6 +113,7 @@ export const mapBackendToUpdatedDevis = (backend: DevisResponse): UpdatedDevisRe
         vosRef: backend.vosRef,
         nbreEcheance: backend.nbreEcheance,
         referalClientId: backend.referalClientId,
+        createdBy:backend.createdBy,
     };
 };
 

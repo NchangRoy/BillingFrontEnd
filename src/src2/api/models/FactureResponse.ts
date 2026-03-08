@@ -49,6 +49,7 @@ export type FactureResponse = {
     version?: number;
     createdAt?: string;
     updatedAt?: string;
+    OrganizationId?:string
 };
 export namespace FactureResponse {
     export enum etat {

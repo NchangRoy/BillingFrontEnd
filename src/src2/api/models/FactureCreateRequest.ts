@@ -39,7 +39,8 @@ export type FactureCreateRequest = {
     remiseGlobalePourcentage?: number;
     remiseGlobaleMontant?: number;
     referalClientId?: string;
-    organizationId?: string;
+     createdBy?:string,
+    organizationId?:string
 };
 export namespace FactureCreateRequest {
     export enum etat {

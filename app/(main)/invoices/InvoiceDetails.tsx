@@ -9,6 +9,10 @@ import { UpdatedDevisResponse } from '@/src/api/models/UpdatedDevisResponse';
 import SummaryCard from './SummaryCard';
 import { Permission, UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
 import { UpdatedFactureResponse } from '@/src/api/models/UpdatedFactureResponse';
+import SockJS from 'sockjs-client';
+import { ProductApiService } from '@/src/api/services/ProduitService';
+import { Client } from '@stomp/stompjs';
+import { toast } from 'sonner';
 const inputStyles = "w-full border border-gray-200 rounded-lg outline-none py-2 px-3 focus:ring-2 focus:ring-secondary-mid/10 focus:border-secondary-mid transition-all text-sm text-gray-700 bg-white shadow-sm placeholder:text-gray-300";
 const labelStyles = "text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1 block ml-0.5";
 
@@ -18,6 +22,12 @@ interface Props {
   setInvoice: (data: UpdatedFactureResponse) => void;
 }
 
+
+interface WebSocketErrorMessage{
+  type:String,
+  productId?:String,
+  message:String
+}
 const InvoiceDetails
  = ({ client, invoice, setInvoice }: Props) => {
   const [productSearch, setProductSearch] = useState("");
@@ -29,11 +39,191 @@ const InvoiceDetails
   const [currentRemiseLine, setCurrentRemiseLine] = useState<number>(0);
   const [quantity, setQuantity] = useState<number>(1);
   const [filterAvailable, setfilterAvailable] = useState<boolean>(false);
+  const [products, setProducts] = useState<UpdatedProductResponse[]>(produits);
+
 
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [seller, setSeller] = useState<UpdatedSellerResponse | null>(null);
-  
+  //live product update
+  //toast hook
+ 
+  const [liveProducts, setLiveProducts] = useState<UpdatedProductResponse[]>(produits);
+
+useEffect(() => {
+  const fetchProducts = async () => {
+    // Only fetch if seller and organizationId exist
+    if (!seller?.organizationId) return;
+
+    try {
+      console.log("🔄 Fetching products for org:", seller.organizationId);
+      const data = await ProductApiService.getProductsByOrganization("3fa85f64-5717-4562-b3fc-2c963f66afa6");
+      
+      // Update both state lists
+      setProducts(data);
+      console.log(data)
+      
+    } catch (error) {
+      console.error("❌ Failed to fetch products:", error);
+      
+    }
+  };
+
+  fetchProducts();
+}, [seller?.organizationId]); 
+
+
+
+
+  //websocket sync logic
+const socketRef = useRef<WebSocket | null>(null);
+useEffect(() => {
+    // 1. Only connect if we actually have an orgId
+    const orgId = seller?.organizationId;
+    if (!orgId) {
+        console.log("⏳ Skipping WS: No OrgId yet");
+        return;
+    }
+
+    console.log("🚀 Attempting connection for Org:", orgId);
+    const socket = new WebSocket(`ws://localhost:8080/ws-stock?orgId=3fa85f64-5717-4562-b3fc-2c963f66afa6&sellerId=${seller.Id}`);
+    
+    // Use a local variable to track if this specific effect instance is still "alive"
+    let isActive = true; 
+
+    socket.onopen = () => {
+        if (isActive) console.log("✅ WebSocket Connected");
+    };
+
+    socket.onmessage = (event) => {
+
+      
+
+
+        if (!isActive) return;
+        const rawData=JSON.parse(event.data)
+        console.log(rawData)
+       if (rawData.stockQuantity) {
+        toast.success(`Reserved product ${rawData.idProduit || rawData.id}`);
+        
+        const updatedProduct: UpdatedProductResponse = rawData;
+
+        // 2. Update the main Products List
+        setProducts((prev) => {
+            const newList = prev.map(p => 
+                // Using OR to catch common naming variations
+                (p.idProduit === updatedProduct.idProduit || p.idProduit === updatedProduct.idProduit) 
+                ? { ...p, ...updatedProduct } // Merge to ensure all fields update
+                : p
+            );
+            return newList;
+        });
+
+        // 3. CRITICAL: Update the Selected Product View
+        // If the user is currently looking at this product, update it manually
+        setSelectedProduct((currentSelected) => {
+            if (currentSelected?.idProduit === updatedProduct.idProduit) {
+                return { ...currentSelected, ...updatedProduct };
+            }
+            return currentSelected;
+        });
+
+        return;
+    
+       }
+
+       else if(rawData.message){
+        if(rawData.type=="ERROR"){
+          console.log("Unable to reserve stock")
+          toast.error("Insufficient Stock:Unable to reserve")
+        }else if(rawData.type=="EXPIRED"){
+          if (invoice && invoice.lignesFacture) {
+        // 1. Find the index of the oldest matching line (first occurrence)
+        const indexToDelete = invoice.lignesFacture.findIndex(
+            line => line.idProduit === rawData.productId
+        );
+
+        if (indexToDelete !== -1) {
+            // 2. Create a new array without that specific line
+            const updatedLines = [...invoice.lignesFacture];
+            updatedLines.splice(indexToDelete, 1);
+
+            // 3. Update the invoice state to trigger UI refresh
+            setInvoice({
+                ...invoice,
+                lignesFacture: updatedLines
+            });
+
+            toast.error(`Reservation for ${rawData.productId} expired and was removed.`);
+        }
+    }
+
+        }
+       }
+
+
+
+        
+
+
+    };
+
+    socket.onclose = () => console.log("🔌 WebSocket Closed");
+    socket.onerror = (err) => console.error("⚠️ WebSocket Error", err);
+
+    socketRef.current = socket;
+
+    return () => {
+        console.log("🧹 Cleaning up WebSocket...");
+        isActive = false;
+        if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
+            socket.close();
+        }
+    };
+}, [seller?.organizationId]); // Only re-run if the OrgId actually changes
+
+// 3. "Inbound" Function (Send to Java)
+const sendReservation = (productId: string, qty: number) => {
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+        const payload = JSON.stringify({
+            productId: productId,
+            quantity: qty,
+            sellerId:seller?.Id,
+            action:"RESERVE",
+            organizationId: seller?.organizationId
+        });
+        
+        socketRef.current.send(payload); // This hits session.receive() in Java
+        console.log("📤 Sent reservation for:", productId);
+        
+
+    } else {
+        console.warn("Socket not open. Current state:", socketRef.current?.readyState);
+    }
+};
+
+const cancelReservation = (productId: string,qty:number) => {
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+        const payload = JSON.stringify({
+            productId: productId,
+            quantity:qty,
+            sellerId:seller?.Id,
+            action:"CANCEL",
+            organizationId: seller?.organizationId
+        });
+        
+        socketRef.current.send(payload); // This hits session.receive() in Java
+        console.log("📤 Sent reservation for:", productId);
+        
+
+    } else {
+        console.warn("Socket not open. Current state:", socketRef.current?.readyState);
+    }
+};
+
+
+
+
     useEffect(() => {
       // Ensuring code runs only on client
       const stored = localStorage.getItem("seller");
@@ -58,7 +248,7 @@ const InvoiceDetails
       setFilteredProducts([]);
       return;
     }
-    let filtered = produits.filter(p =>
+    let filtered = products.filter(p =>
       p.idProduit?.toLowerCase().includes(term) ||
       p.nomProduit?.toLowerCase().includes(term)
     );
@@ -112,7 +302,7 @@ const InvoiceDetails
     const now = new Date();
 
     const updatedLines = invoice.lignesFacture.map(line => {
-      const product = produits.find(p => p.idProduit === line.idProduit);
+      const product = products.find(p => p.idProduit === line.idProduit);
       const sizeStr = line.description?.split(' - ')[1];
       const sizeConfig = product?.allowedSaleSizes?.find(s => s.size === sizeStr);
 
@@ -198,6 +388,9 @@ const InvoiceDetails
   const addLine = () => {
     if (!selectedProduct || !selectedSize || !invoice) return;
 
+    //first send reservation for product & quantity
+    sendReservation(selectedProduct.idProduit??"", quantity);
+
     const newLine = {
       idProduit: selectedProduct.idProduit,
       nomProduit: selectedProduct.nomProduit,
@@ -222,13 +415,22 @@ const InvoiceDetails
 
   const removeLine = (index: number) => {
     if (!invoice) return;
+    //first delete reservation
+    
     const newLines = [...(invoice.lignesFacture || [])];
+    const line=newLines[index]
+    console.log("removing line ",line)
+    //cancel reservation
+    cancelReservation(line.idProduit||"",line.quantite||0)
+
     newLines.splice(index, 1);
+
     setInvoice({ ...invoice, lignesFacture: newLines });
   };
 
-  const handleEdit = (line: any, index: number) => {
-    const productToEdit = produits.find(p => p.idProduit === line.idProduit);
+  const handleEdit =
+ (line: any, index: number) => {
+    const productToEdit = products.find(p => p.idProduit === line.idProduit);
     if (!productToEdit) return;
     setSelectedProduct(productToEdit);
     setProductSearch(productToEdit.nomProduit || "");
@@ -386,7 +588,7 @@ const InvoiceDetails
         )}
       </div>
     </div>
-
+        
     <div className="col-span-12 md:col-span-5">
       <label className={labelStyles}>Line Preview</label>
       <div className="grid grid-cols-2 gap-3">
@@ -396,6 +598,20 @@ const InvoiceDetails
             {selectedProduct ? (selectedPrice * quantity).toLocaleString() : '--'}
           </div>
         </div>
+         <div className="relative group">
+          <div className="absolute -top-2 left-2 px-1 bg-white text-[9px] font-black text-secondary-mid uppercase z-10">Available Qty</div>
+          <div className="bg-white rounded-xl px-3 py-3 border border-gray-200 text-sm font-black text-secondary h-[48px] flex items-center shadow-sm">
+            {selectedProduct?.availableQuantity}
+          </div>
+        </div>
+
+         <div className="relative group">
+          <div className="absolute -top-2 left-2 px-1 bg-white text-[9px] font-black text-secondary-mid uppercase z-10">Reserved Qty</div>
+          <div className="bg-white rounded-xl px-3 py-3 border border-gray-200 text-sm font-black text-secondary h-[48px] flex items-center shadow-sm">
+            {selectedProduct?.reservedQuantity}
+          </div>
+        </div>
+
         <div className="relative group">
           <div className="absolute -top-2 left-2 px-1 bg-white text-[9px] font-black text-emerald-600 uppercase z-10">Savings</div>
           <div className={`rounded-xl px-3 py-3 border text-sm font-black h-[48px] flex items-center shadow-sm transition-all ${

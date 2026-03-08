@@ -1,5 +1,5 @@
 'use client'
-import { seller1,seller2 } from '@/src/api/models/UpdatedSellerResponse';
+import {  UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
 
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation';
@@ -10,6 +10,8 @@ import {
   VisibilityOffOutlined,
   LoginOutlined
 } from "@mui/icons-material";
+import { SellerAuthResponse } from '@/src/src2/api/services/ExternalServices.ts/SellerAuthResponse';
+import { mapAuthToUpdatedSeller } from '@/src/Mappers/SellerAuthMapper';
 
 const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -20,21 +22,53 @@ const LoginForm = () => {
   });
   const router=useRouter()
 
+
+
+const loginSellerFetch = async (username: string, password: string): Promise<SellerAuthResponse> => {
+  const response = await fetch('http://192.168.50.1:8081/sellers/login', {
+    method: 'POST',
+    headers: {
+      'Accept': '*/*',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ username, password }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Authentication failed');
+  }
+
+  return response.json();
+};
+
   
 
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit =async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Login Attempt:", formData);
 
+      //send request to authenticate user
+
+     const data=await loginSellerFetch(formData.username,formData.password)
+     
+
+     const sellerdate=mapAuthToUpdatedSeller(data)
+     localStorage.setItem("seller",JSON.stringify(sellerdate))
+console.log(sellerdate)
+router.push("/dashboard")
+
+   /*
     if(formData.username=="alice_smith"){
       localStorage.setItem("seller",JSON.stringify(seller1))
       router.push("/dashboard")
     }
     else if(formData.username=="bob_johnson"){
       localStorage.setItem("seller",JSON.stringify(seller2))
-      router.push("/dashboard")
+      
     }
+   */
    
     // Add your authentication logic here
   };

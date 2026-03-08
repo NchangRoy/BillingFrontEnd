@@ -258,4 +258,22 @@ export class FactureService {
             },
         });
     }
+
+    /**
+     * Comptabiliser une facture (Synchronisation avec le système comptable)
+     * @param factureId
+     * @returns any OK
+     * @throws ApiError
+     */
+    public static accountFacture(
+        factureId: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/factures/account/{factureId}',
+            path: {
+                'factureId': factureId,
+            },
+        });
+    }
 }

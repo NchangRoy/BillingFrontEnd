@@ -8,6 +8,7 @@ import AddIcon from "@mui/icons-material/Add"
 import { Pencil, Trash2, MoreVertical, Printer, FileText, ReceiptText, Mail } from "lucide-react";
 import CreateInvoiceModal from './CreateInvoiceModal'
 import CreateInvoicePrintModal from './InvoicePrintPreviewModal'
+import { ClientService } from '@/src/src2/api/services/ClientService'
 // Updated Imports
 
 import { UpdatedClientResponse, clients } from '@/src/api/models/UpdatedClientResponse'
@@ -15,6 +16,7 @@ import { FactureResponse, UpdatedFactureResponse } from '@/src/api/models/Update
 import { MOCK_FACTURE } from '@/src/api/models/UpdatedFactureResponse'
 import { mapBackendFactureArrayToUpdatedArray } from '@/src/Mappers/FactureMapper'
 import { FactureService } from '@/src/src2/api/services/FactureService'
+import { toast } from 'sonner'
 // Adjusting Table Columns for Invoices
 const columns = {
   "Invoice #": "numeroFacture",
@@ -42,13 +44,15 @@ const Factures = () => {
   const [factures, setFactures] = useState<UpdatedFactureResponse[]>(MOCK_FACTURE);
   const [client, setClient] = useState<UpdatedClientResponse | undefined>()
   const [onsuccess,setOnSuccess]=useState<boolean>(false)
-
   //logic to load the tranformed invoice from local storage
   useEffect(()=>{
     const findFactures = async () => {
   try {
     // 1. Appel au service API généré
     const data = await FactureService.getAllFactures();
+
+    const clientService=new ClientService();
+    const clients=await clientService.getClients()
     
     // 2. Transformation des données Backend -> UI via le mapper
     // Nous utilisons la version 'Array' pour traiter toute la liste d'un coup
@@ -58,9 +62,10 @@ const Factures = () => {
     
     // 3. Mise à jour de l'état local (ex: setInvoices ou setFactures)
     setFactures(transformed);
-    
+    toast.success("Good")
   } catch (error) {
     console.error("Erreur lors du chargement des factures:", error);
+    toast.error("Bad")
     // Ici, vous pourriez ajouter un toast de notification pour l'utilisateur
   }
 };
@@ -146,6 +151,41 @@ findFactures()
       },
       color: "text-red-600" 
     },
+    { 
+    label: "Comptabiliser", 
+    icon: <ReceiptText size={14} />, // Uses the ReceiptText icon for accounting
+    action: (f: UpdatedFactureResponse) => {
+
+
+
+      const handleAccountingSync = async (f: UpdatedFactureResponse) => {
+  try {
+    if (!f.idFacture) return;
+    
+    // Call the service
+    //await FactureService.syncToAccounting(f.idFacture);
+    try {
+      await FactureService.accountFacture(f.idFacture)
+      
+    } catch (error) {
+     // alert(`Error occured when accounting Bill`);
+    }
+    
+    // Success feedback
+    alert(`Facture ${f.numeroFacture} sent to accounting!`);
+    
+    // Optional: Refresh list or update status
+  } catch (error) {
+    console.error("Sync error:", error);
+    alert("Error syncing with accounting backend.");
+  }
+
+
+};
+handleAccountingSync(f)
+    },
+    color: "text-orange-600" // Distinct color for accounting
+  },
   ];
 
   return (

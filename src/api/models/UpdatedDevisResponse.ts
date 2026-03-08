@@ -52,6 +52,9 @@ export type UpdatedDevisResponse = {
      nbreEcheance?:number;
      referalClientId?:string
      finalAmount:number
+
+     organizationId?:string;
+      createdBy?:string;
     
 };
 export namespace UpdatedDevisResponse {

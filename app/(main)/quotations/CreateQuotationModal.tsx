@@ -13,6 +13,7 @@ import { UpdatedDevisResponse } from "@/src/api/models/UpdatedDevisResponse";
 import { MOCK_QUOTATIONS } from "@/src/api/models/UpdatedDevisResponse";
 import { mapUpdatedResponseToCreateRequest } from "@/src/Mappers/DevisMapper";
 import { DevisService } from "@/src/src2/api";
+import { UpdatedSellerResponse } from "@/src/api/models/UpdatedSellerResponse";
 interface Props {
   isOpen: boolean;
   onClose: (param: boolean) => void;
@@ -40,6 +41,17 @@ const QuotationFormModal = ({ isOpen, onClose,clientData,quotationData}: Props) 
   const [headerData, setHeaderData] = useState<headerData>();
 
   const [quotation, setQuotation] = useState<UpdatedDevisResponse | undefined>();
+
+
+
+      const [seller,setSeller]=useState<UpdatedSellerResponse>()
+        useEffect(() => {
+          // Ensuring code runs only on client
+          const stored = localStorage.getItem("seller");
+          if (stored) {
+            setSeller(JSON.parse(stored));
+          }
+        }, []);
   
 
 
@@ -129,9 +141,15 @@ const finalPayload: UpdatedDevisResponse = {
     
   // Ensure lines are always an array
   lignesDevis: quotation.lignesDevis || [],
+
+  organizationId:seller?.organizationId,
+  createdBy:seller?.Id
+  
 };
 
     const request = mapUpdatedResponseToCreateRequest(finalPayload);
+    console.log(finalPayload)
+    console.log(request)
 
   try {
     if (!quotationData) {

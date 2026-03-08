@@ -15,7 +15,12 @@ import {
   ShoppingBag as PurchaseOrderIcon,
   Description as SupplierInvoiceIcon,
   BusinessCenter as SalesSectionIcon,
-  Factory as PurchaseSectionIcon
+  Factory as PurchaseSectionIcon,
+  // New Icons for Journals
+  MenuBook as JournalSectionIcon,
+  AutoStories as GeneralLedgerIcon,
+  HistoryEdu as AuditLogIcon,
+  AccountBalanceWallet as PaymentJournalIcon
 } from "@mui/icons-material";
 
 const iconMap: Record<string, React.ElementType> = {
@@ -30,7 +35,12 @@ const iconMap: Record<string, React.ElementType> = {
   PurchaseOrderIcon,
   SupplierInvoiceIcon,
   SalesSectionIcon,
-  PurchaseSectionIcon
+  PurchaseSectionIcon,
+  // Mapping New Icons
+  JournalSectionIcon,
+  GeneralLedgerIcon,
+  AuditLogIcon,
+  PaymentJournalIcon
 };
 
 const MENU_SECTIONS = [
@@ -45,7 +55,6 @@ const MENU_SECTIONS = [
       { content: "Invoices", Icon: "ReceiptIcon", path: "/invoices" },
       { content: "Delivery Note", Icon: "DeliveryIcon", path: "/delivery_notes" },
       { content: "Credit Notes", Icon: "CreditNoteIcon", path: "/credit_notes" },
-     
     ],
   },
   {
@@ -58,6 +67,18 @@ const MENU_SECTIONS = [
       { content: "Supplier Invoice", Icon: "SupplierInvoiceIcon", path: "/supplier_invoice" },
     ],
   },
+  {
+    id: "journals",
+    label: "Accounting Journals",
+    icon: "JournalSectionIcon",
+    items: [
+       { content: "Quotation Journal", Icon: "GeneralLedgerIcon", path: "/journals/quotations" },
+      { content: "Sale Order Journal", Icon: "GeneralLedgerIcon", path: "/journals/sales" },
+      { content: "Purchase Order Journal", Icon: "GeneralLedgerIcon", path: "/journals/purchasing" },
+      { content: "Client Invoice Journal", Icon: "PaymentJournalIcon", path: "/journals/payments" },
+      { content: "Supplier Invoice Journal", Icon: "AuditLogIcon", path: "/journals/audit" },
+    ],
+  },
 ];
 
 const Sidebar = () => {
@@ -68,11 +89,11 @@ const Sidebar = () => {
     setOpenSectionId(openSectionId === id ? null : id);
   };
 
-  const currentSection = MENU_SECTIONS.find(s => s.id === openSectionId);
+  const currentSection = MENU_SECTIONS.find((s) => s.id === openSectionId);
 
   return (
     <div className="inset-y-0 left-0 z-50 flex">
-      {/* STAGE 1: Primary Icon Rail */}
+      {/* STAGE 1: Primary Icon Rail (Fixed Left) */}
       <aside
         className="w-16 h-screen flex flex-col bg-white border-r-4 shadow-xl z-20"
         style={{ borderColor: "var(--color-secondary-mid)" }}
@@ -89,18 +110,20 @@ const Sidebar = () => {
           {MENU_SECTIONS.map((section) => {
             const Icon = iconMap[section.icon];
             const isOpen = openSectionId === section.id;
-            const isAnyItemActive = section.items.some(item => pathname === item.path);
-            
+            const isAnyItemActive = section.items.some((item) => pathname === item.path);
+
             return (
               <button
                 key={section.id}
                 onClick={() => handleIconClick(section.id)}
                 title={section.label}
                 className={`w-full h-16 flex items-center justify-center transition-all relative
-                  ${isOpen ? 'bg-[var(--color-secondary-super-light)] text-[var(--color-secondary-mid)]' : 'text-gray-400 hover:bg-gray-50'}`}
+                  ${isOpen ? "bg-[var(--color-secondary-super-light)] text-[var(--color-secondary-mid)]" : "text-gray-400 hover:bg-gray-50"}`}
               >
-                <div className={`w-1 flex h-8 rounded-r-full absolute left-0 transition-all 
-                  ${isAnyItemActive ? 'bg-[var(--color-secondary-mid)]' : 'bg-transparent'}`} 
+                {/* Active Indicator Line */}
+                <div
+                  className={`w-1 flex h-8 rounded-r-full absolute left-0 transition-all 
+                  ${isAnyItemActive ? "bg-[var(--color-secondary-mid)]" : "bg-transparent"}`}
                 />
                 {Icon && <Icon fontSize="medium" />}
               </button>
@@ -109,7 +132,7 @@ const Sidebar = () => {
         </nav>
       </aside>
 
-      {/* STAGE 2: Secondary Panel */}
+      {/* STAGE 2: Secondary Panel (Slide Out) */}
       <div
         className={`h-screen bg-white shadow-2xl border-r transition-all duration-300 ease-in-out overflow-hidden no-scrollbar
           ${openSectionId ? "w-64 opacity-100" : "w-0 opacity-0 pointer-events-none"}`}
@@ -124,14 +147,14 @@ const Sidebar = () => {
                 </h2>
                 <div className="h-1 w-6 bg-secondary-mid mt-1 rounded-full" />
               </div>
-              <button 
+              <button
                 onClick={() => setOpenSectionId(null)}
                 className="text-gray-300 hover:text-secondary-mid transition-colors text-2xl leading-none"
               >
                 ×
               </button>
             </div>
-            
+
             <div className="space-y-1.5">
               {currentSection.items.map((item) => {
                 const ItemIcon = iconMap[item.Icon];
@@ -139,14 +162,18 @@ const Sidebar = () => {
 
                 return (
                   <Link key={item.path} href={item.path}>
-                    <div className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-200 group
-                      ${isItemActive 
-                        ? 'bg-[var(--color-secondary-mid)] text-white font-bold shadow-lg shadow-secondary-mid/30 translate-x-1' 
-                        : 'text-gray-500 hover:bg-[var(--color-secondary-super-light)] hover:text-[var(--color-secondary-mid)] hover:translate-x-1'}`}>
+                    <div
+                      className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-200 group
+                      ${
+                        isItemActive
+                          ? "bg-[var(--color-secondary-mid)] text-white font-bold shadow-lg shadow-secondary-mid/30 translate-x-1"
+                          : "text-gray-500 hover:bg-[var(--color-secondary-super-light)] hover:text-[var(--color-secondary-mid)] hover:translate-x-1"
+                      }`}
+                    >
                       {ItemIcon && (
-                        <ItemIcon 
-                          fontSize="small" 
-                          className={isItemActive ? 'text-white' : 'text-gray-400 group-hover:text-secondary-mid'} 
+                        <ItemIcon
+                          fontSize="small"
+                          className={isItemActive ? "text-white" : "text-gray-400 group-hover:text-secondary-mid"}
                         />
                       )}
                       <span className="text-sm tracking-tight">{item.content}</span>
@@ -160,8 +187,13 @@ const Sidebar = () => {
       </div>
 
       <style jsx global>{`
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
       `}</style>
     </div>
   );

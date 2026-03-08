@@ -38,7 +38,9 @@ export type UpdatedFactureResponse = {
     dateEnvoiEmail?: string;
     createdAt?: string;
     updatedAt?: string;
-    referalClientId?:string
+    referalClientId?:string,
+    createdBy?:string,
+    organizationId?:string
 };
 
 export namespace FactureResponse {

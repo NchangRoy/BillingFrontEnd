@@ -177,5 +177,30 @@ export const clients: UpdatedClientResponse[] = [
       ClientSaleSize.size.DETAIL,
       ClientSaleSize.size.DEMIS_GROS
     ]
-}
+},
+{
+    idClient: "d5e8f4a2-9b3c-4e1a-8f6d-7c2a1b0e9f4b",
+    username: "fureh mitoto",
+    categorie: "Wholesale",
+    siteWeb: "https://abc-distributors.cm",
+    adresse: "Yaoundé, Bastos",
+    telephone: "+237690000002",
+    email: "furehmitoto@gmail.com",
+    typeClient: ClientResponse.typeClient.ENTREPRISE,
+    raisonSociale: "fureh mitoto",
+    numeroTva: "TVA123456",
+    codeClient: "CLI-002",
+    limiteCredit: 5000000,
+    soldeCourant: 1200000,
+    actif: true,
+    ntva: false,
+    createdAt: "2024-11-01T10:00:00Z",
+    updatedAt: "2025-12-01T11:00:00Z",
+
+    allowedSaleSizes: [
+      ClientSaleSize.size.DEMIS_GROS,
+      ClientSaleSize.size.GROS,
+      ClientSaleSize.size.SUPER_GROS
+    ]
+  },
 ];

@@ -6,8 +6,7 @@ import { UpdatedFactureResponse } from '../api/models/UpdatedFactureResponse';
  * Gère les fallbacks pour éviter les erreurs de validation Hibernate (ex: montantTotal).
  */
 export const mapUpdatedFactureToCreateRequest = (
-  response: UpdatedFactureResponse,
-  organizationId?: string
+  response: UpdatedFactureResponse
 ): FactureCreateRequest => {
   return {
     // --- Identification ---
@@ -17,7 +16,8 @@ export const mapUpdatedFactureToCreateRequest = (
     adresseClient: response.adresseClient,
     emailClient: response.emailClient,
     telephoneClient: response.telephoneClient,
-    organizationId: organizationId,
+    organizationId: response.organizationId,
+    createdBy:response.createdBy,
 
     // --- Dates (Garantit le format string ISO requis) ---
     dateFacturation: response.dateFacturation || new Date().toISOString().split('T')[0],
@@ -137,6 +137,8 @@ export const mapBackendFactureToUpdatedFacture = (
         applyVat: backend.applyVat ?? false,
         devise: backend.devise || "XAF",
         tauxChange: backend.tauxChange || 1,
+        createdBy:backend.createdBy,
+        organizationId:backend.organizationId,
 
         // Détails & Lignes
         lignesFacture: backend.lignesFacture || [],

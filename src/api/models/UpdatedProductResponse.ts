@@ -19,7 +19,9 @@ export type UpdatedProductResponse = {
     uom?:string;
     /** Sale sizes this client is allowed to buy (FULL CONFIG) */
     allowedSaleSizes?: ClientSaleSize[];
-   
+   availableQuantity?: number; // Added for completeness
+    reservedQuantity?: number; 
+    organizationId?:string;
 
     /** Active promotions per sale size */
     activePromotions?: ClientResponse.SaleSizePromotion[];

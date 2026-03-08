@@ -16,6 +16,8 @@ import { MOCK_FACTURE } from '@/src/api/models/UpdatedFactureResponse';
 import { Search } from 'lucide-react';
 import { DevisResponse, FactureResponse } from '@/src/api';
 import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
+import { getAcronym } from '@/src/src2/api/services/ExternalServices.ts/AcronymService';
+import { ClientService } from '@/src/src2/api/services/ClientService';
 interface Props {
   clients: UpdatedClientResponse[];
   
@@ -42,7 +44,7 @@ const ClientHeader = ({ clients,  setMainSelectedClient, selectClient, Invoice,s
   const [showReferalResults, setShowReferalResults] = useState(false);
   const [systemDate, setSystemDate] = useState<string | null>(null);
   const [seller, setSeller] = useState<UpdatedSellerResponse | null>(null);
-    
+ 
       useEffect(() => {
         // Ensuring code runs only on client
         const stored = localStorage.getItem("seller");
@@ -143,7 +145,7 @@ useEffect(() => {
 
   useEffect(() => {
   // 1. Always calculate what the "new" ID should look like based on current form state
-  const agency = seller?.agency || "HQ";
+  const agency = getAcronym(seller?.agency || "HQ");
   const type = "INV";
   const taxFlag = (formData.applyVat && selectClient?.ntva) ? "T" : "NT";
   const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");

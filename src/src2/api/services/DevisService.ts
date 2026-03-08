@@ -9,7 +9,51 @@ import type { PageDevisResponse } from '../models/PageDevisResponse';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
+import { EnrichedDevisResponse } from '../models/EnrichedDevisResponse';
 export class DevisService {
+
+
+
+    /**
+     * Envoyer un devis par email avec PDF généré
+     * @param id L'identifiant du devis
+     * @param htmlContent Le contenu HTML généré pour le PDF
+     * @returns any OK
+     * @throws ApiError
+     */
+    public static sendDevisEmail(
+        id: string,
+        htmlContent: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/devis/email',
+            body: {
+                id: id,
+                htmlContent: htmlContent,
+            },
+            mediaType: 'application/json',
+        });
+    }
+
+    
+    /**
+     * Récupérer les devis enrichis pour un journal de vente
+     * @param orgId UUID de l'organisation
+     * @returns EnrichedDevisResponse OK
+     * @throws ApiError
+     */
+    public static getEnrichedDevis(
+        orgId: string,
+    ): CancelablePromise<Array<EnrichedDevisResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/devis/enriched/{orgId}',
+            path: {
+                'orgId': orgId,
+            },
+        });
+    }
     /**
      * Récupérer un devis par ID
      * @param devisId

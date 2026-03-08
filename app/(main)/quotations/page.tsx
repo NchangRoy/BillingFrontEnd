@@ -15,9 +15,11 @@ import {
   CheckCircle2, 
   XCircle, 
   FileText, 
-  ChevronRight 
+  ChevronRight ,
+  SendHorizonal
+  
 } from "lucide-react";
-
+import { toast } from 'sonner'
 // API & Types
 import { UpdatedClientResponse, clients } from '@/src/api/models/UpdatedClientResponse'
 import { UpdatedDevisResponse, MOCK_QUOTATIONS } from '@/src/api/models/UpdatedDevisResponse'
@@ -29,6 +31,8 @@ import CreateQuotationModal from './CreateQuotationModal'
 import PrintPreviewModal from './PrintPreviewModal'
 import { UpdatedSalesOrderResponse } from '@/src/api/models/UpdatedSalesOrder'
 import { mapBackendArrayToUpdatedDevisArray } from '@/src/Mappers/DevisMapper'
+import { generateQuotationHTML } from '@/src/api/printGenerators/quotationPrint'
+import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse'
 
 const columns = {
   "Devis Number": "numeroDevis",
@@ -54,7 +58,15 @@ const Quotation = () => {
   const [quotations, setQuotations] = useState<UpdatedDevisResponse[]>(MOCK_QUOTATIONS);
   const [client, setClient] = useState<UpdatedClientResponse | undefined>()
 
-
+    const [seller, setSeller] = useState<UpdatedSellerResponse | null>(null);
+    
+      useEffect(() => {
+        // Ensuring code runs only on client
+        const stored = localStorage.getItem("seller");
+        if (stored) {
+          setSeller(JSON.parse(stored));
+        }
+      }, []);
   //first initialize the quoattions array by fetching fromthe backend
 
   useEffect(() => {
@@ -126,6 +138,42 @@ const Quotation = () => {
     localStorage.setItem("modalOpen", "open");
     router.push("/sales_orders");
   }
+const [isSending, setIsSending] = useState(false);
+
+const sendQuotation = async () => {
+  console.log(clickedQuotation)
+  // 1. Safety Guard: Ensure we have the quotation and seller data
+  if (!clickedQuotation?.idDevis || !seller) {
+    toast.error("Missing quotation or seller information");
+    return;
+  }
+
+  setIsSending(true);
+  try {
+    // 2. Generate the clean HTML string
+    const htmlTemplate = generateQuotationHTML(clickedQuotation, seller);
+    console.log(htmlTemplate)
+    // 3. Call the service
+    // Note: Use .toString() if your service expects a string ID
+    await DevisService.sendDevisEmail(
+      clickedQuotation.idDevis.toString(), 
+      htmlTemplate
+    );
+
+    // 4. Success handling
+    toast.success("Quotation Sent Successfully");
+    
+  } catch (error: any) {
+    // 5. Error handling with specific message if available
+    console.error("Email Error:", error);
+    const errorMessage = error.body?.message || "Unable to send Quotation";
+    toast.error(errorMessage);
+    
+  } finally {
+    // 6. Reset loading state
+    setIsSending(false);
+  }
+};
 
   return (
     <div className='max-w-7xl mx-auto p-6 lg:p-10 flex flex-col gap-8 bg-secondary-super-light/20 min-h-screen'>
@@ -308,6 +356,17 @@ const Quotation = () => {
                           title="Print"
                         >
                           <Printer size={14} />
+                        </button>
+
+                         {/* email */}
+                        <button 
+                          onClick={() => { setClickedQuotation(quotation);
+                            sendQuotation();
+                           }}
+                          className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-purple-800 transition-all"
+                          title="Email"
+                        >
+                          <SendHorizonal size={14} />
                         </button>
 
                         {/* Delete */}

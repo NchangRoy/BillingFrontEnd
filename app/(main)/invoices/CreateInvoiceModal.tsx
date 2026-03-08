@@ -15,6 +15,8 @@ import InvoicePrintPreviewModal from "./InvoicePrintPreviewModal";
 import { mapUpdatedFactureToCreateRequest } from "@/src/Mappers/FactureMapper";
 import { FactureService } from "@/src/src2/api/services/FactureService";
 import { useRouter } from "next/navigation";
+import { UpdatedSellerResponse } from "@/src/api/models/UpdatedSellerResponse";
+import { ClientService } from "@/src/src2/api/services/ClientService";
 
 interface Props {
   isOpen: boolean;
@@ -27,6 +29,27 @@ interface Props {
 const CreateInvoiceModal = ({ isOpen, onClose, clientData, factureData }: Props) => {
   const [selectedClient, setSelectedClient] = useState<UpdatedClientResponse | undefined>(clientData);
   const [facture, setFacture] = useState<UpdatedFactureResponse | undefined>();
+  const [seller,setSeller]=useState<UpdatedSellerResponse>()
+   const [clientss,setClients]=useState<UpdatedClientResponse[]>(clients)
+      const clientService=new ClientService()
+          useEffect( () => {
+            // Ensuring code runs only on client
+            const stored = localStorage.getItem("seller");
+            //fetch clients
+          const fetchUsers=async ()=>{
+             try {
+              const data=await clientService.getClients()
+              setClients(data)
+              console.log(data)
+
+            } catch (error) {
+              console.log("error fetching clients")
+            }
+          }
+            if (stored) {
+              setSeller(JSON.parse(stored));
+            }
+          }, []);
   const router=useRouter()
   // 1. INITIALIZATION LOGIC
   useEffect(() => {
@@ -86,12 +109,15 @@ const CreateInvoiceModal = ({ isOpen, onClose, clientData, factureData }: Props)
       montantRestant:  facture.montantTTC,
       
       // Metadata
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+       organizationId:seller?.organizationId,
+      createdBy:seller?.Id
     };
 
     console.log("Saving Facture Payload:", finalPayload);
 
     const tranformed=mapUpdatedFactureToCreateRequest(finalPayload)
+    console.log(tranformed)
 
 
 

@@ -46,6 +46,7 @@ export type DevisResponse = {
     createdAt?: string;
     updatedAt?: string;
     organizationId?: string;
+    createdBy?:string
 };
 export namespace DevisResponse {
     export enum statut {

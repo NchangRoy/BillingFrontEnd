@@ -19,6 +19,7 @@ import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
 import { UpdatedFactureResponse } from '@/src/api/models/UpdatedFactureResponse';
 import { DevisService } from '@/src/src2/api/services/DevisService';
 import { mapBackendArrayToUpdatedDevisArray } from '@/src/Mappers/DevisMapper';
+import { getAcronym } from '@/src/src2/api/services/ExternalServices.ts/AcronymService';
 interface Props {
   clients: UpdatedClientResponse[];
   
@@ -157,7 +158,8 @@ useEffect(() => {
   // 1. ID GENERATION
   useEffect(() => {
     if (!quotation?.idDevis) {
-      const agency = seller?.agency, type = "QUO";
+      const agency = getAcronym(seller?.agency??"HQ");
+      const type="QUO";
       const taxFlag = formData.applyVat && selectClient?.ntva ? "T" : "NT";
       const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
       const suffix = Math.floor(Math.random() * 10000).toString().padStart(4, "0");

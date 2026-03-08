@@ -37,6 +37,8 @@ export type DevisCreateRequest = {
     referalClientId?: string;
     pdfPath?: string;
     organizationId?: string;
+
+    createdBy?:string;
 };
 export namespace DevisCreateRequest {
     export enum statut {
