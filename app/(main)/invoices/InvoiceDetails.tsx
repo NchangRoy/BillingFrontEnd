@@ -10,7 +10,7 @@ import SummaryCard from './SummaryCard';
 import { Permission, UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
 import { UpdatedFactureResponse } from '@/src/api/models/UpdatedFactureResponse';
 import SockJS from 'sockjs-client';
-import { ProductApiService } from '@/src/api/services/ProduitService';
+import { ProductControllerService } from '@/src/src2/api';
 import { Client } from '@stomp/stompjs';
 import { toast } from 'sonner';
 const inputStyles = "w-full border border-gray-200 rounded-lg outline-none py-2 px-3 focus:ring-2 focus:ring-secondary-mid/10 focus:border-secondary-mid transition-all text-sm text-gray-700 bg-white shadow-sm placeholder:text-gray-300";
@@ -57,7 +57,7 @@ useEffect(() => {
 
     try {
       console.log("🔄 Fetching products for org:", seller.organizationId);
-      const data = await ProductApiService.getProductsByOrganization("3fa85f64-5717-4562-b3fc-2c963f66afa6");
+      const data = await ProductControllerService.getProductByOrganization("3fa85f64-5717-4562-b3fc-2c963f66afa6") as unknown as UpdatedProductResponse[];
       
       // Update both state lists
       setProducts(data);

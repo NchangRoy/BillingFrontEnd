@@ -4,12 +4,10 @@
 /* eslint-disable */
 import type { DevisCreateRequest } from '../models/DevisCreateRequest';
 import type { DevisResponse } from '../models/DevisResponse';
-import type { Pageable } from '../models/Pageable';
-import type { PageDevisResponse } from '../models/PageDevisResponse';
+import type { EnrichedDevisResponse } from '../models/EnrichedDevisResponse';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
-import { EnrichedDevisResponse } from '../models/EnrichedDevisResponse';
 export class DevisService {
 
 
@@ -220,23 +218,6 @@ export class DevisService {
             query: {
                 'dateDebut': dateDebut,
                 'dateFin': dateFin,
-            },
-        });
-    }
-    /**
-     * Récupérer tous les devis avec pagination
-     * @param pageable
-     * @returns PageDevisResponse OK
-     * @throws ApiError
-     */
-    public static getAllDevisPaginated(
-        pageable: Pageable,
-    ): CancelablePromise<PageDevisResponse> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/devis/paginated',
-            query: {
-                'pageable': pageable,
             },
         });
     }

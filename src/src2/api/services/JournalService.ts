@@ -5,8 +5,6 @@
 import type { JournalCreateRequest } from '../models/JournalCreateRequest';
 import type { JournalResponse } from '../models/JournalResponse';
 import type { JournalUpdateRequest } from '../models/JournalUpdateRequest';
-import type { Pageable } from '../models/Pageable';
-import type { PageJournalResponse } from '../models/PageJournalResponse';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -124,23 +122,6 @@ export class JournalService {
             url: '/api/journals/search',
             query: {
                 'nom': nom,
-            },
-        });
-    }
-    /**
-     * Récupérer tous les journals avec pagination
-     * @param pageable
-     * @returns PageJournalResponse OK
-     * @throws ApiError
-     */
-    public static getAllJournalsPaginated(
-        pageable: Pageable,
-    ): CancelablePromise<PageJournalResponse> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/journals/page',
-            query: {
-                'pageable': pageable,
             },
         });
     }

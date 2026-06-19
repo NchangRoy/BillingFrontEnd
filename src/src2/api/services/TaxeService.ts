@@ -2,8 +2,6 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { Pageable } from '../models/Pageable';
-import type { PageTaxeResponse } from '../models/PageTaxeResponse';
 import type { TaxeCreateRequest } from '../models/TaxeCreateRequest';
 import type { TaxeResponse } from '../models/TaxeResponse';
 import type { TaxeUpdateRequest } from '../models/TaxeUpdateRequest';
@@ -192,23 +190,6 @@ export class TaxeService {
             url: '/api/taxes/porte/{porteTaxe}',
             path: {
                 'porteTaxe': porteTaxe,
-            },
-        });
-    }
-    /**
-     * Récupérer toutes les taxes (paginée)
-     * @param pageable
-     * @returns PageTaxeResponse OK
-     * @throws ApiError
-     */
-    public static getAllTaxesPaginated(
-        pageable: Pageable,
-    ): CancelablePromise<PageTaxeResponse> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/taxes/page',
-            query: {
-                'pageable': pageable,
             },
         });
     }

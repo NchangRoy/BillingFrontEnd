@@ -4,8 +4,6 @@
 /* eslint-disable */
 import type { FactureCreateRequest } from '../models/FactureCreateRequest';
 import type { FactureResponse } from '../models/FactureResponse';
-import type { Pageable } from '../models/Pageable';
-import type { PageFactureResponse } from '../models/PageFactureResponse';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -159,23 +157,6 @@ export class FactureService {
             query: {
                 'dateDebut': dateDebut,
                 'dateFin': dateFin,
-            },
-        });
-    }
-    /**
-     * Récupérer toutes les factures avec pagination
-     * @param pageable
-     * @returns PageFactureResponse OK
-     * @throws ApiError
-     */
-    public static getAllFacturesPaginated(
-        pageable: Pageable,
-    ): CancelablePromise<PageFactureResponse> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/factures/paginated',
-            query: {
-                'pageable': pageable,
             },
         });
     }
