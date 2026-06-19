@@ -20,6 +20,7 @@ import { UpdatedFactureResponse } from '@/src/api/models/UpdatedFactureResponse'
 import { DevisService } from '@/src/src2/api/services/DevisService';
 import { mapBackendArrayToUpdatedDevisArray } from '@/src/Mappers/DevisMapper';
 import { getAcronym } from '@/src/src2/api/services/ExternalServices.ts/AcronymService';
+import { toast } from 'sonner';
 interface Props {
   clients: UpdatedClientResponse[];
   
@@ -102,11 +103,11 @@ useEffect(() => {
         setQuotations(transformed);
       } catch (error) {
         console.error("Erreur lors du chargement des devis:", error);
-        // Optionnel : afficher une notification d'erreur ici
+        toast.error("Failed to load quotations.")
       }
     };
-  
-    findDevis(); 
+
+    findDevis();
   }, []);
 
 

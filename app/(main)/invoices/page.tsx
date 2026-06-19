@@ -17,6 +17,7 @@ import { MOCK_FACTURE } from '@/src/api/models/UpdatedFactureResponse'
 import { mapBackendFactureArrayToUpdatedArray } from '@/src/Mappers/FactureMapper'
 import { FactureService } from '@/src/src2/api/services/FactureService'
 import { toast } from 'sonner'
+import TableSkeleton from '@/components/TableSkeleton'
 // Adjusting Table Columns for Invoices
 const columns = {
   "Invoice #": "numeroFacture",
@@ -44,32 +45,25 @@ const Factures = () => {
   const [factures, setFactures] = useState<UpdatedFactureResponse[]>(MOCK_FACTURE);
   const [client, setClient] = useState<UpdatedClientResponse | undefined>()
   const [onsuccess,setOnSuccess]=useState<boolean>(false)
+  const [isLoading, setIsLoading] = useState<boolean>(true)
   //logic to load the tranformed invoice from local storage
   useEffect(()=>{
     const findFactures = async () => {
-  try {
-    // 1. Appel au service API généré
-    const data = await FactureService.getAllFactures();
-
-    const clientService=new ClientService();
-    const clients=await clientService.getClients()
-    
-    // 2. Transformation des données Backend -> UI via le mapper
-    // Nous utilisons la version 'Array' pour traiter toute la liste d'un coup
-    const transformed = mapBackendFactureArrayToUpdatedArray(data);
-    
-    console.log("Factures chargées et mappées:", transformed);
-    
-    // 3. Mise à jour de l'état local (ex: setInvoices ou setFactures)
-    setFactures(transformed);
-    toast.success("Good")
-  } catch (error) {
-    console.error("Erreur lors du chargement des factures:", error);
-    toast.error("Bad")
-    // Ici, vous pourriez ajouter un toast de notification pour l'utilisateur
-  }
-};
-findFactures()
+      setIsLoading(true)
+      try {
+        const data = await FactureService.getAllFactures();
+        const clientService=new ClientService();
+        await clientService.getClients()
+        const transformed = mapBackendFactureArrayToUpdatedArray(data);
+        setFactures(transformed);
+      } catch (error) {
+        console.error("Erreur lors du chargement des factures:", error);
+        toast.error("Failed to load invoices. Please try again.")
+      } finally {
+        setIsLoading(false)
+      }
+    };
+    findFactures()
   },[isModalOpen])
 
     useEffect(()=>{
@@ -166,18 +160,13 @@ findFactures()
     //await FactureService.syncToAccounting(f.idFacture);
     try {
       await FactureService.accountFacture(f.idFacture)
-      
+      toast.success(`Facture ${f.numeroFacture} sent to accounting!`)
     } catch (error) {
-     // alert(`Error occured when accounting Bill`);
+      toast.error("Error occurred when accounting bill")
     }
-    
-    // Success feedback
-    alert(`Facture ${f.numeroFacture} sent to accounting!`);
-    
-    // Optional: Refresh list or update status
   } catch (error) {
     console.error("Sync error:", error);
-    alert("Error syncing with accounting backend.");
+    toast.error("Error syncing with accounting backend.");
   }
 
 
@@ -259,7 +248,9 @@ handleAccountingSync(f)
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filteredFactures.map((facture) => (
+              {isLoading ? (
+                <TableSkeleton cols={Object.keys(columns).length} />
+              ) : filteredFactures.map((facture) => (
                 <tr key={facture.idFacture} className="group hover:bg-secondary-mid/[0.02] transition-colors">
                   {Object.values(columns).map((key, index) => (
                     <td key={index} className="px-6 py-4 text-gray-600 font-medium whitespace-nowrap">

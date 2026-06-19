@@ -15,6 +15,7 @@ import { PurcaseOrderResponse, PurchaseOrderResponse } from '@/src/api/models/Pu
 import { MOCK_PURCHASE_ORDERS } from '@/src/api/models/PurchaseOrderLine';
 import { BonDAchatService } from '@/src/src2/api/services/BonDAchatService';
 import { mapBackendBAArrayToUIArray } from '@/src/Mappers/BonAchatMapper';
+import { toast } from 'sonner';
 
 interface Props {
   producers: UpdatedClientResponse[]; // Using the clients array as producers
@@ -61,7 +62,7 @@ const ProducerHeader = ({ producers, setMainSelectedProducer, selectedProducer, 
         
       } catch (error) {
         console.error("Erreur lors du chargement des factures:", error);
-        // Ici, vous pourriez ajouter un toast de notification pour l'utilisateur
+        toast.error("Failed to load purchase order data.")
       }
     };
     findFactures()

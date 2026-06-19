@@ -12,6 +12,7 @@ import { DeliveryNoteResponse } from '@/src/api/models/DeliveryNoteResponse';
 import { transformSalesOrderToDeliveryNote } from '@/src/api/transformation/deliveryOrderTransformation';
 import { BonCommandeService } from '@/src/src2/api/services/BonCommandeService';
 import { mapBonCommandeListToSalesOrderList } from '@/src/Mappers/BonCommandeMapper';
+import { toast } from 'sonner';
 
 interface Props {
   clients: UpdatedClientResponse[];
@@ -47,11 +48,11 @@ const ClientHeader = ({ clients, setMainSelectedClient, selectClient, deliveryNo
           setOrders(transformed)
         } catch (error) {
           console.error("Erreur lors du chargement des devis:", error);
-          // Optionnel : afficher une notification d'erreur ici
+          toast.error("Failed to load sales orders.")
         }
       };
-    
-      findDevis(); 
+
+      findDevis();
     }, []);
 
   const containerRef = useRef<HTMLDivElement>(null);

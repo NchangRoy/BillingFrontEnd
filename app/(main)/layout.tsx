@@ -6,6 +6,7 @@ import { Roboto } from "next/font/google";
 
 // 1. Import Sonner's Toaster (No extra CSS import needed)
 import { Toaster } from 'sonner';
+import NavigationProgress from '@/components/NavigationProgress';
 
 export const metadata: Metadata = {
   title: 'Billing Enterprise ERP',
@@ -30,10 +31,11 @@ export default function RootLayout({
         {/* 2. Place Sonner Toaster here. 
             'richColors' makes success/error look professional automatically. 
             'expand' allows users to see the stack on hover. */}
-        <Toaster 
-          position="top-right" 
-          richColors 
-          closeButton 
+        <NavigationProgress />
+        <Toaster
+          position="top-right"
+          richColors
+          closeButton
           expand={true}
         />
 

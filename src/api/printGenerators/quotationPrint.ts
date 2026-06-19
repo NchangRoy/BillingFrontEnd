@@ -1,18 +1,15 @@
 import { UpdatedSellerResponse } from "../models/UpdatedSellerResponse";
 import { UpdatedDevisResponse } from "../models/UpdatedDevisResponse";
-/**
- * Generates the A4 Quotation HTML string based on specific data and seller profiles.
- */
+
 export const generateQuotationHTML = (
-  data: UpdatedDevisResponse, // This would be your UpdatedDevisResponse object
-  seller: UpdatedSellerResponse
+  data: UpdatedDevisResponse,
+  seller: UpdatedSellerResponse,
+  qrBase64: string
 ): string => {
   
-  // Helper for currency: 15000 -> 15,000 XAF
   const formatCurrency = (num: number = 0) => 
     new Intl.NumberFormat('en-GB').format(num) + ' ' + (data.devise || 'XAF');
 
-  // Helper for dates: 2026-03-07 -> 07 Mar 2026
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return '---';
     return new Date(dateStr).toLocaleDateString('en-GB', {
@@ -20,7 +17,6 @@ export const generateQuotationHTML = (
     });
   };
 
-  // Generate Table Rows
   const tableRows = data.lignesDevis?.map((item: any) => `
     <tr>
         <td class="desc-col">${item.description}</td>
@@ -69,7 +65,9 @@ export const generateQuotationHTML = (
         .desc-col { font-weight: 700; color: #1e293b; }
         .total-col { font-weight: 900; }
         .footer { margin-top: auto; padding-top: 32px; border-top: 2px solid #f1f5f9; display: flex; justify-content: space-between; align-items: flex-end; }
-        .terms { width: 50%; }
+        .terms { width: 55%; display: flex; gap: 24px; align-items: flex-start; }
+        .terms-content { flex: 1; }
+        .qr-container { flex-shrink: 0; text-align: center; background: #f8fafc; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0; }
         .terms-text { font-size: 10px; color: #64748b; font-style: italic; line-height: 1.6; }
         .totals-box { width: 288px; }
         .subtotal-row { display: flex; justify-content: space-between; padding: 0 16px; margin-bottom: 8px; font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; }
@@ -143,10 +141,17 @@ export const generateQuotationHTML = (
 
         <footer class="footer">
             <div class="terms">
-                <p class="section-label" style="border: none; padding: 0;">Terms & Conditions</p>
-                <p class="terms-text">This quotation is valid until the date specified above. Prices are subject to change after the validity period. All payments should be made to the account details provided separately.</p>
+                <div class="qr-container">
+                    <img src="${qrBase64}" style="width: 75px; height: 75px; mix-blend-mode: multiply;" />
+                    <p style="font-size: 7px; font-weight: 900; color: #64748b; margin: 5px 0 0 0; text-transform: uppercase;">Verify Document</p>
+                </div>
+
+                <div class="terms-content">
+                    <p class="section-label" style="border: none; padding: 0;">Terms & Conditions</p>
+                    <p class="terms-text">This quotation is valid until the date specified above. Digital approval via the QR portal is legally binding. All payments should be made to the account details provided separately.</p>
+                </div>
             </div>
-            
+
             <div class="totals-box">
                 <div class="subtotal-row">
                     <span>Subtotal HT</span>

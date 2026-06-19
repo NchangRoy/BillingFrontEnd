@@ -16,6 +16,7 @@ import DeliveryNoteLogistics from "./DeliveryNoteLogistics";
 import { mapSalesOrderToBonCommandeRequest } from "@/src/Mappers/BonCommandeMapper";
 import { BonDeLivraisonService } from "@/src/src2/api";
 import { mapDeliveryNoteToRequest } from "@/src/Mappers/DeliveryNoteMapper";
+import { toast } from 'sonner';
 
 interface Props {
   isOpen: boolean;
@@ -63,7 +64,7 @@ const CreateDeliveryNoteModal = ({ isOpen, onClose, clientData, deliveryNoteData
   const handleSave = async () => {
     // Basic Validation: Ensure we have a client and at least one item
     if (!selectedClient || !deliveryNote || (deliveryNote.lines?.length ?? 0) === 0) {
-      console.error("Missing required data: Client or Items");
+      toast.error("Please select a client and add at least one item.")
       return;
     }
 
@@ -118,6 +119,7 @@ const CreateDeliveryNoteModal = ({ isOpen, onClose, clientData, deliveryNoteData
       onClose(true); 
     } catch (error) {
       console.error("Failed to save delivery note:", error);
+      toast.error("Failed to save delivery note. Please try again.")
     }
   };
   // 3. CHANGE HANDLER

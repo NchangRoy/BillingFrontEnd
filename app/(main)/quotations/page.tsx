@@ -33,6 +33,8 @@ import { UpdatedSalesOrderResponse } from '@/src/api/models/UpdatedSalesOrder'
 import { mapBackendArrayToUpdatedDevisArray } from '@/src/Mappers/DevisMapper'
 import { generateQuotationHTML } from '@/src/api/printGenerators/quotationPrint'
 import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse'
+import EmailPreviewModal from '../../../components/EmailPreviewModal'
+import TableSkeleton from '@/components/TableSkeleton'
 
 const columns = {
   "Devis Number": "numeroDevis",
@@ -57,7 +59,8 @@ const Quotation = () => {
   const [clickedQuotation, setClickedQuotation] = useState<UpdatedDevisResponse | undefined>();
   const [quotations, setQuotations] = useState<UpdatedDevisResponse[]>(MOCK_QUOTATIONS);
   const [client, setClient] = useState<UpdatedClientResponse | undefined>()
-
+  const [emailModalOpen,setEmailModalOpen]=useState<boolean>(false)
+  const [isLoading, setIsLoading] = useState<boolean>(true)
     const [seller, setSeller] = useState<UpdatedSellerResponse | null>(null);
     
       useEffect(() => {
@@ -71,19 +74,20 @@ const Quotation = () => {
 
   useEffect(() => {
   const findDevis = async () => {
+    setIsLoading(true)
     try {
       const data = await DevisService.getAllDevis();
-      // Utilisation de votre mapper pour transformer les données backend -> UI
       const transformed = mapBackendArrayToUpdatedDevisArray(data);
-      console.log(transformed)
       setQuotations(transformed);
     } catch (error) {
       console.error("Erreur lors du chargement des devis:", error);
-      // Optionnel : afficher une notification d'erreur ici
+      toast.error("Failed to load quotations. Please try again.")
+    } finally {
+      setIsLoading(false)
     }
   };
 
-  findDevis(); 
+  findDevis();
 }, [isModalOpen]);
   
   const filteredQuotations = useMemo(() => {
@@ -138,42 +142,7 @@ const Quotation = () => {
     localStorage.setItem("modalOpen", "open");
     router.push("/sales_orders");
   }
-const [isSending, setIsSending] = useState(false);
 
-const sendQuotation = async () => {
-  console.log(clickedQuotation)
-  // 1. Safety Guard: Ensure we have the quotation and seller data
-  if (!clickedQuotation?.idDevis || !seller) {
-    toast.error("Missing quotation or seller information");
-    return;
-  }
-
-  setIsSending(true);
-  try {
-    // 2. Generate the clean HTML string
-    const htmlTemplate = generateQuotationHTML(clickedQuotation, seller);
-    console.log(htmlTemplate)
-    // 3. Call the service
-    // Note: Use .toString() if your service expects a string ID
-    await DevisService.sendDevisEmail(
-      clickedQuotation.idDevis.toString(), 
-      htmlTemplate
-    );
-
-    // 4. Success handling
-    toast.success("Quotation Sent Successfully");
-    
-  } catch (error: any) {
-    // 5. Error handling with specific message if available
-    console.error("Email Error:", error);
-    const errorMessage = error.body?.message || "Unable to send Quotation";
-    toast.error(errorMessage);
-    
-  } finally {
-    // 6. Reset loading state
-    setIsSending(false);
-  }
-};
 
   return (
     <div className='max-w-7xl mx-auto p-6 lg:p-10 flex flex-col gap-8 bg-secondary-super-light/20 min-h-screen'>
@@ -246,7 +215,9 @@ const sendQuotation = async () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filteredQuotations.map((quotation) => (
+              {isLoading ? (
+                <TableSkeleton cols={Object.keys(columns).length} />
+              ) : filteredQuotations.map((quotation) => (
                 <tr key={quotation.idDevis} className="group hover:bg-secondary-mid/[0.02] transition-colors">
                   {Object.values(columns).map((key, index) => (
                     <td key={index} className="px-6 py-4 text-gray-600 font-medium whitespace-nowrap">
@@ -361,7 +332,8 @@ const sendQuotation = async () => {
                          {/* email */}
                         <button 
                           onClick={() => { setClickedQuotation(quotation);
-                            sendQuotation();
+                            setEmailModalOpen(!emailModalOpen)
+                            console.log(emailModalOpen)
                            }}
                           className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-purple-800 transition-all"
                           title="Email"
@@ -390,8 +362,19 @@ const sendQuotation = async () => {
         </div>
       </div>
 
+
       {isModalOpen && <CreateQuotationModal quotationData={clickedQuotation} clientData={client} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}/>} 
       {isPrintModalOpen && clickedQuotation && <PrintPreviewModal onConfirmPrint={()=>{}} isOpen={isPrintModalOpen} data={clickedQuotation} onClose={() => setIsPrintModalOpen(false)} />}
+              <EmailPreviewModal 
+  isOpen={emailModalOpen} 
+  data={clickedQuotation}
+  onClose={() => setEmailModalOpen(false)}
+  onSend={()=>{
+    toast.success("Email sent")
+    setEmailModalOpen(false)
+  }}
+  clientEmail={clickedQuotation?.emailClient??""}
+/>
     </div>
   )
 }

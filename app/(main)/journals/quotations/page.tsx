@@ -9,6 +9,7 @@ import {
 import { EnrichedDevisResponse, StatutDevis } from '@/src/src2/api/models/EnrichedDevisResponse';
 import { DevisService } from '@/src/src2/api';
 import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
+import { toast } from 'sonner';
 
 const SalesJournalPage = () => {
   const [data, setData] = useState<EnrichedDevisResponse[]>([]);
@@ -41,6 +42,7 @@ const SalesJournalPage = () => {
           setData(res);
         } catch (error) {
           console.error("Error fetching journal:", error);
+          toast.error("Failed to load journal data. Please try again.")
         } finally {
           setLoading(false);
         }

@@ -5,6 +5,8 @@ import { UpdatedDevisResponse } from '@/src/api/models/UpdatedDevisResponse';
 import { Printer, Mail, X, FileText, Receipt } from 'lucide-react';
 import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
 import { generateQuotationHTML } from '@/src/api/printGenerators/quotationPrint';
+import { generateQRBase64 } from '@/src/api/Utils/qrCode';
+import { toast } from 'sonner';
 
 type PrintFormat = 'A4' | 'Thermal';
 
@@ -14,6 +16,22 @@ interface PrintPreviewProps {
   data: UpdatedDevisResponse;
   onConfirmPrint: () => void;
 }
+
+async function sendPrintRequest(html:string) {
+  console.log("printing ",html)
+  const response = await fetch("http://localhost:3002/print", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      "html" :html
+    })
+  });
+
+  return await response.json();
+}
+
 
 const PrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: PrintPreviewProps) => {
   const [format, setFormat] = useState<PrintFormat>('A4');
@@ -31,13 +49,40 @@ const PrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: PrintPrevi
        
       } catch (e) {
         console.error("Failed to parse seller data", e);
+        toast.error("Failed to load seller data for preview.")
       }
     }
   }, [isOpen]);
-  useEffect(()=>{
-      if(seller)
-        setGeneratedHTML(generateQuotationHTML(data,seller))
-  },[seller])
+
+  useEffect(() => {
+  // Use a flag to prevent setting state on an unmounted component
+  let isMounted = true;
+
+  if (seller && data) {
+    const loadHTML = async () => {
+      try {
+        // Use actual document data for the QR, not just Google
+        
+        
+        const qrBase64 = await generateQRBase64("https://google.com", 200);
+        const html = generateQuotationHTML(data, seller, qrBase64);
+
+        if (isMounted) {
+          setGeneratedHTML(html);
+        }
+      } catch (err) {
+        console.error("Failed to generate preview HTML", err);
+        toast.error("Failed to generate document preview.")
+      }
+    };
+
+    loadHTML();
+  }
+
+  return () => {
+    isMounted = false; // Cleanup flag
+  };
+}, [seller, data, isOpen]); // Added data and isOpen to ensure it refreshes correctly
 
   if (!isOpen) return null;
 
@@ -45,6 +90,8 @@ const PrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: PrintPrevi
     if (!printAreaRef.current) return;
     setIsSending(true);
     try {
+
+      //add qr code
       const htmlContent = printAreaRef.current.innerHTML;
       const payload = {
         documentReference: data.numeroDevis,
@@ -63,6 +110,7 @@ const PrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: PrintPrevi
       if (response.ok) alert("Document successfully sent to server!");
     } catch (error) {
       console.error("Errora sending to backend:", error);
+      toast.error("Failed to send document to server.")
     } finally {
       setIsSending(false);
     }
@@ -107,7 +155,10 @@ const PrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: PrintPrevi
             <button onClick={handleSendToBackend} disabled={isSending} className="flex items-center gap-2 px-6 py-3 border-2 border-slate-200 text-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all disabled:opacity-50">
               <Mail size={16} /> {isSending ? 'Sending...' : 'Send By Email'}
             </button>
-            <button onClick={onConfirmPrint} className="flex items-center gap-2 px-8 py-3 bg-slate-900 hover:bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-slate-900/20 transition-all">
+            <button
+              onClick={() => sendPrintRequest(generatedHTML)}
+              className="flex items-center gap-2 px-8 py-3 bg-slate-900 hover:bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-slate-900/20 transition-all"
+            >
               <Printer size={16} /> Print Now
             </button>
           </div>

@@ -31,6 +31,8 @@ import { mapProformaToFacture, mapProformaToSalesOrder } from '@/src/api/transfo
 import { UpdatedSalesOrderResponse } from '@/src/api/models/UpdatedSalesOrder'
 import { FacturesProformaService } from '@/src/src2/api'
 import { mapProformaArrayToUI } from '@/src/Mappers/ProformaMapper'
+import { toast } from 'sonner'
+import TableSkeleton from '@/components/TableSkeleton'
 
 const columns = {
   "Devis Number": "numeroProformaInvoice",
@@ -55,24 +57,24 @@ const ProformaInvoice = () => {
   const [clickedProformaInvoice, setClickedProformaInvoice] = useState<UpdatedProformaInvoiceResponse | undefined>();
   const [ProformaInvoices, setProformaInvoices] = useState<UpdatedProformaInvoiceResponse[]>(MOCK_PROFORMA_INVOICE);
   const [client, setClient] = useState<UpdatedClientResponse | undefined>()
-
-
+  const [isLoading, setIsLoading] = useState<boolean>(true)
 
    useEffect(() => {
     const findDevis = async () => {
+      setIsLoading(true)
       try {
         const data = await FacturesProformaService.getAllProformas()
-        // Utilisation de votre mapper pour transformer les données backend -> UI
         const transformed = mapProformaArrayToUI(data);
-        console.log(transformed)
         setProformaInvoices(transformed);
       } catch (error) {
         console.error("Erreur lors du chargement des devis:", error);
-        // Optionnel : afficher une notification d'erreur ici
+        toast.error("Failed to load proforma invoices. Please try again.")
+      } finally {
+        setIsLoading(false)
       }
     };
-  
-    findDevis(); 
+
+    findDevis();
   }, [isModalOpen]);
 
 
@@ -223,7 +225,9 @@ const ProformaInvoice = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filteredProformaInvoices.map((ProformaInvoice) => (
+              {isLoading ? (
+                <TableSkeleton cols={Object.keys(columns).length} />
+              ) : filteredProformaInvoices.map((ProformaInvoice) => (
                 <tr key={ProformaInvoice.idProformaInvoice} className="group hover:bg-secondary-mid/[0.02] transition-colors">
                   {Object.values(columns).map((key, index) => (
                     <td key={index} className="px-6 py-4 text-gray-600 font-medium whitespace-nowrap">

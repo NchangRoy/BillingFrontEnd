@@ -13,6 +13,7 @@ import { UpdatedDevisResponse } from "@/src/api/models/UpdatedDevisResponse";
 import { MOCK_QUOTATIONS } from "@/src/api/models/UpdatedDevisResponse";
 import { mapUpdatedResponseToCreateRequest } from "@/src/Mappers/DevisMapper";
 import { DevisService } from "@/src/src2/api";
+import { toast } from 'sonner';
 import { UpdatedSellerResponse } from "@/src/api/models/UpdatedSellerResponse";
 interface Props {
   isOpen: boolean;
@@ -169,7 +170,7 @@ const finalPayload: UpdatedDevisResponse = {
     onClose(false);
   } catch (error) {
     console.error("Erreur lors de la sauvegarde :", error);
-    alert("Erreur lors de l'enregistrement. Veuillez réessayer.");
+    toast.error("Failed to save quotation. Please try again.")
   } finally {
    // setIsSaving(false); // Déverrouille le bouton dans tous les cas
   }

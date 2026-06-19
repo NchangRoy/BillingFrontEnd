@@ -20,6 +20,7 @@ import { BondeReceptionControllerService } from '@/src/src2/api/services/BondeRe
 import { mapGRNArrayToInternalArray } from '@/src/Mappers/GRNMapper';
 import { BonDAchatService } from '@/src/src2/api/services/BonDAchatService';
 import { mapBackendBAArrayToUIArray } from '@/src/Mappers/BonAchatMapper';
+import { toast } from 'sonner';
 
 interface Props {
   suppliers: UpdatedClientResponse[]; 
@@ -65,6 +66,7 @@ const SupplierHeader = ({ suppliers, setSelectedSupplier, selectedSupplier, invo
            setGRNS(transformed)
          } catch (error) {
            console.error("Erreur lors du chargement des factures:", error);
+           toast.error("Failed to load GRN and purchase order data.")
          }
        };
        findFactures()
@@ -197,7 +199,7 @@ const SupplierHeader = ({ suppliers, setSelectedSupplier, selectedSupplier, invo
       }
     } else {
       console.error("No matching Purchase Order found for this GRN");
-      // Optional: Show a toast notification to the user here
+      toast.error("No matching Purchase Order found for this GRN.")
     }
   };
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {

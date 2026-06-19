@@ -5,6 +5,7 @@ import { UpdatedFactureResponse, FactureResponse } from '@/src/api/models/Update
 import { Printer, Mail, X, FileText, Receipt, Building2, Phone, MapPin } from 'lucide-react';
 import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
 import { QRCode } from 'react-qrcode-logo';
+import { toast } from 'sonner';
 
 type PrintFormat = 'A4' | 'Thermal';
 
@@ -28,6 +29,7 @@ const InvoicePrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: Pri
         setSeller(JSON.parse(stored));
       } catch (e) {
         console.error("Failed to parse seller data", e);
+        toast.error("Failed to load seller data for preview.")
       }
     }
   }, [isOpen]); 
@@ -70,6 +72,7 @@ const InvoicePrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: Pri
       if (response.ok) alert("Invoice PDF successfully generated!");
     } catch (error) {
       console.error("Error sending to backend:", error);
+      toast.error("Failed to send invoice to server.")
     } finally {
       setIsSending(false);
     }

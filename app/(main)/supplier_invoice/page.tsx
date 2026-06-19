@@ -17,6 +17,8 @@ import CreateSupplierInvoiceModal from './CreateSupplierInvoiceModal'
 import SupplierInvoicePrintPreviewModal from './SupplierInvoicePrintPreviewModal'
 import { FactureFournisseurControllerService } from '@/src/src2/api'
 import { mapBackendFactureFournisseurArrayToInternal } from '@/src/Mappers/SupplierFactureMapper'
+import { toast } from 'sonner'
+import TableSkeleton from '@/components/TableSkeleton'
 
 // Helper for date formatting
 const formatDate = (dateString?: string) => {
@@ -54,20 +56,20 @@ const SupplierFactures = () => {
   const [clickedFacture, setClickedFacture] = useState<UpdatedSupplierFactureResponse | undefined>();
   const [factures, setFactures] = useState<UpdatedSupplierFactureResponse[]>(MOCK_SUPPLIER_FACTURES);
   const [selectedSupplier, setSelectedSupplier] = useState<any | undefined>();
-
-
+  const [isLoading, setIsLoading] = useState<boolean>(true)
 
     useEffect(() => {
     const findDevis = async () => {
+      setIsLoading(true)
       try {
         const data = await FactureFournisseurControllerService.getFactures()
-        // Utilisation de votre mapper pour transformer les données backend -> UI
         const transformed = mapBackendFactureFournisseurArrayToInternal(data)
-        console.log(transformed)
         setFactures(transformed);
       } catch (error) {
         console.error("Erreur lors du chargement des devis:", error);
-        // Optionnel : afficher une notification d'erreur ici
+        toast.error("Failed to load supplier invoices. Please try again.")
+      } finally {
+        setIsLoading(false)
       }
     };
   
@@ -200,7 +202,9 @@ const SupplierFactures = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filteredFactures.map((facture) => (
+              {isLoading ? (
+                <TableSkeleton cols={Object.keys(columns).length} />
+              ) : filteredFactures.map((facture) => (
                 <tr key={facture.idFacture} className="group hover:bg-secondary-mid/[0.01] transition-colors">
                   {Object.values(columns).map((key, index) => (
                     <td key={index} className="px-6 py-4 text-gray-600 font-medium whitespace-nowrap">

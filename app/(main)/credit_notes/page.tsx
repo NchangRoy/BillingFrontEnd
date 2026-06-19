@@ -16,6 +16,8 @@ import CreateCreditNoteModal from './CreateCreditNoteModal'
 import PrintPreviewModal from './CreditNotePrintPreviewModal'
 import { NoteCreditControllerService } from '@/src/src2/api'
 import { mapCreditNoteArrayToInternalArray } from '@/src/Mappers/CreditNoteMapper'
+import { toast } from 'sonner'
+import TableSkeleton from '@/components/TableSkeleton'
 
 const columns = {
   "Note Number": "numeroCreditNote",
@@ -43,16 +45,21 @@ const CreditNote = () => {
   const [creditNotes, setCreditNotes] = useState<UpdatedCreditNoteResponse[]>(MOCK_CREDIT_NOTES);
   const [client, setClient] = useState<UpdatedClientResponse | undefined>()
   const [showMenu,setShowMenu]=useState<boolean>(false)
+  const [isLoading, setIsLoading] = useState<boolean>(true)
 
   // Load Data from API
   useEffect(() => {
     const findFactures = async () => {
+      setIsLoading(true)
       try {
         const data = await NoteCreditControllerService.getAllNoteCredits()
         const transformed = mapCreditNoteArrayToInternalArray(data)
         setCreditNotes(transformed);
       } catch (error) {
         console.error("Erreur lors du chargement des factures:", error);
+        toast.error("Failed to load credit notes. Please try again.")
+      } finally {
+        setIsLoading(false)
       }
     };
     findFactures()
@@ -190,7 +197,9 @@ const CreditNote = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filteredNotes.map((note) => (
+              {isLoading ? (
+                <TableSkeleton cols={Object.keys(columns).length} />
+              ) : filteredNotes.map((note) => (
                 <tr key={note.idCreditNote} className="group hover:bg-secondary-mid/[0.02] transition-colors">
                   {Object.values(columns).map((value, index) => (
                     <td key={index} className="px-6 py-4 text-gray-600 font-medium whitespace-nowrap">

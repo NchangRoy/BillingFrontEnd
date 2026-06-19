@@ -32,6 +32,8 @@ import { generateFactureFromPOandGRN } from '@/src/api/transformation/supplierIn
 import { BonDAchatService, BondeReceptionControllerService } from '@/src/src2/api'
 import { mapGRNArrayToInternalArray } from '@/src/Mappers/GRNMapper'
 import { mapBackendBAArrayToUIArray } from '@/src/Mappers/BonAchatMapper'
+import { toast } from 'sonner'
+import TableSkeleton from '@/components/TableSkeleton'
 
 // Mapping Table Columns for GRN
 const columns = {
@@ -60,21 +62,24 @@ const GoodsReceiptNotes = () => {
   const [grnList, setGrnList] = useState<GoodsReceiptNoteResponse[]>(MOCK_GOODS_RN);
   const [client, setClient] = useState<UpdatedClientResponse | undefined>()
   const [purchaseOrders,setPurchaseOrders]=useState<PurchaseOrderResponse[]>(MOCK_PURCHASE_ORDERS)
+  const [isLoading, setIsLoading] = useState<boolean>(true)
 
   // Load Data from API
    useEffect(() => {
      const findFactures = async () => {
+       setIsLoading(true)
        try {
          const data = await BondeReceptionControllerService.getBons()
          const transformed = mapGRNArrayToInternalArray(data)
-
-         //aslo felct the purchase orders
          const purchase_order=await BonDAchatService.getAllBonsAchat()
          const trans=mapBackendBAArrayToUIArray(purchase_order)
          setPurchaseOrders(trans)
          setGrnList(transformed)
        } catch (error) {
          console.error("Erreur lors du chargement des factures:", error);
+         toast.error("Failed to load goods receipt notes. Please try again.")
+       } finally {
+         setIsLoading(false)
        }
      };
      findFactures()
@@ -218,7 +223,9 @@ const GoodsReceiptNotes = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filteredGRNs.map((grn) => (
+              {isLoading ? (
+                <TableSkeleton cols={Object.keys(columns).length} />
+              ) : filteredGRNs.map((grn) => (
                 <tr key={grn.idGRN} className="group hover:bg-secondary-mid/[0.01] transition-colors">
                   {Object.values(columns).map((value, index) => (
                     <td key={index} className="px-6 py-4 text-gray-600 font-medium whitespace-nowrap">

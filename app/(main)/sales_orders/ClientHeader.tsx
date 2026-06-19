@@ -19,6 +19,7 @@ import { DevisService } from '@/src/src2/api/services/DevisService';
 import { mapBackendArrayToUpdatedDevisArray } from '@/src/Mappers/DevisMapper';
 import { BonCommandeService } from '@/src/src2/api';
 import { mapBonCommandeListToSalesOrderList } from '@/src/Mappers/BonCommandeMapper';
+import { toast } from 'sonner';
 
 interface Props {
   clients: UpdatedClientResponse[];
@@ -73,25 +74,22 @@ const [selectedClient, setSelectedClient] = useState<UpdatedClientResponse | nul
           setOrders(transformed)
         } catch (error) {
           console.error("Erreur lors du chargement des devis:", error);
-          // Optionnel : afficher une notification d'erreur ici
+          toast.error("Failed to load sales orders.")
         }
       };
-    
-      findDevis(); 
-    }, []);
 
+      findDevis();
+    }, []);
 
    useEffect(() => {
     const findDevis = async () => {
       try {
         const data = await DevisService.getAllDevis();
-        // Utilisation de votre mapper pour transformer les données backend -> UI
         const transformed = mapBackendArrayToUpdatedDevisArray(data);
-        console.log(transformed)
         setQuotations(transformed);
       } catch (error) {
         console.error("Erreur lors du chargement des devis:", error);
-        // Optionnel : afficher une notification d'erreur ici
+        toast.error("Failed to load quotations.")
       }
     };
   

@@ -28,6 +28,8 @@ import CreateDeliveryNoteModal from './CreateDeliveryNoteModal'
 import DeliveryNotePrintPreviewModal from './DeliveryNotePrintPreviewModal'
 import { BonDeLivraisonService } from '@/src/src2/api'
 import { mapBackendArrayToDeliveryNoteList } from '@/src/Mappers/DeliveryNoteMapper'
+import { toast } from 'sonner'
+import TableSkeleton from '@/components/TableSkeleton'
 
 const columns = {
   "DN Number": "deliveryNoteNumber",
@@ -55,20 +57,20 @@ const DeliveryNotes = () => {
   const [clickedNote, setClickedNote] = useState<DeliveryNoteResponse | undefined>();
   const [deliveryNotes, setDeliveryNotes] = useState<DeliveryNoteResponse[]>(MOCK_DELIVERY_NOTES);
   const [client, setClient] = useState<UpdatedClientResponse | undefined>()
-
-
+  const [isLoading, setIsLoading] = useState<boolean>(true)
 
    useEffect(() => {
     const findDevis = async () => {
+      setIsLoading(true)
       try {
         const data = await BonDeLivraisonService.getAllBonLivraisons()
-        // Utilisation de votre mapper pour transformer les données backend -> UI
         const transformed = mapBackendArrayToDeliveryNoteList(data)
-        console.log(transformed)
         setDeliveryNotes(transformed);
       } catch (error) {
         console.error("Erreur lors du chargement des devis:", error);
-        // Optionnel : afficher une notification d'erreur ici
+        toast.error("Failed to load delivery notes. Please try again.")
+      } finally {
+        setIsLoading(false)
       }
     };
   
@@ -206,7 +208,9 @@ const DeliveryNotes = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filteredNotes.map((note) => (
+              {isLoading ? (
+                <TableSkeleton cols={Object.keys(columns).length} />
+              ) : filteredNotes.map((note) => (
                 <tr key={note.idDN} className="group hover:bg-secondary-mid/[0.01] transition-colors">
                   {Object.values(columns).map((value, index) => (
                     <td key={index} className="px-6 py-4 text-gray-600 font-medium whitespace-nowrap">

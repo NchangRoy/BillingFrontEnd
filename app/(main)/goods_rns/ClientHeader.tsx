@@ -12,6 +12,7 @@ import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
 import { convertPurchaseOrderToGRN } from '@/src/api/transformation/purchaseOrderTranformation';
 import { BonDAchatService } from '@/src/src2/api/services/BonDAchatService';
 import { mapBackendBAArrayToUIArray } from '@/src/Mappers/BonAchatMapper';
+import { toast } from 'sonner';
 
 interface Props {
   producers: UpdatedClientResponse[];
@@ -60,6 +61,7 @@ const ClientHeader = ({ producers, setMainSelectedProducer, selectedProducer, gr
         setPurchaseOrders(transformed);
       } catch (error) {
         console.error("Error loading purchase orders:", error);
+        toast.error("Failed to load purchase orders.")
       }
     };
     loadPurchaseOrders();

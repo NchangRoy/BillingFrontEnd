@@ -29,6 +29,8 @@ import PurchaseOrderPrintPreviewModal from './PurchaseOrderPrintPreviewModal'
 import { convertPurchaseOrderToGRN } from '@/src/api/transformation/purchaseOrderTranformation'
 import { BonDAchatService } from '@/src/src2/api'
 import { mapBackendBAArrayToUIArray } from '@/src/Mappers/BonAchatMapper'
+import { toast } from 'sonner'
+import TableSkeleton from '@/components/TableSkeleton'
 
 const columns = {
   "PO #": "poNumber",
@@ -56,30 +58,24 @@ const PurchaseOrders = () => {
   const [clickedOrder, setClickedOrder] = useState<PurchaseOrderResponse | undefined>();
   const [orders, setOrders] = useState<PurchaseOrderResponse[]>(MOCK_PURCHASE_ORDERS); 
   const [producer, setProducer] = useState<UpdatedClientResponse | undefined>();
-
+  const [isLoading, setIsLoading] = useState<boolean>(true)
 
   useEffect(()=>{
-      const findFactures = async () => {
-    try {
-      // 1. Appel au service API généré
-      const data = await BonDAchatService.getAllBonsAchat()
-      
-      // 2. Transformation des données Backend -> UI via le mapper
-      // Nous utilisons la version 'Array' pour traiter toute la liste d'un coup
-      const transformed = mapBackendBAArrayToUIArray(data);
-      
-      console.log("Factures chargées et mappées:", transformed);
-      
-      // 3. Mise à jour de l'état local (ex: setInvoices ou setFactures)
-      setOrders(transformed);
-      
-    } catch (error) {
-      console.error("Erreur lors du chargement des factures:", error);
-      // Ici, vous pourriez ajouter un toast de notification pour l'utilisateur
-    }
-  };
-  findFactures()
-    },[isModalOpen])
+    const findFactures = async () => {
+      setIsLoading(true)
+      try {
+        const data = await BonDAchatService.getAllBonsAchat()
+        const transformed = mapBackendBAArrayToUIArray(data);
+        setOrders(transformed);
+      } catch (error) {
+        console.error("Erreur lors du chargement des factures:", error);
+        toast.error("Failed to load purchase orders. Please try again.")
+      } finally {
+        setIsLoading(false)
+      }
+    };
+    findFactures()
+  },[isModalOpen])
 
   // Filter Logic
   const filteredOrders = useMemo(() => {
@@ -185,7 +181,9 @@ const PurchaseOrders = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filteredOrders.map((order) => (
+              {isLoading ? (
+                <TableSkeleton cols={Object.keys(columns).length} />
+              ) : filteredOrders.map((order) => (
                 <tr key={order.idPO} className="group hover:bg-secondary-mid/[0.01] transition-colors">
                   {Object.values(columns).map((key, index) => (
                     <td key={index} className="px-6 py-4 text-gray-600 font-medium whitespace-nowrap">

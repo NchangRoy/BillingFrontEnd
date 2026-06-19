@@ -17,6 +17,7 @@ import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
 import { UpdatedProformaInvoiceResponse,MOCK_PROFORMA_INVOICE } from '@/src/api/models/UpdatedProformaInvoiceResponse';
 import { FacturesProformaService } from '@/src/src2/api';
 import { mapProformaArrayToUI } from '@/src/Mappers/ProformaMapper';
+import { toast } from 'sonner';
 interface Props {
   clients: UpdatedClientResponse[];
   
@@ -64,7 +65,7 @@ const ClientHeader = ({ clients,  setMainSelectedClient, selectClient, ProformaI
               setProformaInvoices(transformed);
             } catch (error) {
               console.error("Erreur lors du chargement des devis:", error);
-              // Optionnel : afficher une notification d'erreur ici
+              toast.error("Failed to load proforma invoices.")
             }
           };
         

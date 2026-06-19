@@ -21,17 +21,28 @@ export class DevisService {
      * @returns any OK
      * @throws ApiError
      */
-    public static sendDevisEmail(
+    public static 
+    sendDevisEmail(
         id: string,
         htmlContent: string,
+        permissions:any,
+        organizationRaisonSociale:string
     ): CancelablePromise<any> {
+        console.log("Sending email request")
+        const body={
+                id: id,
+                htmlContent: htmlContent,
+                canView:permissions["view"],
+                canAccept:permissions["accept"],
+                canReject:permissions["reject"],
+                canModify:permissions["modify"],
+                organizationRaisonSociale
+            }
+            console.log(body)
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/devis/email',
-            body: {
-                id: id,
-                htmlContent: htmlContent,
-            },
+            body: body,
             mediaType: 'application/json',
         });
     }

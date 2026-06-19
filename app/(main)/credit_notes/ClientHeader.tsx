@@ -17,6 +17,7 @@ import { UpdatedFactureResponse } from '@/src/api/models/UpdatedFactureResponse'
 import { MOCK_FACTURE } from '@/src/api/models/UpdatedFactureResponse';
 import { FactureService } from '@/src/src2/api/services/FactureService';
 import { mapBackendFactureArrayToUpdatedArray } from '@/src/Mappers/FactureMapper';
+import { toast } from 'sonner';
 
 interface Props {
     clients: UpdatedClientResponse[];
@@ -134,7 +135,7 @@ const Invoice_To_CreditNote = (invoice: UpdatedFactureResponse): UpdatedCreditNo
         
       } catch (error) {
         console.error("Erreur lors du chargement des factures:", error);
-        // Ici, vous pourriez ajouter un toast de notification pour l'utilisateur
+        toast.error("Failed to load invoice data for credit note.")
       }
     };
     findFactures()
