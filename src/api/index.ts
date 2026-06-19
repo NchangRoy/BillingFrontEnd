@@ -21,3 +21,5 @@ export type { UpdatedSellerResponse } from './models/UpdatedSellerResponse';
 export type { UpdatedSupplierFactureResponse } from './models/UpdatedSupplierFactureResponse';
 export { PurcaseOrderResponse } from './models/PurchaseOrderLine';
 export type { PurchaseOrderResponse } from './models/PurchaseOrderLine';
+export type { UpdatedBackOrderResponse, BackOrderLine } from './models/UpdatedBackOrderResponse';
+export { BackOrderStatus } from './models/UpdatedBackOrderResponse';

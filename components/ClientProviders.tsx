@@ -9,7 +9,9 @@ export default function ClientProviders({ children }: { children: ReactNode }) {
     <LoadingProvider>
       <NavigationProgress />
       <LoadingOverlay />
-      {children}
+      <div style={{ display: 'contents' }}>
+        {children}
+      </div>
     </LoadingProvider>
   )
 }

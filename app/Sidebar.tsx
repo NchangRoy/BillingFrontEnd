@@ -16,7 +16,6 @@ import {
   Description as SupplierInvoiceIcon,
   BusinessCenter as SalesSectionIcon,
   Factory as PurchaseSectionIcon,
-  // New Icons for Journals
   MenuBook as JournalSectionIcon,
   AutoStories as GeneralLedgerIcon,
   HistoryEdu as AuditLogIcon,
@@ -36,7 +35,6 @@ const iconMap: Record<string, React.ElementType> = {
   SupplierInvoiceIcon,
   SalesSectionIcon,
   PurchaseSectionIcon,
-  // Mapping New Icons
   JournalSectionIcon,
   GeneralLedgerIcon,
   AuditLogIcon,
@@ -55,6 +53,7 @@ const MENU_SECTIONS = [
       { content: "Invoices", Icon: "ReceiptIcon", path: "/invoices" },
       { content: "Delivery Note", Icon: "DeliveryIcon", path: "/delivery_notes" },
       { content: "Credit Notes", Icon: "CreditNoteIcon", path: "/credit_notes" },
+      { content: "Back Orders", Icon: "GoodsReceiptIcon", path: "/back_orders" },
     ],
   },
   {
@@ -92,11 +91,11 @@ const Sidebar = () => {
   const currentSection = MENU_SECTIONS.find((s) => s.id === openSectionId);
 
   return (
-    <div className="inset-y-0 left-0 z-50 flex">
-      {/* STAGE 1: Primary Icon Rail (Fixed Left) */}
+    <div className="flex" style={{ height: '100%', minHeight: '100%' }}>
+      {/* Icon Rail */}
       <aside
-        className="w-16 h-screen flex flex-col bg-white border-r-4 shadow-xl z-20"
-        style={{ borderColor: "var(--color-secondary-mid)" }}
+        className="w-16 flex flex-col bg-white border-r-4 shadow-xl z-20"
+        style={{ borderColor: "var(--color-secondary-mid)", minHeight: '100%' }}
       >
         <Link href="/dashboard">
           <div className="flex justify-center py-6 border-b border-gray-100 cursor-pointer">
@@ -120,9 +119,8 @@ const Sidebar = () => {
                 className={`w-full h-16 flex items-center justify-center transition-all relative
                   ${isOpen ? "bg-[var(--color-secondary-super-light)] text-[var(--color-secondary-mid)]" : "text-gray-400 hover:bg-gray-50"}`}
               >
-                {/* Active Indicator Line */}
                 <div
-                  className={`w-1 flex h-8 rounded-r-full absolute left-0 transition-all 
+                  className={`w-1 flex h-8 rounded-r-full absolute left-0 transition-all
                   ${isAnyItemActive ? "bg-[var(--color-secondary-mid)]" : "bg-transparent"}`}
                 />
                 {Icon && <Icon fontSize="medium" />}
@@ -132,14 +130,14 @@ const Sidebar = () => {
         </nav>
       </aside>
 
-      {/* STAGE 2: Secondary Panel (Slide Out) */}
+      {/* Secondary Panel */}
       <div
-        className={`h-screen bg-white shadow-2xl border-r transition-all duration-300 ease-in-out overflow-hidden no-scrollbar
+        className={`flex flex-col bg-white shadow-2xl border-r transition-all duration-300 ease-in-out overflow-hidden no-scrollbar
           ${openSectionId ? "w-64 opacity-100" : "w-0 opacity-0 pointer-events-none"}`}
-        style={{ borderColor: "var(--color-secondary-light)" }}
+        style={{ borderColor: "var(--color-secondary-light)", minHeight: '100%' }}
       >
         {currentSection && (
-          <div className="w-64 p-6 animate-in fade-in slide-in-from-left-4 duration-300">
+          <div className="w-64 flex-1 p-6 overflow-y-auto no-scrollbar animate-in fade-in slide-in-from-left-4 duration-300">
             <div className="flex justify-between items-center mb-8">
               <div>
                 <h2 className="text-[10px] uppercase tracking-[0.2em] text-gray-400 font-black">

@@ -3,8 +3,12 @@ export type DeliveryNoteLineResponse = {
   description?: string;
   quantity?: number;
   unitPrice?: number;
-  idProduit?:string
-  amount?: number; // quantity * unitPrice
+  idProduit?: string;
+  amount?: number;
+  // Partial delivery fields
+  quantiteTotal?: number;
+  quantiteLivree?: number;
+  quantiteRestante?: number;
 };
 
 export type DeliveryNoteResponse = {
@@ -47,6 +51,9 @@ export type DeliveryNoteResponse = {
   idSaleOrder?: string;
   SaleOrderNumber?: string;
 
+  // Partial delivery
+  isPartial?: boolean;
+
   createdAt?: string;
   updatedAt?: string;
 };
@@ -55,6 +62,7 @@ export namespace DeliveryNoteResponse {
   export enum etat {
     BROUILLON = 'BROUILLON',
     ENVOYE = 'ENVOYE',
+    PARTIELLE = 'PARTIELLE',
     ANNULE = 'ANNULE',
   }
 }
