@@ -13,6 +13,7 @@ import ClientHeader from "./ClientHeader";
 import GRNDetails from "./GRNDetails";
 import { mapInternalToBondeReceptionCreateRequest } from "@/src/Mappers/GRNMapper";
 import { BondeReceptionControllerService } from "@/src/src2/api";
+import { toast } from 'sonner';
 interface Props {
   isOpen: boolean;
   onClose: (param: boolean) => void;
@@ -73,18 +74,18 @@ const CreateGRNModal = ({ isOpen, onClose, clientData, grnData }: Props) => {
 
     console.log("Saving GRN Payload:", finalPayload);
 
-    if (!grnData?.idGRN) {
-      console.log("API CALL: Creating new Goods Receipt Note...");
-      await BondeReceptionControllerService.createBon(apiPayload)
-
-    } else {
-      console.log("API CALL: Updating existing Goods Receipt Note...");
-     if(grnData.idGRN){
-       await BondeReceptionControllerService.updateBon(grnData.idGRN,apiPayload)
-     }
+    try {
+      if (!grnData?.idGRN) {
+        await BondeReceptionControllerService.createBon(apiPayload)
+      } else if (grnData.idGRN) {
+        await BondeReceptionControllerService.updateBon(grnData.idGRN, apiPayload)
+      }
+      toast.success(grnData?.idGRN ? "GRN updated successfully." : "GRN created successfully.")
+      onClose(false);
+    } catch (error) {
+      console.error("Failed to save GRN:", error);
+      toast.error("Failed to save GRN. Please try again.")
     }
-
-    onClose(false);
   };
 
   // 3. CHANGE HANDLER

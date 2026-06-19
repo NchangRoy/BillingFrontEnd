@@ -31,6 +31,7 @@ import { BonDAchatService } from '@/src/src2/api'
 import { mapBackendBAArrayToUIArray } from '@/src/Mappers/BonAchatMapper'
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
+import EmptyState from '@/components/EmptyState'
 
 const columns = {
   "PO #": "poNumber",
@@ -183,6 +184,8 @@ const PurchaseOrders = () => {
             <tbody className="divide-y divide-gray-50">
               {isLoading ? (
                 <TableSkeleton cols={Object.keys(columns).length} />
+              ) : filteredOrders.length === 0 ? (
+                <EmptyState />
               ) : filteredOrders.map((order) => (
                 <tr key={order.idPO} className="group hover:bg-secondary-mid/[0.01] transition-colors">
                   {Object.values(columns).map((key, index) => (

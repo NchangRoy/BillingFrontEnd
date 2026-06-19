@@ -33,6 +33,7 @@ import { FacturesProformaService } from '@/src/src2/api'
 import { mapProformaArrayToUI } from '@/src/Mappers/ProformaMapper'
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
+import EmptyState from '@/components/EmptyState'
 
 const columns = {
   "Devis Number": "numeroProformaInvoice",
@@ -227,6 +228,8 @@ const ProformaInvoice = () => {
             <tbody className="divide-y divide-gray-50">
               {isLoading ? (
                 <TableSkeleton cols={Object.keys(columns).length} />
+              ) : filteredProformaInvoices.length === 0 ? (
+                <EmptyState />
               ) : filteredProformaInvoices.map((ProformaInvoice) => (
                 <tr key={ProformaInvoice.idProformaInvoice} className="group hover:bg-secondary-mid/[0.02] transition-colors">
                   {Object.values(columns).map((key, index) => (

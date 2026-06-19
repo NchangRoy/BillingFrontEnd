@@ -14,6 +14,7 @@ import SupplierInvoiceDetails from "./SupplierInvoiceDetails";
 import { mapInternalToFactureFournisseurCreateRequest } from "@/src/Mappers/SupplierFactureMapper";
 import { FactureFournisseurControllerService } from "@/src/src2/api";
 import { UpdatedSellerResponse } from "@/src/api/models/UpdatedSellerResponse";
+import { toast } from 'sonner';
 
 interface Props {
   isOpen: boolean;
@@ -94,21 +95,18 @@ const CreateSupplierInvoiceModal = ({ isOpen, onClose, supplierData, factureData
     console.log("Saving Payload:", finalPayload);
 
     const apiPayload=mapInternalToFactureFournisseurCreateRequest(finalPayload)
-    if(!factureData?.idFacture){
-      console.log("Creating facture founisseur")
-      await FactureFournisseurControllerService.createFacture1(apiPayload)
-    }
-    else{
-      if(factureData?.idFacture){
-        await FactureFournisseurControllerService.updateFacture1(factureData.idFacture,apiPayload)
+    try {
+      if (!factureData?.idFacture) {
+        await FactureFournisseurControllerService.createFacture1(apiPayload)
+      } else {
+        await FactureFournisseurControllerService.updateFacture1(factureData.idFacture, apiPayload)
       }
-
+      toast.success(factureData?.idFacture ? "Supplier invoice updated successfully." : "Supplier invoice created successfully.")
+      onClose(false);
+    } catch (error) {
+      console.error("Failed to save supplier invoice:", error);
+      toast.error("Failed to save supplier invoice. Please try again.")
     }
-
-    
-
-
-    onClose(false);
   };
 
   if (!isOpen) return null;

@@ -15,6 +15,7 @@ import POPaintPreviewModal from "./PurchaseOrderPrintPreviewModal";
 import PurchaseOrderLogistics from "./PurchaseOrderLogistics";
 import { mapPurchaseOrderToBonAchatRequest } from "@/src/Mappers/BonAchatMapper";
 import { BonDAchatService } from "@/src/src2/api";
+import { toast } from 'sonner';
 interface Props {
   isOpen: boolean;
   onClose: (param: boolean) => void;
@@ -83,17 +84,18 @@ const CreatePurchaseOrderModal = ({ isOpen, onClose, producerData, orderData }: 
     const apiPayload=mapPurchaseOrderToBonAchatRequest(finalPayload)
 
 
-    if (!orderData) {
-      console.log("API CALL: Creating new Purchase Order...");
-      await BonDAchatService.createBonAchat(apiPayload)
-    } else {
-      console.log("API CALL: Updating existing Purchase Order...");
-      if(orderData.idPO){
-        await BonDAchatService.updateBonAchatById(orderData.idPO,apiPayload)
+    try {
+      if (!orderData) {
+        await BonDAchatService.createBonAchat(apiPayload)
+      } else if (orderData.idPO) {
+        await BonDAchatService.updateBonAchatById(orderData.idPO, apiPayload)
       }
+      toast.success(orderData ? "Purchase order updated successfully." : "Purchase order created successfully.")
+      onClose(false);
+    } catch (error) {
+      console.error("Failed to save purchase order:", error);
+      toast.error("Failed to save purchase order. Please try again.")
     }
-
-    onClose(false);
   };
 
   // 3. CHANGE HANDLER

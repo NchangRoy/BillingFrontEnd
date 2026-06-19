@@ -165,7 +165,7 @@ const finalPayload: UpdatedDevisResponse = {
       }
     }
     
-    // On ne rafraîchit et ferme QUE si l'appel a réussi
+    toast.success(quotationData?.idDevis ? "Quotation updated successfully." : "Quotation created successfully.")
     router.refresh();
     onClose(false);
   } catch (error) {

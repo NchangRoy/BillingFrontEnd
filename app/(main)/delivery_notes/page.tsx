@@ -30,6 +30,7 @@ import { BonDeLivraisonService } from '@/src/src2/api'
 import { mapBackendArrayToDeliveryNoteList } from '@/src/Mappers/DeliveryNoteMapper'
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
+import EmptyState from '@/components/EmptyState'
 
 const columns = {
   "DN Number": "deliveryNoteNumber",
@@ -210,6 +211,8 @@ const DeliveryNotes = () => {
             <tbody className="divide-y divide-gray-50">
               {isLoading ? (
                 <TableSkeleton cols={Object.keys(columns).length} />
+              ) : filteredNotes.length === 0 ? (
+                <EmptyState />
               ) : filteredNotes.map((note) => (
                 <tr key={note.idDN} className="group hover:bg-secondary-mid/[0.01] transition-colors">
                   {Object.values(columns).map((value, index) => (

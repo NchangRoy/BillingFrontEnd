@@ -1,17 +1,12 @@
 @import "tailwindcss";
 
 @theme {
-  /* Primary color (deepest blue) */
-  --color-primary: #03045e;       /* darkest shade */
-
-  /* Secondary a (lighter shades of blue/cyan) */
-  --color-secondary: #1F47E6;    
-  
-  /* medium-dark */
-  /*#0096c7*/
-  --color-secondary-mid: #1F47E6; /* medium */
-  --color-secondary-light: #E5E7EB; /* light */
-  --color-secondary-super-light: #ECF3FA; /* very light#caf0f8 */
-  --color-secondary-background:#F6F8FC;
-  --color-secondary-gray:#99a1af;
+  /* Brand palette */
+  --color-primary: #03045e;           /* deep navy – darkest text / headings */
+  --color-secondary: #1F47E6;         /* brand blue – page headings */
+  --color-secondary-mid: #1A3DD0;     /* slightly deeper blue – buttons, active states */
+  --color-secondary-light: #E5E7EB;   /* border gray */
+  --color-secondary-super-light: #ECF3FA; /* tinted bg, hover fills */
+  --color-secondary-background: #F6F8FC; /* page canvas */
+  --color-secondary-gray: #6B7280;    /* muted text */
 }

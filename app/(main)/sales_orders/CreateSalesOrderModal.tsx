@@ -15,6 +15,7 @@ import ClientHeader from "./ClientHeader";
 import SalesOrderDetails from "./SalesOrderDetails"; 
 import { mapSalesOrderToBonCommandeRequest } from "@/src/Mappers/BonCommandeMapper";
 import { BonCommandeService } from "@/src/src2/api";
+import { toast } from 'sonner';
 
 interface Props {
   isOpen: boolean;
@@ -89,18 +90,18 @@ const CreateSalesOrderModal = ({ isOpen, onClose, clientData, orderData }: Props
     console.log(salesOrder)
     
 
-    if (!orderData?.idSalesOrder) {
-      console.log("API CALL: Creating new Sales Order...");
-
-      await BonCommandeService.createBonCommande(apiPayload)
-    } else {
-      console.log("API CALL: Updating existing Sales Order...");
-      if(orderData.idSalesOrder){
-        await BonCommandeService.updateBonCommandeById(orderData.idSalesOrder,apiPayload)
+    try {
+      if (!orderData?.idSalesOrder) {
+        await BonCommandeService.createBonCommande(apiPayload)
+      } else {
+        await BonCommandeService.updateBonCommandeById(orderData.idSalesOrder, apiPayload)
       }
+      toast.success(orderData?.idSalesOrder ? "Sales order updated successfully." : "Sales order created successfully.")
+      onClose(false);
+    } catch (error) {
+      console.error("Failed to save sales order:", error);
+      toast.error("Failed to save sales order. Please try again.")
     }
-
-    onClose(false);
   };
 
   // 3. CHANGE HANDLER

@@ -17,6 +17,7 @@ import { FactureService } from "@/src/src2/api/services/FactureService";
 import { useRouter } from "next/navigation";
 import { UpdatedSellerResponse } from "@/src/api/models/UpdatedSellerResponse";
 import { ClientService } from "@/src/src2/api/services/ClientService";
+import { toast } from 'sonner';
 
 interface Props {
   isOpen: boolean;
@@ -131,6 +132,7 @@ const CreateInvoiceModal = ({ isOpen, onClose, clientData, factureData }: Props)
         await FactureService.updateFacture(factureData.idFacture, tranformed);
       }
     }
+    toast.success(factureData?.idFacture ? "Invoice updated successfully." : "Invoice created successfully.")
     router.refresh()
     onClose(false);
   };

@@ -107,7 +107,7 @@ const PrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: PrintPrevi
         body: JSON.stringify(payload),
       });
 
-      if (response.ok) alert("Document successfully sent to server!");
+      if (response.ok) toast.success("Document successfully sent to server!")
     } catch (error) {
       console.error("Errora sending to backend:", error);
       toast.error("Failed to send document to server.")

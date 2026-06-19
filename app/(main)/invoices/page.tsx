@@ -18,6 +18,7 @@ import { mapBackendFactureArrayToUpdatedArray } from '@/src/Mappers/FactureMappe
 import { FactureService } from '@/src/src2/api/services/FactureService'
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
+import EmptyState from '@/components/EmptyState'
 // Adjusting Table Columns for Invoices
 const columns = {
   "Invoice #": "numeroFacture",
@@ -250,6 +251,8 @@ handleAccountingSync(f)
             <tbody className="divide-y divide-gray-50">
               {isLoading ? (
                 <TableSkeleton cols={Object.keys(columns).length} />
+              ) : filteredFactures.length === 0 ? (
+                <EmptyState />
               ) : filteredFactures.map((facture) => (
                 <tr key={facture.idFacture} className="group hover:bg-secondary-mid/[0.02] transition-colors">
                   {Object.values(columns).map((key, index) => (

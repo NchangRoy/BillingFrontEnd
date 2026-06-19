@@ -69,7 +69,7 @@ const InvoicePrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: Pri
         body: JSON.stringify(payload),
       });
 
-      if (response.ok) alert("Invoice PDF successfully generated!");
+      if (response.ok) toast.success("Invoice PDF successfully generated!")
     } catch (error) {
       console.error("Error sending to backend:", error);
       toast.error("Failed to send invoice to server.")

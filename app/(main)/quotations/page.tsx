@@ -35,6 +35,7 @@ import { generateQuotationHTML } from '@/src/api/printGenerators/quotationPrint'
 import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse'
 import EmailPreviewModal from '../../../components/EmailPreviewModal'
 import TableSkeleton from '@/components/TableSkeleton'
+import EmptyState from '@/components/EmptyState'
 
 const columns = {
   "Devis Number": "numeroDevis",
@@ -217,6 +218,8 @@ const Quotation = () => {
             <tbody className="divide-y divide-gray-50">
               {isLoading ? (
                 <TableSkeleton cols={Object.keys(columns).length} />
+              ) : filteredQuotations.length === 0 ? (
+                <EmptyState />
               ) : filteredQuotations.map((quotation) => (
                 <tr key={quotation.idDevis} className="group hover:bg-secondary-mid/[0.02] transition-colors">
                   {Object.values(columns).map((key, index) => (

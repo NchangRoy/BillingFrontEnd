@@ -13,6 +13,7 @@ import ClientHeader from "./ClientHeader";
 import CreditNoteDetails from "./CreditNoteDetails"; // Similar to InvoiceDetails but handles reasons
 import { mapCreditNoteToRequest } from "@/src/Mappers/CreditNoteMapper";
 import { NoteCreditControllerService } from "@/src/src2/api";
+import { toast } from 'sonner';
 
 interface Props {
   isOpen: boolean;
@@ -85,17 +86,18 @@ const CreateCreditNoteModal = ({ isOpen, onClose, clientData, creditNoteData }: 
 
     console.log("Saving Credit Note Payload:", finalPayload);
 
-    if (!creditNoteData) {
-      console.log("API CALL: Creating new Credit Note...");
-      await NoteCreditControllerService.createNoteCredit(apiPayload)
-    } else {
-      console.log("API CALL: Updating existing Credit Note...");
-      if(creditNoteData.idCreditNote){
-        await NoteCreditControllerService.updateNoteCredit(creditNoteData.idCreditNote,apiPayload)
+    try {
+      if (!creditNoteData) {
+        await NoteCreditControllerService.createNoteCredit(apiPayload)
+      } else if (creditNoteData.idCreditNote) {
+        await NoteCreditControllerService.updateNoteCredit(creditNoteData.idCreditNote, apiPayload)
       }
+      toast.success(creditNoteData ? "Credit note updated successfully." : "Credit note created successfully.")
+      onClose(false);
+    } catch (error) {
+      console.error("Failed to save credit note:", error);
+      toast.error("Failed to save credit note. Please try again.")
     }
-
-    onClose(false);
   };
 
   // 3. CHANGE HANDLER

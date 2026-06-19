@@ -19,6 +19,7 @@ import { FactureFournisseurControllerService } from '@/src/src2/api'
 import { mapBackendFactureFournisseurArrayToInternal } from '@/src/Mappers/SupplierFactureMapper'
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
+import EmptyState from '@/components/EmptyState'
 
 // Helper for date formatting
 const formatDate = (dateString?: string) => {
@@ -204,6 +205,8 @@ const SupplierFactures = () => {
             <tbody className="divide-y divide-gray-50">
               {isLoading ? (
                 <TableSkeleton cols={Object.keys(columns).length} />
+              ) : filteredFactures.length === 0 ? (
+                <EmptyState />
               ) : filteredFactures.map((facture) => (
                 <tr key={facture.idFacture} className="group hover:bg-secondary-mid/[0.01] transition-colors">
                   {Object.values(columns).map((key, index) => (

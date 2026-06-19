@@ -12,6 +12,7 @@ import { clients, UpdatedClientResponse } from "@/src/api/models/UpdatedClientRe
 import { UpdatedProformaInvoiceResponse,MOCK_PROFORMA_INVOICE } from "@/src/api/models/UpdatedProformaInvoiceResponse";
 import { mapUIToProformaRequest } from "@/src/Mappers/ProformaMapper";
 import { FacturesProformaService } from "@/src/src2/api";
+import { toast } from 'sonner';
 interface Props {
   isOpen: boolean;
   onClose: (param: boolean) => void;
@@ -123,19 +124,18 @@ const CreateProformaInvoiceModal = ({ isOpen, onClose,clientData,ProformaInvoice
     console.log("Saving ProformaInvoice Payload:", finalPayload);
     // Add your API call here (e.g., mutate(finalPayload))
 
-    if(ProformaInvoiceData?.idProformaInvoice==undefined){
-      //call method to create new quotataion
-      console.log("creating")
-      await FacturesProformaService.createProforma(apiPayload)
-    }else{
-      //call method to update new ProformaInvoice
-      console.log("updating")
-      if(ProformaInvoice?.idProformaInvoice){
-        await FacturesProformaService.updateFactureProforma(ProformaInvoice.idProformaInvoice,apiPayload)
+    try {
+      if (ProformaInvoiceData?.idProformaInvoice == undefined) {
+        await FacturesProformaService.createProforma(apiPayload)
+      } else if (ProformaInvoice?.idProformaInvoice) {
+        await FacturesProformaService.updateFactureProforma(ProformaInvoice.idProformaInvoice, apiPayload)
       }
+      toast.success(ProformaInvoiceData?.idProformaInvoice ? "Proforma updated successfully." : "Proforma invoice created successfully.")
+      onClose(false)
+    } catch (error) {
+      console.error("Failed to save proforma invoice:", error);
+      toast.error("Failed to save proforma invoice. Please try again.")
     }
-
-    onClose(false)
   };
 
  const handleProformaInvoiceDataChange = useCallback((param: Partial<UpdatedProformaInvoiceResponse>) => {

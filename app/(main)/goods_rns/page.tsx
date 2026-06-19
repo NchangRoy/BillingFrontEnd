@@ -11,12 +11,11 @@ import {
   MoreVertical, 
   Printer, 
   ClipboardCheck, 
-  Clock, 
-  XCircle, 
-  CheckCircle2, 
-  PackageSearch, 
-  ReceiptText, 
-  ChevronRight 
+  Clock,
+  XCircle,
+  CheckCircle2,
+  ReceiptText,
+  ChevronRight
 } from "lucide-react";
 
 // API & Models
@@ -34,6 +33,7 @@ import { mapGRNArrayToInternalArray } from '@/src/Mappers/GRNMapper'
 import { mapBackendBAArrayToUIArray } from '@/src/Mappers/BonAchatMapper'
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
+import EmptyState from '@/components/EmptyState'
 
 // Mapping Table Columns for GRN
 const columns = {
@@ -225,6 +225,8 @@ const GoodsReceiptNotes = () => {
             <tbody className="divide-y divide-gray-50">
               {isLoading ? (
                 <TableSkeleton cols={Object.keys(columns).length} />
+              ) : filteredGRNs.length === 0 ? (
+                <EmptyState />
               ) : filteredGRNs.map((grn) => (
                 <tr key={grn.idGRN} className="group hover:bg-secondary-mid/[0.01] transition-colors">
                   {Object.values(columns).map((value, index) => (
@@ -333,13 +335,6 @@ const GoodsReceiptNotes = () => {
             </tbody>
           </table>
         </div>
-
-        {filteredGRNs.length === 0 && (
-          <div className='py-24 text-center flex flex-col items-center justify-center'>
-            <PackageSearch className="text-gray-100 mb-4" size={64} />
-            <p className='text-gray-400 font-black uppercase tracking-[0.2em] text-[10px]'>No receipt records found</p>
-          </div>
-        )}
       </div>
 
       {/* Modals */}

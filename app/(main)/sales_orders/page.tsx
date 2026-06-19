@@ -30,6 +30,7 @@ import { BonCommandeService } from '@/src/src2/api'
 import { mapBonCommandeListToSalesOrderList } from '@/src/Mappers/BonCommandeMapper'
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
+import EmptyState from '@/components/EmptyState'
 
 const columns = {
   "Order #": "numeroSalesOrder",
@@ -206,6 +207,8 @@ const SalesOrders = () => {
             <tbody className="divide-y divide-gray-50">
               {isLoading ? (
                 <TableSkeleton cols={Object.keys(columns).length} />
+              ) : filteredOrders.length === 0 ? (
+                <EmptyState />
               ) : filteredOrders.map((order) => (
                 <tr key={order.idSalesOrder} className="group hover:bg-secondary-mid/[0.01] transition-colors">
                   {Object.values(columns).map((key, index) => (
