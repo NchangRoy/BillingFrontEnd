@@ -19,6 +19,8 @@ import { FactureService } from '@/src/src2/api/services/FactureService'
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
 import EmptyState from '@/components/EmptyState'
+import { useLoading } from '@/components/LoadingContext'
+import ActionButton from '@/components/ActionButton'
 // Adjusting Table Columns for Invoices
 const columns = {
   "Invoice #": "numeroFacture",
@@ -47,10 +49,12 @@ const Factures = () => {
   const [client, setClient] = useState<UpdatedClientResponse | undefined>()
   const [onsuccess,setOnSuccess]=useState<boolean>(false)
   const [isLoading, setIsLoading] = useState<boolean>(true)
+  const { showLoader, hideLoader, showError } = useLoading()
   //logic to load the tranformed invoice from local storage
   useEffect(()=>{
     const findFactures = async () => {
       setIsLoading(true)
+      showLoader('Loading invoices...')
       try {
         const data = await FactureService.getAllFactures();
         const clientService=new ClientService();
@@ -60,8 +64,10 @@ const Factures = () => {
       } catch (error) {
         console.error("Erreur lors du chargement des factures:", error);
         toast.error("Failed to load invoices. Please try again.")
+        showError('Failed to load invoices')
       } finally {
         setIsLoading(false)
+        hideLoader()
       }
     };
     findFactures()
@@ -280,14 +286,14 @@ handleAccountingSync(f)
                     {activeMenuId === facture.idFacture && (
                       <div ref={menuRef} className="absolute right-16 top-1/2 -translate-y-1/2 z-40 bg-white border border-slate-100 rounded-2xl shadow-2xl p-1.5 flex gap-1">
                         {actionOptions.map((opt, i) => (
-                          <button
+                          <ActionButton
                             key={i}
-                            title={opt.label}
+                            label={opt.label}
                             onClick={() => { opt.action(facture); setActiveMenuId(null); }}
                             className={`w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 transition-all ${opt.color}`}
                           >
                             {opt.icon}
-                          </button>
+                          </ActionButton>
                         ))}
                       </div>
                     )}

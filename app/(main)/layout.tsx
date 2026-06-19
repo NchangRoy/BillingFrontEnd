@@ -4,9 +4,8 @@ import Navbar from '@/components/Navbar'
 import Sidebar from "../Sidebar";
 import { Roboto } from "next/font/google";
 
-// 1. Import Sonner's Toaster (No extra CSS import needed)
 import { Toaster } from 'sonner';
-import NavigationProgress from '@/components/NavigationProgress';
+import ClientProviders from '@/components/ClientProviders';
 
 export const metadata: Metadata = {
   title: 'Billing Enterprise ERP',
@@ -28,10 +27,6 @@ export default function RootLayout({
     <html lang="en" className={`${roboto.variable} h-full`}>
       <body className='flex flex-col h-screen font-sans overflow-hidden'>
         
-        {/* 2. Place Sonner Toaster here. 
-            'richColors' makes success/error look professional automatically. 
-            'expand' allows users to see the stack on hover. */}
-        <NavigationProgress />
         <Toaster
           position="top-right"
           richColors
@@ -39,22 +34,24 @@ export default function RootLayout({
           expand={true}
         />
 
-        <div className='flex flex-1 overflow-hidden relative'>
-          <aside className='shrink-0 z-50'>
-            <Sidebar/>
-          </aside>
+        <ClientProviders>
+          <div className='flex flex-1 overflow-hidden relative'>
+            <aside className='shrink-0 z-50'>
+              <Sidebar/>
+            </aside>
 
-          <div className='flex flex-col flex-1 bg-secondary-background' >
-            <header className="z-[60] shrink-0">
-              <Navbar name='' signedIn={true}/>
-            </header>
-            <main className='flex-1 overflow-y-auto no-scrollbar mr-5 relative bg-white rounded-2xl '>
-              <div className="min-h-full">
-                {children}
-              </div>
-            </main>
-          </div> 
-        </div>
+            <div className='flex flex-col flex-1 bg-secondary-background' >
+              <header className="z-[60] shrink-0">
+                <Navbar name='' signedIn={true}/>
+              </header>
+              <main className='flex-1 overflow-y-auto no-scrollbar mr-5 relative bg-white rounded-2xl '>
+                <div className="min-h-full">
+                  {children}
+                </div>
+              </main>
+            </div>
+          </div>
+        </ClientProviders>
 
       </body>
     </html>

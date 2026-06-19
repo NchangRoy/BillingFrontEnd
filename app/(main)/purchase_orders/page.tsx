@@ -32,6 +32,8 @@ import { mapBackendBAArrayToUIArray } from '@/src/Mappers/BonAchatMapper'
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
 import EmptyState from '@/components/EmptyState'
+import { useLoading } from '@/components/LoadingContext'
+import ActionButton from '@/components/ActionButton'
 
 const columns = {
   "PO #": "poNumber",
@@ -60,10 +62,12 @@ const PurchaseOrders = () => {
   const [orders, setOrders] = useState<PurchaseOrderResponse[]>(MOCK_PURCHASE_ORDERS); 
   const [producer, setProducer] = useState<UpdatedClientResponse | undefined>();
   const [isLoading, setIsLoading] = useState<boolean>(true)
+  const { showLoader, hideLoader, showError } = useLoading()
 
   useEffect(()=>{
     const findFactures = async () => {
       setIsLoading(true)
+      showLoader('Loading purchase orders...')
       try {
         const data = await BonDAchatService.getAllBonsAchat()
         const transformed = mapBackendBAArrayToUIArray(data);
@@ -71,8 +75,10 @@ const PurchaseOrders = () => {
       } catch (error) {
         console.error("Erreur lors du chargement des factures:", error);
         toast.error("Failed to load purchase orders. Please try again.")
+        showError('Failed to load purchase orders')
       } finally {
         setIsLoading(false)
+        hideLoader()
       }
     };
     findFactures()
@@ -227,7 +233,8 @@ const PurchaseOrders = () => {
                       <div ref={menuRef} className="absolute right-16 top-1/2 -translate-y-1/2 z-40 bg-white border border-slate-100 rounded-2xl shadow-2xl p-1.5 flex gap-1 animate-in fade-in slide-in-from-right-2 duration-200">
                         
                         {/* Edit */}
-                        <button 
+                        <ActionButton
+                           label="Edit"
                            onClick={() => {
                              const foundProducer = clients.find(c => c.idClient === order.supplierId);
                              setProducer(foundProducer);
@@ -236,16 +243,15 @@ const PurchaseOrders = () => {
                              setActiveMenuId(null);
                            }}
                            className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-blue-600 transition-all"
-                           title="Edit"
-                        ><Pencil size={14} /></button>
+                        ><Pencil size={14} /></ActionButton>
 
                         {/* Transform to GRN */}
                         <div className="relative">
-                          <button 
+                          <ActionButton
+                            label="Transform"
                             onClick={() => setShowTransformSub(!showTransformSub)}
                             className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${showTransformSub ? 'bg-emerald-600 text-white' : 'hover:bg-emerald-50 text-emerald-600'}`}
-                            title="Transform"
-                          ><ReceiptText size={14} /></button>
+                          ><ReceiptText size={14} /></ActionButton>
 
                           {showTransformSub && (
                             <div className="absolute bottom-full right-0 mb-3 bg-white border border-secondary-light rounded-2xl shadow-2xl p-2 min-w-[220px] animate-in fade-in zoom-in-95 duration-150 z-50">
@@ -265,21 +271,21 @@ const PurchaseOrders = () => {
                         </div>
 
                         {/* Print */}
-                        <button 
+                        <ActionButton
+                          label="Print"
                           onClick={() => { setClickedOrder(order); setIsPrintModalOpen(true); setActiveMenuId(null); }}
                           className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-purple-800 transition-all"
-                          title="Print"
-                        ><Printer size={14} /></button>
+                        ><Printer size={14} /></ActionButton>
 
                         {/* Delete */}
-                        <button 
+                        <ActionButton
+                          label="Delete"
                           onClick={() => {
                             setOrders(prev => prev.filter(o => o.idPO !== order.idPO));
                             setActiveMenuId(null);
                           }}
                           className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-red-50 text-red-600 transition-all"
-                          title="Delete"
-                        ><Trash2 size={14} /></button>
+                        ><Trash2 size={14} /></ActionButton>
                       </div>
                     )}
                   </td>

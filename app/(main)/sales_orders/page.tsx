@@ -31,6 +31,8 @@ import { mapBonCommandeListToSalesOrderList } from '@/src/Mappers/BonCommandeMap
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
 import EmptyState from '@/components/EmptyState'
+import { useLoading } from '@/components/LoadingContext'
+import ActionButton from '@/components/ActionButton'
 
 const columns = {
   "Order #": "numeroSalesOrder",
@@ -60,10 +62,12 @@ const SalesOrders = () => {
   const [orders, setOrders] = useState<UpdatedSalesOrderResponse[]>(MOCK_SALES_ORDERS); 
   const [client, setClient] = useState<UpdatedClientResponse | undefined>()
   const [isLoading, setIsLoading] = useState<boolean>(true)
+  const { showLoader, hideLoader, showError } = useLoading()
 
    useEffect(() => {
     const findDevis = async () => {
       setIsLoading(true)
+      showLoader('Loading sales orders...')
       try {
         const data = await BonCommandeService.getAllBonCommandes()
         const transformed = mapBonCommandeListToSalesOrderList(data)
@@ -71,8 +75,10 @@ const SalesOrders = () => {
       } catch (error) {
         console.error("Erreur lors du chargement des devis:", error);
         toast.error("Failed to load sales orders. Please try again.")
+        showError('Failed to load sales orders')
       } finally {
         setIsLoading(false)
+        hideLoader()
       }
     };
 
@@ -248,7 +254,8 @@ const SalesOrders = () => {
                       <div ref={menuRef} className="absolute right-16 top-1/2 -translate-y-1/2 z-40 bg-white border border-slate-100 rounded-2xl shadow-2xl p-1.5 flex gap-1 animate-in fade-in slide-in-from-right-2 duration-200">
                         
                         {/* Edit */}
-                        <button 
+                        <ActionButton
+                           label="Edit"
                            onClick={() => {
                              const foundClient = clients.find(c => c.idClient === order.idClient);
                              setClient(foundClient);
@@ -257,20 +264,19 @@ const SalesOrders = () => {
                              setActiveMenuId(null);
                            }}
                            className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 transition-all text-blue-600"
-                           title="Edit"
                         >
                           <Pencil size={14} />
-                        </button>
+                        </ActionButton>
 
                         {/* Transform Sub-menu Logic */}
                         <div className="relative">
-                          <button 
+                          <ActionButton
+                            label="Transform"
                             onClick={() => setShowTransformSub(!showTransformSub)}
                             className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${showTransformSub ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200' : 'hover:bg-emerald-50 text-emerald-600'}`}
-                            title="Transform"
                           >
                             <ReceiptText size={14} />
-                          </button>
+                          </ActionButton>
 
                           {showTransformSub && (
                             <div className="absolute bottom-full right-0 mb-3 bg-white border border-secondary-light rounded-2xl shadow-2xl p-2 min-w-[220px] animate-in fade-in zoom-in-95 duration-150 z-50">
@@ -302,25 +308,25 @@ const SalesOrders = () => {
                         </div>
 
                         {/* Print */}
-                        <button 
+                        <ActionButton
+                          label="Print"
                           onClick={() => { setClickedOrder(order); setIsPrintModalOpen(true); setActiveMenuId(null); }}
                           className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-purple-800 transition-all"
-                          title="Print"
                         >
                           <Printer size={14} />
-                        </button>
+                        </ActionButton>
 
                         {/* Delete */}
-                        <button 
+                        <ActionButton
+                          label="Delete"
                           onClick={() => {
                             setOrders(prev => prev.filter(o => o.idSalesOrder !== order.idSalesOrder));
                             setActiveMenuId(null);
                           }}
                           className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-red-50 text-red-600 transition-all"
-                          title="Delete"
                         >
                           <Trash2 size={14} />
-                        </button>
+                        </ActionButton>
                       </div>
                     )}
                   </td>

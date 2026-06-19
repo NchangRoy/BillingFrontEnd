@@ -36,6 +36,8 @@ import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse'
 import EmailPreviewModal from '../../../components/EmailPreviewModal'
 import TableSkeleton from '@/components/TableSkeleton'
 import EmptyState from '@/components/EmptyState'
+import { useLoading } from '@/components/LoadingContext'
+import ActionButton from '@/components/ActionButton'
 
 const columns = {
   "Devis Number": "numeroDevis",
@@ -62,6 +64,7 @@ const Quotation = () => {
   const [client, setClient] = useState<UpdatedClientResponse | undefined>()
   const [emailModalOpen,setEmailModalOpen]=useState<boolean>(false)
   const [isLoading, setIsLoading] = useState<boolean>(true)
+  const { showLoader, hideLoader, showError } = useLoading()
     const [seller, setSeller] = useState<UpdatedSellerResponse | null>(null);
     
       useEffect(() => {
@@ -76,6 +79,7 @@ const Quotation = () => {
   useEffect(() => {
   const findDevis = async () => {
     setIsLoading(true)
+    showLoader('Loading quotations...')
     try {
       const data = await DevisService.getAllDevis();
       const transformed = mapBackendArrayToUpdatedDevisArray(data);
@@ -83,8 +87,10 @@ const Quotation = () => {
     } catch (error) {
       console.error("Erreur lors du chargement des devis:", error);
       toast.error("Failed to load quotations. Please try again.")
+      showError('Failed to load quotations')
     } finally {
       setIsLoading(false)
+      hideLoader()
     }
   };
 
@@ -259,7 +265,8 @@ const Quotation = () => {
                       <div ref={menuRef} className="absolute right-16 top-1/2 -translate-y-1/2 z-40 bg-white border border-slate-100 rounded-2xl shadow-2xl p-1.5 flex gap-1 animate-in fade-in slide-in-from-right-2 duration-200">
                         
                         {/* Edit */}
-                        <button 
+                        <ActionButton
+                           label="Edit"
                            onClick={() => {
                              const foundClient = clients.find(c => c.idClient === quotation.idClient);
                              setClient(foundClient);
@@ -268,21 +275,21 @@ const Quotation = () => {
                              setActiveMenuId(null);
                            }}
                            className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 transition-all text-blue-600"
-                           title="Edit"
                         >
                           <Pencil size={14} />
-                        </button>
+                        </ActionButton>
 
                         {/* Transform */}
-                        <div 
+                        <div
                           className="relative"
                           onClick={() => setShowTransformSub(!showTransformSub)}
                         >
-                          <button 
+                          <ActionButton
+                            label="Transform"
                             className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${showTransformSub ? 'bg-emerald-600 text-white' : 'hover:bg-emerald-50 text-emerald-600'}`}
                           >
                             <ReceiptText size={14} />
-                          </button>
+                          </ActionButton>
 
                           {showTransformSub && (
                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-white border border-secondary-light rounded-2xl shadow-2xl p-2 min-w-[200px] animate-in fade-in zoom-in-95 duration-150">
@@ -324,37 +331,34 @@ const Quotation = () => {
                         </div>
 
                         {/* Print */}
-                        <button 
+                        <ActionButton
+                          label="Print"
                           onClick={() => { setClickedQuotation(quotation); setIsPrintModalOpen(true); setActiveMenuId(null); }}
                           className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-purple-800 transition-all"
-                          title="Print"
                         >
                           <Printer size={14} />
-                        </button>
+                        </ActionButton>
 
-                         {/* email */}
-                        <button 
-                          onClick={() => { setClickedQuotation(quotation);
-                            setEmailModalOpen(!emailModalOpen)
-                            console.log(emailModalOpen)
-                           }}
+                        {/* Email */}
+                        <ActionButton
+                          label="Send Email"
+                          onClick={() => { setClickedQuotation(quotation); setEmailModalOpen(!emailModalOpen); }}
                           className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-purple-800 transition-all"
-                          title="Email"
                         >
                           <SendHorizonal size={14} />
-                        </button>
+                        </ActionButton>
 
                         {/* Delete */}
-                        <button 
+                        <ActionButton
+                          label="Delete"
                           onClick={() => {
                             setQuotations(prev => prev.filter(q => q.idDevis !== quotation.idDevis));
                             setActiveMenuId(null);
                           }}
                           className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-red-600 transition-all"
-                          title="Delete"
                         >
                           <Trash2 size={14} />
-                        </button>
+                        </ActionButton>
                       </div>
                     )}
                   </td>

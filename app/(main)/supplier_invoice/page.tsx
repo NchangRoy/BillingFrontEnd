@@ -20,6 +20,8 @@ import { mapBackendFactureFournisseurArrayToInternal } from '@/src/Mappers/Suppl
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
 import EmptyState from '@/components/EmptyState'
+import { useLoading } from '@/components/LoadingContext'
+import ActionButton from '@/components/ActionButton'
 
 // Helper for date formatting
 const formatDate = (dateString?: string) => {
@@ -58,10 +60,12 @@ const SupplierFactures = () => {
   const [factures, setFactures] = useState<UpdatedSupplierFactureResponse[]>(MOCK_SUPPLIER_FACTURES);
   const [selectedSupplier, setSelectedSupplier] = useState<any | undefined>();
   const [isLoading, setIsLoading] = useState<boolean>(true)
+  const { showLoader, hideLoader, showError } = useLoading()
 
     useEffect(() => {
     const findDevis = async () => {
       setIsLoading(true)
+      showLoader('Loading supplier invoices...')
       try {
         const data = await FactureFournisseurControllerService.getFactures()
         const transformed = mapBackendFactureFournisseurArrayToInternal(data)
@@ -69,8 +73,10 @@ const SupplierFactures = () => {
       } catch (error) {
         console.error("Erreur lors du chargement des devis:", error);
         toast.error("Failed to load supplier invoices. Please try again.")
+        showError('Failed to load supplier invoices')
       } finally {
         setIsLoading(false)
+        hideLoader()
       }
     };
   
@@ -235,23 +241,23 @@ const SupplierFactures = () => {
 
                     {activeMenuId === facture.idFacture && (
                       <div ref={menuRef} className="absolute right-16 top-1/2 -translate-y-1/2 z-40 bg-white border border-slate-100 rounded-2xl shadow-2xl p-1.5 flex gap-1 animate-in fade-in slide-in-from-right-2 duration-200">
-                        <button 
+                        <ActionButton
+                          label="Modify"
                           onClick={() => { setClickedFacture(facture); setIsModalOpen(true); setActiveMenuId(null); }}
                           className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-blue-600 transition-all"
-                          title="Modify"
-                        ><Pencil size={14} /></button>
-                        
-                        <button 
+                        ><Pencil size={14} /></ActionButton>
+
+                        <ActionButton
+                          label="Print"
                           onClick={() => { setClickedFacture(facture); setIsPrintModalOpen(true); setActiveMenuId(null); }}
                           className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-purple-800 transition-all"
-                          title="Print"
-                        ><Printer size={14} /></button>
+                        ><Printer size={14} /></ActionButton>
 
-                        <button 
+                        <ActionButton
+                          label="Delete"
                           onClick={() => { setFactures(prev => prev.filter(f => f.idFacture !== facture.idFacture)); setActiveMenuId(null); }}
                           className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-red-50 text-red-600 transition-all"
-                          title="Delete"
-                        ><Trash2 size={14} /></button>
+                        ><Trash2 size={14} /></ActionButton>
                       </div>
                     )}
                   </td>

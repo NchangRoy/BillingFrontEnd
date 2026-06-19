@@ -19,6 +19,8 @@ import { mapCreditNoteArrayToInternalArray } from '@/src/Mappers/CreditNoteMappe
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
 import EmptyState from '@/components/EmptyState'
+import { useLoading } from '@/components/LoadingContext'
+import ActionButton from '@/components/ActionButton'
 
 const columns = {
   "Note Number": "numeroCreditNote",
@@ -47,11 +49,13 @@ const CreditNote = () => {
   const [client, setClient] = useState<UpdatedClientResponse | undefined>()
   const [showMenu,setShowMenu]=useState<boolean>(false)
   const [isLoading, setIsLoading] = useState<boolean>(true)
+  const { showLoader, hideLoader, showError } = useLoading()
 
   // Load Data from API
   useEffect(() => {
     const findFactures = async () => {
       setIsLoading(true)
+      showLoader('Loading credit notes...')
       try {
         const data = await NoteCreditControllerService.getAllNoteCredits()
         const transformed = mapCreditNoteArrayToInternalArray(data)
@@ -59,8 +63,10 @@ const CreditNote = () => {
       } catch (error) {
         console.error("Erreur lors du chargement des factures:", error);
         toast.error("Failed to load credit notes. Please try again.")
+        showError('Failed to load credit notes')
       } finally {
         setIsLoading(false)
+        hideLoader()
       }
     };
     findFactures()
@@ -234,19 +240,18 @@ const CreditNote = () => {
                     {activeMenuId === note.idCreditNote  && showMenu && (
                       <div ref={menuRef} className="absolute right-16 top-1/2 -translate-y-1/2 z-40 bg-white border border-slate-100 rounded-2xl shadow-2xl p-1.5 flex gap-1 animate-in fade-in slide-in-from-right-2 duration-200">
                         {actionOptions.map((opt, i) => (
-                          <button
+                          <ActionButton
                             key={i}
-                            title={opt.label}
+                            label={opt.label}
                             onClick={(e) => {
                                 e.stopPropagation();
-                                opt.action(note); 
-                                setActiveMenuId(null); 
-                                
+                                opt.action(note);
+                                setActiveMenuId(null);
                             }}
                             className={`w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 transition-all active:scale-90 ${opt.color}`}
                           >
                             {opt.icon}
-                          </button>
+                          </ActionButton>
                         ))}
                       </div>
                     )}

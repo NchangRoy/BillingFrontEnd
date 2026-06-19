@@ -34,6 +34,8 @@ import { mapProformaArrayToUI } from '@/src/Mappers/ProformaMapper'
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
 import EmptyState from '@/components/EmptyState'
+import { useLoading } from '@/components/LoadingContext'
+import ActionButton from '@/components/ActionButton'
 
 const columns = {
   "Devis Number": "numeroProformaInvoice",
@@ -59,10 +61,12 @@ const ProformaInvoice = () => {
   const [ProformaInvoices, setProformaInvoices] = useState<UpdatedProformaInvoiceResponse[]>(MOCK_PROFORMA_INVOICE);
   const [client, setClient] = useState<UpdatedClientResponse | undefined>()
   const [isLoading, setIsLoading] = useState<boolean>(true)
+  const { showLoader, hideLoader, showError } = useLoading()
 
    useEffect(() => {
     const findDevis = async () => {
       setIsLoading(true)
+      showLoader('Loading proforma invoices...')
       try {
         const data = await FacturesProformaService.getAllProformas()
         const transformed = mapProformaArrayToUI(data);
@@ -70,8 +74,10 @@ const ProformaInvoice = () => {
       } catch (error) {
         console.error("Erreur lors du chargement des devis:", error);
         toast.error("Failed to load proforma invoices. Please try again.")
+        showError('Failed to load proforma invoices')
       } finally {
         setIsLoading(false)
+        hideLoader()
       }
     };
 
@@ -278,21 +284,21 @@ const ProformaInvoice = () => {
                              setActiveMenuId(null);
                            }}
                            className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 transition-all text-blue-600"
-                           title="Edit"
                         >
                           <Pencil size={14} />
                         </button>
 
                         {/* Transform */}
-                        <div 
+                        <div
                           className="relative"
                           onClick={() => setShowTransformSub(!showTransformSub)}
                         >
-                          <button 
+                          <ActionButton
+                            label="Transform"
                             className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${showTransformSub ? 'bg-emerald-600 text-white' : 'hover:bg-emerald-50 text-emerald-600'}`}
                           >
                             <ReceiptText size={14} />
-                          </button>
+                          </ActionButton>
 
                           {showTransformSub && (
                             <div className="  absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-white border border-secondary-light rounded-2xl shadow-2xl p-2 min-w-[200px] animate-in fade-in zoom-in-95 duration-150">
@@ -326,25 +332,25 @@ const ProformaInvoice = () => {
                         </div>
 
                         {/* Print */}
-                        <button 
+                        <ActionButton
+                          label="Print"
                           onClick={() => { setClickedProformaInvoice(ProformaInvoice); setIsPrintModalOpen(true); setActiveMenuId(null); }}
                           className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-purple-800 transition-all"
-                          title="Print"
                         >
                           <Printer size={14} />
-                        </button>
+                        </ActionButton>
 
                         {/* Delete */}
-                        <button 
+                        <ActionButton
+                          label="Delete"
                           onClick={() => {
                             setProformaInvoices(prev => prev.filter(q => q.idProformaInvoice !== ProformaInvoice.idProformaInvoice));
                             setActiveMenuId(null);
                           }}
                           className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-red-600 transition-all"
-                          title="Delete"
                         >
                           <Trash2 size={14} />
-                        </button>
+                        </ActionButton>
                       </div>
                     )}
                   </td>

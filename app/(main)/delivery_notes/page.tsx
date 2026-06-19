@@ -31,6 +31,8 @@ import { mapBackendArrayToDeliveryNoteList } from '@/src/Mappers/DeliveryNoteMap
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
 import EmptyState from '@/components/EmptyState'
+import { useLoading } from '@/components/LoadingContext'
+import ActionButton from '@/components/ActionButton'
 
 const columns = {
   "DN Number": "deliveryNoteNumber",
@@ -59,10 +61,12 @@ const DeliveryNotes = () => {
   const [deliveryNotes, setDeliveryNotes] = useState<DeliveryNoteResponse[]>(MOCK_DELIVERY_NOTES);
   const [client, setClient] = useState<UpdatedClientResponse | undefined>()
   const [isLoading, setIsLoading] = useState<boolean>(true)
+  const { showLoader, hideLoader, showError } = useLoading()
 
    useEffect(() => {
     const findDevis = async () => {
       setIsLoading(true)
+      showLoader('Loading delivery notes...')
       try {
         const data = await BonDeLivraisonService.getAllBonLivraisons()
         const transformed = mapBackendArrayToDeliveryNoteList(data)
@@ -70,8 +74,10 @@ const DeliveryNotes = () => {
       } catch (error) {
         console.error("Erreur lors du chargement des devis:", error);
         toast.error("Failed to load delivery notes. Please try again.")
+        showError('Failed to load delivery notes')
       } finally {
         setIsLoading(false)
+        hideLoader()
       }
     };
   
@@ -249,7 +255,8 @@ const DeliveryNotes = () => {
                       <div ref={menuRef} className="absolute right-16 top-1/2 -translate-y-1/2 z-40 bg-white border border-slate-100 rounded-2xl shadow-2xl p-1.5 flex gap-1 animate-in fade-in slide-in-from-right-2 duration-200">
                         
                         {/* Edit */}
-                        <button 
+                        <ActionButton
+                           label="Edit"
                            onClick={() => {
                              const foundClient = clients.find(c => c.idClient === note.idClient);
                              setClient(foundClient);
@@ -258,20 +265,19 @@ const DeliveryNotes = () => {
                              setActiveMenuId(null);
                            }}
                            className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 transition-all text-blue-600"
-                           title="Edit"
                         >
                           <Pencil size={14} />
-                        </button>
+                        </ActionButton>
 
                         {/* Transform */}
                         <div className="relative">
-                          <button 
+                          <ActionButton
+                            label="Transform"
                             onClick={() => setShowTransformSub(!showTransformSub)}
                             className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${showTransformSub ? 'bg-emerald-600 text-white' : 'hover:bg-emerald-50 text-emerald-600'}`}
-                            title="Transform"
                           >
                             <ReceiptText size={14} />
-                          </button>
+                          </ActionButton>
 
                           {showTransformSub && (
                             <div className="absolute bottom-full right-0 mb-3 bg-white border border-secondary-light rounded-2xl shadow-2xl p-2 min-w-[220px] animate-in fade-in zoom-in-95 duration-150 z-50">
@@ -291,25 +297,25 @@ const DeliveryNotes = () => {
                         </div>
 
                         {/* Print */}
-                        <button 
+                        <ActionButton
+                          label="Print"
                           onClick={() => { setClickedNote(note); setIsPrintModalOpen(true); setActiveMenuId(null); }}
                           className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-purple-800 transition-all"
-                          title="Print"
                         >
                           <Printer size={14} />
-                        </button>
+                        </ActionButton>
 
                         {/* Delete */}
-                        <button 
+                        <ActionButton
+                          label="Delete"
                           onClick={() => {
                             setDeliveryNotes(prev => prev.filter(dn => dn.idDN !== note.idDN));
                             setActiveMenuId(null);
                           }}
                           className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-red-50 text-red-600 transition-all"
-                          title="Delete"
                         >
                           <Trash2 size={14} />
-                        </button>
+                        </ActionButton>
                       </div>
                     )}
                   </td>

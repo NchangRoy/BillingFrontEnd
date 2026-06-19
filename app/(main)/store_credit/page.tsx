@@ -7,6 +7,8 @@ import { Trash2, MoreVertical, CheckCircle2, XCircle, Clock, Wallet } from "luci
 import { ClientStoreCredit } from '@/src/api/models/UpdatedStoreCreditResponse'
 import TableSkeleton from '@/components/TableSkeleton'
 import EmptyState from '@/components/EmptyState'
+import { useLoading } from '@/components/LoadingContext'
+import ActionButton from '@/components/ActionButton'
 
 const MOCK_STORE_CREDITS: ClientStoreCredit[] = [
   {
@@ -87,15 +89,18 @@ const StoreCredit = () => {
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null)
   const [credits, setCredits] = useState<ClientStoreCredit[]>(MOCK_STORE_CREDITS)
   const [isLoading, setIsLoading] = useState(true)
+  const { showLoader, hideLoader, showError } = useLoading()
 
   useEffect(() => {
     const load = async () => {
       setIsLoading(true)
+      showLoader('Loading store credits...')
       try {
         await new Promise((r) => setTimeout(r, 600))
         setCredits(MOCK_STORE_CREDITS)
       } finally {
         setIsLoading(false)
+        hideLoader()
       }
     }
     load()
@@ -279,16 +284,16 @@ const StoreCredit = () => {
 
                       {activeMenuId === credit.idStoreCredit && (
                         <div ref={menuRef} className="absolute right-16 top-1/2 -translate-y-1/2 z-40 bg-white border border-slate-100 rounded-2xl shadow-2xl p-1.5 flex gap-1 animate-in fade-in slide-in-from-right-2 duration-200">
-                          <button
+                          <ActionButton
+                            label="Delete"
                             onClick={() => {
                               setCredits((prev) => prev.filter((c) => c.idStoreCredit !== credit.idStoreCredit))
                               setActiveMenuId(null)
                             }}
                             className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-red-50 text-red-600 transition-all"
-                            title="Delete"
                           >
                             <Trash2 size={14} />
-                          </button>
+                          </ActionButton>
                         </div>
                       )}
                     </td>
