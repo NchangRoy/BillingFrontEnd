@@ -42,36 +42,32 @@ export const mapInternalToFactureFournisseurCreateRequest = (
 ): FactureFournisseurCreateRequest => {
     return {
         numeroFacture: data.numeroFacture,
-        dateFacturation: toLocalDateTime(data.dateFacturation),
+        dateFacture: toLocalDateTime(data.dateFacturation),
         dateEcheance: toLocalDateTime(data.dateEcheance),
-        
+
         // Enums mapping (keys match in your case, so we cast to the target enum)
-        etat: data.etat as unknown as FactureFournisseurCreateRequest.etat,
+        statut: data.etat as unknown as FactureFournisseurCreateRequest.statut,
         modeReglement: data.modeReglement as unknown as FactureFournisseurCreateRequest.modeReglement,
-        
-        type: data.type,
+
         idFournisseur: data.idFournisseur,
-        nomFournisseru: data.nomFournisseru,
+        nomFournisseur: data.nomFournisseru,
         adresseFournisseur: data.adresseFournisseur,
         emailFournisseur: data.emailFournisseur,
         telephoneFournisseur: data.telephoneFournisseur,
-        
+
         montantHT: data.montantHT,
         montantTVA: data.montantTVA,
         montantTTC: data.montantTTC,
-        
-        remiseGlobalePourcentage: data.remiseGlobalePourcentage,
+
         applyVat: data.applyVat,
         devise: data.devise,
-        tauxChange: data.tauxChange,
-        
-        referenceCommande: data.referenceCommande,
-        idGRN: data.idGRN,
-        numeroGRN: data.numeroGRN,
-        
-        lignesFacture: data.lignesFacture?.map(mapInternalLineToRequest) || [],
+
+        idBonReception: data.idGRN,
+        numeroBonReception: data.numeroGRN,
+
+        lines: data.lignesFacture?.map(mapInternalLineToRequest) || [],
         notes: data.notes,
-        
+
         // Custom field for the creator
         createdBy: data.createdBy
     };
@@ -108,47 +104,39 @@ export const mapBackendFactureFournisseurToInternal = (
     api: FactureFournisseurResponse
 ): UpdatedSupplierFactureResponse => {
     return {
-        idFacture: api.idFacture,
+        idFacture: api.idFactureFournisseur,
         numeroFacture: api.numeroFacture,
-        dateFacturation: api.dateFacturation,
+        dateFacturation: api.dateFacture,
         dateEcheance: api.dateEcheance,
         dateSysteme: api.dateSysteme,
-        
+
         // Enum Casting (assuming keys match)
-        etat: api.etat as unknown as FactureResponse.etat,
+        etat: api.statut as unknown as FactureResponse.etat,
         modeReglement: api.modeReglement as unknown as FactureResponse.modeReglement,
-        
-        type: api.type,
+
         idFournisseur: api.idFournisseur,
-        nomFournisseru: api.nomFournisseru,
+        nomFournisseru: api.nomFournisseur,
         adresseFournisseur: api.adresseFournisseur,
         emailFournisseur: api.emailFournisseur,
         telephoneFournisseur: api.telephoneFournisseur,
-        
+
         montantHT: api.montantHT,
         montantTVA: api.montantTVA,
         montantTTC: api.montantTTC,
         montantTotal: api.montantTotal,
         montantRestant: api.montantRestant,
-        finalAmount: api.finalAmount,
-        
-        remiseGlobalePourcentage: api.remiseGlobalePourcentage,
-        remiseGlobaleMontant: api.remiseGlobaleMontant,
+        finalAmount: api.montantTotal,
+
         applyVat: api.applyVat,
         devise: api.devise,
-        tauxChange: api.tauxChange,
-        conditionsPaiement: api.conditionsPaiement,
         nbreEcheance: api.nbreEcheance,
-        
-        nosRef: api.nosRef,
-        vosRef: api.vosRef,
-        referenceCommande: api.referenceCommande,
-        idGRN: api.idGRN,
-        numeroGRN: api.numeroGRN,
-        
-        lignesFacture: api.lignesFacture?.map(mapLineBackendToInternal) || [],
+
+        idGRN: api.idBonReception,
+        numeroGRN: api.numeroBonReception,
+
+        lignesFacture: api.lines?.map(mapLineBackendToInternal) || [],
         notes: api.notes,
-        
+
         createdAt: api.createdAt,
         updatedAt: api.updatedAt,
     };

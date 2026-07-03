@@ -31,6 +31,9 @@ export type ProformaInvoiceRequest = {
     remiseGlobalePourcentage?: number;
     remiseGlobaleMontant?: number;
     validiteOffreJours?: number;
+    organizationId?: string;
+    agencyId?: string;
+    createdBy?: string;
 };
 export namespace ProformaInvoiceRequest {
     export enum statut {

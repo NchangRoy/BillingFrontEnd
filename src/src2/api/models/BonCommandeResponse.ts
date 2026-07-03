@@ -44,6 +44,7 @@ export type BonCommandeResponse = {
     updatedAt?: string;
     validatedAt?: string;
     organizationId?: string;
+    agencyId?: string;
 };
 export namespace BonCommandeResponse {
     export enum statut {

@@ -1,79 +1,77 @@
-export enum StatutDevis {
-  BROUILLON = "BROUILLON",
-  VALIDE = "VALIDE",
-  REJETE = "REJETE",
-  EXPIRE = "EXPIRE",
+/* generated using openapi-typescript-codegen -- do not edit */
+/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+import type { LigneDevisResponse } from './LigneDevisResponse';
+export type EnrichedDevisResponse = {
+    idDevis?: string;
+    numeroDevis?: string;
+    dateCreation?: string;
+    dateValidite?: string;
+    type?: string;
+    statut?: EnrichedDevisResponse.statut;
+    montantTotal?: number;
+    idClient?: string;
+    nomClient?: string;
+    adresseClient?: string;
+    emailClient?: string;
+    telephoneClient?: string;
+    lignesDevis?: Array<LigneDevisResponse>;
+    montantHT?: number;
+    montantTVA?: number;
+    montantTTC?: number;
+    devise?: string;
+    tauxChange?: number;
+    conditionsPaiement?: string;
+    notes?: string;
+    referenceExterne?: string;
+    pdfPath?: string;
+    envoyeParEmail?: boolean;
+    dateEnvoiEmail?: string;
+    dateAcceptation?: string;
+    dateRefus?: string;
+    motifRefus?: string;
+    idFactureConvertie?: string;
+    remiseGlobalePourcentage?: number;
+    remiseGlobaleMontant?: number;
+    validiteOffreJours?: number;
+    applyVat?: boolean;
+    dateSysteme?: string;
+    modeReglement?: EnrichedDevisResponse.modeReglement;
+    nosRef?: string;
+    vosRef?: string;
+    nbreEcheance?: number;
+    referalClientId?: string;
+    finalAmount?: number;
+    createdAt?: string;
+    updatedAt?: string;
+    organizationId?: string;
+    organizationName?: string;
+    agencyId?: string;
+    agencyName?: string;
+    salesPointId?: string;
+    salesPointName?: string;
+};
+export namespace EnrichedDevisResponse {
+    export enum statut {
+        BROUILLON = 'BROUILLON',
+        ENVOYE = 'ENVOYE',
+        ACCEPTE = 'ACCEPTE',
+        REFUSE = 'REFUSE',
+        EXPIRE = 'EXPIRE',
+        ANNULE = 'ANNULE',
+        CONVERTI_EN_FACTURE = 'CONVERTI_EN_FACTURE',
+    }
+    export enum modeReglement {
+        VIREMENT = 'VIREMENT',
+        CARTE_BANCAIRE = 'CARTE_BANCAIRE',
+        ESPECES = 'ESPECES',
+        CHEQUE = 'CHEQUE',
+        PRELEVEMENT = 'PRELEVEMENT',
+        PAYPAL = 'PAYPAL',
+        ORANGE_MONEY = 'ORANGE_MONEY',
+        MOBILE_MONEY = 'MOBILE_MONEY',
+        AUTRE = 'AUTRE',
+    }
 }
 
-export enum TypePaiementDevis {
-  COMPTANT = "COMPTANT",
-  VIREMENT = "VIREMENT",
-  CHEQUE = "CHEQUE",
-}
-
-export interface LigneDevisResponse {
-  idProduit?: string; // UUID string
-  nomProduit?: string;
-  quantite?: number;
-  prixUnitaire?: number;
-  montantTotal?: number;
-}
-
-export interface EnrichedDevisResponse {
-  idDevis?: string; // UUID string
-  numeroDevis: string;
-  
-  // Dates are strings in ISO 8601 format (e.g., "2026-02-04T17:00:00")
-  dateCreation: string;
-  dateValidite: string;
-  
-  type?: string;
-  statut: StatutDevis;
-  montantTotal?: number;
-  
-  idClient: string;
-  nomClient?: string;
-  adresseClient?: string;
-  emailClient?: string;
-  telephoneClient?: string;
-
-  lignesDevis: LigneDevisResponse[];
-
-  montantHT?: number;
-  montantTVA?: number;
-  montantTTC?: number;
-  devise?: string;
-  tauxChange: number;
-  conditionsPaiement?: string;
-  notes?: string;
-  referenceExterne?: string;
-  pdfPath?: string;
-  envoyeParEmail: boolean;
-  dateEnvoiEmail?: string;
-  dateAcceptation?: string;
-  dateRefus?: string;
-  motifRefus?: string;
-  idFactureConvertie?: string; // UUID string
-  remiseGlobalePourcentage: number;
-  remiseGlobaleMontant: number;
-  validiteOffreJours: number;
-  
-  applyVat: boolean;
-  dateSysteme?: string;
-  modeReglement?: TypePaiementDevis;
-  nosRef?: string;
-  vosRef?: string;
-  nbreEcheance?: number;
-  referalClientId?: string;
-  finalAmount?: number;
-
-  // Audit and Enrichment fields
-  createdAt?: string;
-  updatedAt?: string;
-  organizationId?: string; // UUID string
-  organizationName?: string;
-  agencyId?: string; // UUID string
-  agencyName?: string;
-  salesPointId?: string; // UUID string
-  salesPointName?: string; // Kept as string per your requirement
-}

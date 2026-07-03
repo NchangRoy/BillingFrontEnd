@@ -1,11 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { UpdatedProductResponse, produits } from '@/src/api/models/UpdatedProductResponse';
+import { UpdatedProductResponse } from '@/src/api/models/UpdatedProductResponse';
 import SearchIcon from "@mui/icons-material/Search";
 import { Trash2, Plus, Box, Package, ClipboardCheck, AlertCircle, Pencil, Split } from "lucide-react";
 import { DeliveryNoteResponse, DeliveryNoteLineResponse } from '@/src/api/models/DeliveryNoteResponse';
 import SummaryCard from '@/components/SummaryCard';
+import { ProductsService } from '@/src/src2/api';
+import { getStoredSeller } from '@/src/api/session';
 
 const inputStyles = "w-full border border-gray-200 rounded-lg outline-none py-2 px-3 focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all text-sm text-gray-700 bg-white shadow-sm placeholder:text-gray-300";
 const labelStyles = "text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1 block ml-0.5";
@@ -19,6 +21,7 @@ interface Props {
 
 const DeliveryNoteDetails = ({ deliveryNote, setDeliveryNote, isPartial }: Props) => {
   const [productSearch, setProductSearch] = useState("");
+  const [produits, setProduits] = useState<UpdatedProductResponse[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<UpdatedProductResponse[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<UpdatedProductResponse | null>(null);
   const [showProductResults, setShowProductResults] = useState(false);
@@ -33,6 +36,16 @@ const DeliveryNoteDetails = ({ deliveryNote, setDeliveryNote, isPartial }: Props
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const orgId = getStoredSeller()?.organizationId;
+    if (!orgId) return;
+    ProductsService.getProductsByOrganization(orgId)
+      .then(data => setProduits(data as unknown as UpdatedProductResponse[]))
+      .catch(() => {
+        // fall back to empty — non-blocking
+      });
+  }, []);
+
+  useEffect(() => {
     const term = productSearch.toLowerCase().trim();
     if (!term || (selectedProduct && term === selectedProduct.nomProduit?.toLowerCase())) {
       setFilteredProducts([]);
@@ -42,7 +55,7 @@ const DeliveryNoteDetails = ({ deliveryNote, setDeliveryNote, isPartial }: Props
       p.idProduit?.toLowerCase().includes(term) ||
       p.nomProduit?.toLowerCase().includes(term)
     ));
-  }, [productSearch, selectedProduct]);
+  }, [productSearch, selectedProduct, produits]);
 
   const addLine = () => {
     if (!selectedProduct || !deliveryNote) return;

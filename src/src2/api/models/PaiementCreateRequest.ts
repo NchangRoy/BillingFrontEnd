@@ -11,6 +11,8 @@ export type PaiementCreateRequest = {
     compteBancaireF?: string;
     memo?: string;
     idFacture?: string;
+    organizationId?: string;
+    agencyId?: string;
 };
 export namespace PaiementCreateRequest {
     export enum modePaiement {

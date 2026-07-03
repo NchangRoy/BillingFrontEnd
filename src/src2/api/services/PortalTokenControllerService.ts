@@ -7,12 +7,13 @@ import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
 export class PortalTokenControllerService {
-    public static getAll(): CancelablePromise<Array<PortalAccessToken>> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/v1/portal-tokens',
-        });
-    }
+    /**
+     * @param resourceId
+     * @param resourceType
+     * @param clientEmail
+     * @returns PortalAccessToken Created
+     * @throws ApiError
+     */
     public static generateToken(
         resourceId: string,
         resourceType: 'QUOTATION' | 'INVOICE' | 'SALES_ORDER' | 'PROFORMA_INVOICE' | 'PURCHASE_ORDER',
@@ -28,13 +29,30 @@ export class PortalTokenControllerService {
             },
         });
     }
+    /**
+     * @returns PortalAccessToken OK
+     * @throws ApiError
+     */
+    public static getAll4(): CancelablePromise<Array<PortalAccessToken>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/portal-tokens',
+        });
+    }
+    /**
+     * @param token
+     * @returns PortalAccessToken OK
+     * @throws ApiError
+     */
     public static validateAndGet(
         token: string,
     ): CancelablePromise<PortalAccessToken> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/portal-tokens/validate/{token}',
-            path: { 'token': token },
+            path: {
+                'token': token,
+            },
         });
     }
 }

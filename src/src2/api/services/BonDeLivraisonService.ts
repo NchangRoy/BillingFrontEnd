@@ -9,6 +9,61 @@ import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
 export class BonDeLivraisonService {
     /**
+     * Récupérer un bon de livraison par ID
+     * @param id
+     * @returns BonLivraisonResponse OK
+     * @throws ApiError
+     */
+    public static getBonLivraisonById(
+        id: string,
+    ): CancelablePromise<BonLivraisonResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/bons-livraison/{id}',
+            path: {
+                'id': id,
+            },
+        });
+    }
+    /**
+     * Mettre à jour un bon de livraison par ID
+     * @param id
+     * @param requestBody
+     * @returns BonLivraisonResponse OK
+     * @throws ApiError
+     */
+    public static updatedLivraison(
+        id: string,
+        requestBody: BonLivraisonRequest,
+    ): CancelablePromise<BonLivraisonResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/bons-livraison/{id}',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+    /**
+     * Supprimer un bon de livraison
+     * @param id
+     * @returns any OK
+     * @throws ApiError
+     */
+    public static deleteBonLivraison(
+        id: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/bons-livraison/{id}',
+            path: {
+                'id': id,
+            },
+        });
+    }
+    /**
      * Lister tous les bons de livraison
      * @returns BonLivraisonResponse OK
      * @throws ApiError
@@ -32,30 +87,6 @@ export class BonDeLivraisonService {
             method: 'POST',
             url: '/api/bons-livraison',
             body: requestBody,
-            mediaType: 'application/json',
-        });
-    }
-
-
-
-   /**
-     * Mettre à jour un bon de livraison
-     * @param id The UUID of the delivery note
-     * @param requestBody The updated delivery note data
-     * @returns BonLivraisonResponse OK
-     * @throws ApiError
-     */
-    public static updateLivraison(
-        id: string,
-        requestBody: BonLivraisonRequest
-    ): CancelablePromise<BonLivraisonResponse> {
-        return __request(OpenAPI, {
-            method: 'PUT', // Ensure this is PUT, not GET
-            url: '/api/bons-livraison/{id}',
-            path: {
-                'id': id,
-            },
-            body: requestBody, // Body is allowed for PUT
             mediaType: 'application/json',
         });
     }
@@ -83,9 +114,9 @@ export class BonDeLivraisonService {
      * @returns BonLivraisonResponse OK
      * @throws ApiError
      */
-    public static updateStatut1(
+    public static updateStatut2(
         id: string,
-        statut: 'EN_PREPARATION' | 'PRET_A_EXPEDIER' | 'EXPEDIE' | 'LIVRE' | 'RETOURNE' | 'ANNULE',
+        statut: 'EN_PREPARATION' | 'PRET_A_EXPEDIER' | 'EXPEDIE' | 'LIVRE' | 'PARTIELLE' | 'RETOURNE' | 'ANNULE',
     ): CancelablePromise<BonLivraisonResponse> {
         return __request(OpenAPI, {
             method: 'PATCH',
@@ -99,36 +130,19 @@ export class BonDeLivraisonService {
         });
     }
     /**
-     * Récupérer un bon de livraison par ID
-     * @param id
+     * Récupérer les bons de livraison par organisation
+     * @param organizationId
      * @returns BonLivraisonResponse OK
      * @throws ApiError
      */
-    public static getBonLivraisonById(
-        id: string,
-    ): CancelablePromise<BonLivraisonResponse> {
+    public static getByOrganizationId4(
+        organizationId: string,
+    ): CancelablePromise<Array<BonLivraisonResponse>> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/bons-livraison/{id}',
+            url: '/api/bons-livraison/organisation/{organizationId}',
             path: {
-                'id': id,
-            },
-        });
-    }
-    /**
-     * Supprimer un bon de livraison
-     * @param id
-     * @returns any OK
-     * @throws ApiError
-     */
-    public static deleteBonLivraison(
-        id: string,
-    ): CancelablePromise<any> {
-        return __request(OpenAPI, {
-            method: 'DELETE',
-            url: '/api/bons-livraison/{id}',
-            path: {
-                'id': id,
+                'organizationId': organizationId,
             },
         });
     }
@@ -146,6 +160,23 @@ export class BonDeLivraisonService {
             url: '/api/bons-livraison/client/{idClient}',
             path: {
                 'idClient': idClient,
+            },
+        });
+    }
+    /**
+     * Récupérer les bons de livraison par agence
+     * @param agencyId
+     * @returns BonLivraisonResponse OK
+     * @throws ApiError
+     */
+    public static getByAgencyId4(
+        agencyId: string,
+    ): CancelablePromise<Array<BonLivraisonResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/bons-livraison/agence/{agencyId}',
+            path: {
+                'agencyId': agencyId,
             },
         });
     }

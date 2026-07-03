@@ -85,4 +85,36 @@ export class NoteCreditControllerService {
             mediaType: 'application/json',
         });
     }
+    /**
+     * @param organizationId
+     * @returns NoteCreditResponse OK
+     * @throws ApiError
+     */
+    public static getNotesCreditByOrganizationId(
+        organizationId: string,
+    ): CancelablePromise<Array<NoteCreditResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/facturation/note-credits/organisation/{organizationId}',
+            path: {
+                'organizationId': organizationId,
+            },
+        });
+    }
+    /**
+     * @param agencyId
+     * @returns NoteCreditResponse OK
+     * @throws ApiError
+     */
+    public static getNotesCreditByAgencyId(
+        agencyId: string,
+    ): CancelablePromise<Array<NoteCreditResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/facturation/note-credits/agence/{agencyId}',
+            path: {
+                'agencyId': agencyId,
+            },
+        });
+    }
 }

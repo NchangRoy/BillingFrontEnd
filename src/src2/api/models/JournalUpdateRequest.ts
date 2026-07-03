@@ -5,5 +5,7 @@
 export type JournalUpdateRequest = {
     nomJournal?: string;
     type?: string;
+    organizationId?: string;
+    agencyId?: string;
 };
 

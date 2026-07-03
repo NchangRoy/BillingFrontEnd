@@ -22,7 +22,6 @@ const ensureDateTime = (dateStr?: string): string => {
  */
 const mapLigneToUI = (ligne: LigneProformaResponse): LigneDevisResponse => {
     return {
-        idLigne: ligne.idLigneProforma,
         idProduit: ligne.idProduit,
         nomProduit: ligne.nomProduit,
         description: ligne.description,
@@ -57,7 +56,7 @@ export const mapProformaResponseToUI = (
         statut: response.statut as unknown as UpdatedProformaInvoiceResponse.statut,
         modeReglement: response.modeReglement as unknown as UpdatedProformaInvoiceResponse.modeReglement,
         
-        lignesDevis: response.lignes?.map(mapLigneToUI) || [],
+        lignesDevis: response.lignesFactureProforma?.map(mapLigneToUI) || [],
         
         applyVat: response.applyVat ?? false,
         finalAmount: response.finalAmount ?? response.montantTTC ?? 0,

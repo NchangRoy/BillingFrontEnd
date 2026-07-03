@@ -13,5 +13,7 @@ export type TaxeResponse = {
     positionFiscale?: string;
     createdAt?: string;
     updatedAt?: string;
+    organizationId?: string;
+    agencyId?: string;
 };
 

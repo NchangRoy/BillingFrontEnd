@@ -5,5 +5,7 @@
 export type JournalCreateRequest = {
     nomJournal: string;
     type: string;
+    organizationId?: string;
+    agencyId?: string;
 };
 

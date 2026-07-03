@@ -6,6 +6,7 @@ import { Roboto } from "next/font/google";
 
 import { Toaster } from 'sonner';
 import ClientProviders from '@/components/ClientProviders';
+import AuthGuard from '@/components/AuthGuard';
 
 export const metadata: Metadata = {
   title: 'Billing Enterprise ERP',
@@ -35,22 +36,24 @@ export default function RootLayout({
         />
 
         <ClientProviders>
-          <div className='flex overflow-hidden' style={{ flex: '1 1 0', minHeight: 0 }}>
-            <aside className='shrink-0 z-50 flex flex-col' style={{ alignSelf: 'stretch' }}>
-              <Sidebar/>
-            </aside>
+          <AuthGuard>
+            <div className='flex overflow-hidden' style={{ flex: '1 1 0', minHeight: 0 }}>
+              <aside className='shrink-0 z-50 flex flex-col' style={{ alignSelf: 'stretch' }}>
+                <Sidebar/>
+              </aside>
 
-            <div className='flex flex-col flex-1 min-w-0 bg-secondary-background'>
-              <header className="z-[60] shrink-0">
-                <Navbar name='' signedIn={true}/>
-              </header>
-              <main className='flex-1 overflow-y-auto no-scrollbar mr-5 relative bg-white rounded-2xl min-h-0'>
-                <div className="min-h-full">
-                  {children}
-                </div>
-              </main>
+              <div className='flex flex-col flex-1 min-w-0 bg-secondary-background'>
+                <header className="z-[60] shrink-0">
+                  <Navbar name='' signedIn={true}/>
+                </header>
+                <main className='flex-1 overflow-y-auto no-scrollbar mr-5 relative bg-white rounded-2xl min-h-0'>
+                  <div className="min-h-full">
+                    {children}
+                  </div>
+                </main>
+              </div>
             </div>
-          </div>
+          </AuthGuard>
         </ClientProviders>
 
       </body>

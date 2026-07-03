@@ -12,6 +12,7 @@ import DeliveryNoteLogistics from "./DeliveryNoteLogistics";
 import { BonDeLivraisonService } from "@/src/src2/api";
 import { mapDeliveryNoteToRequest } from "@/src/Mappers/DeliveryNoteMapper";
 import { BackOrderService } from "@/src/src2/api/services/BackOrderService";
+import { BackOrderRequest } from "@/src/src2/api/models/BackOrderRequest";
 import { toast } from 'sonner';
 
 interface Props {
@@ -135,7 +136,7 @@ const CreateDeliveryNoteModal = ({ isOpen, onClose, clientData, deliveryNoteData
       if (!deliveryNoteData?.idDN) {
         await BonDeLivraisonService.createBonLivraison(apiPayload);
       } else {
-        await BonDeLivraisonService.updateLivraison(deliveryNoteData.idDN!, apiPayload);
+        await BonDeLivraisonService.updatedLivraison(deliveryNoteData.idDN!, apiPayload);
       }
 
       if (createBO) {
@@ -153,20 +154,20 @@ const CreateDeliveryNoteModal = ({ isOpen, onClose, clientData, deliveryNoteData
     const missingLines = (payload.lines || [])
       .filter(l => (l.quantiteRestante ?? 0) > 0)
       .map(l => ({
-        productId: l.productId,
-        productName: l.description,
+        idProduit: l.productId,
+        nomProduit: l.description,
         quantiteCommandee: l.quantiteTotal,
         quantiteRecue: l.quantiteLivree,
-        quantiteManquante: l.quantiteRestante,
-        unitPrice: l.unitPrice,
+        quantiteEnAttente: l.quantiteRestante,
+        prixUnitaire: l.unitPrice,
       }));
 
     try {
       await BackOrderService.createBackOrder({
-        idBonAchat: payload.idSaleOrder,
+        idBonAchat: payload.idSaleOrder ?? '',
         lignes: missingLines,
-        statut: 'EN_ATTENTE' as any,
-        remarques: `Generated from partial delivery ${payload.deliveryNoteNumber || ''} (SO: ${payload.SaleOrderNumber || ''})`,
+        statut: BackOrderRequest.statut.EN_ATTENTE,
+        notes: `Generated from partial delivery ${payload.deliveryNoteNumber || ''} (SO: ${payload.SaleOrderNumber || ''})`,
         organizationId: undefined,
         agencyId: undefined,
       });

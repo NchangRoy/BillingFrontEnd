@@ -39,6 +39,7 @@ export type FactureResponse = {
     dateEnvoiEmail?: string;
     referalClientId?: string;
     organizationId?: string;
+    agencyId?: string;
     remiseGlobalePourcentage?: number;
     remiseGlobaleMontant?: number;
     createdBy?: string;
@@ -49,7 +50,6 @@ export type FactureResponse = {
     version?: number;
     createdAt?: string;
     updatedAt?: string;
-    OrganizationId?:string
 };
 export namespace FactureResponse {
     export enum etat {

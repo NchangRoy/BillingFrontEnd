@@ -5,39 +5,34 @@
 import type { LineFactureFournisseur } from './LineFactureFournisseur';
 export type FactureFournisseurCreateRequest = {
     numeroFacture?: string;
-    dateFacturation?: string;
-    dateEcheance?: string;
-    etat?: FactureFournisseurCreateRequest.etat;
-    type?: string;
     idFournisseur?: string;
-    nomFournisseru?: string;
+    nomFournisseur?: string;
     adresseFournisseur?: string;
     emailFournisseur?: string;
     telephoneFournisseur?: string;
+    lines?: Array<LineFactureFournisseur>;
     montantHT?: number;
     montantTVA?: number;
     montantTTC?: number;
-    remiseGlobalePourcentage?: number;
+    montantTotal?: number;
+    modeReglement?: FactureFournisseurCreateRequest.modeReglement;
+    nbreEcheance?: number;
+    montantRestant?: number;
+    dateFacture?: string;
+    dateEcheance?: string;
+    statut?: FactureFournisseurCreateRequest.statut;
     applyVat?: boolean;
     devise?: string;
-    tauxChange?: number;
-    modeReglement?: FactureFournisseurCreateRequest.modeReglement;
-    referenceCommande?: string;
-    idGRN?: string;
-    numeroGRN?: string;
-    lignesFacture?: Array<LineFactureFournisseur>;
     notes?: string;
+    pdfPath?: string;
     createdBy?: string;
+    idBonReception?: string;
+    numeroBonReception?: string;
+    dateSysteme?: string;
+    organizationId?: string;
+    agencyId?: string;
 };
 export namespace FactureFournisseurCreateRequest {
-    export enum etat {
-        BROUILLON = 'BROUILLON',
-        ENVOYE = 'ENVOYE',
-        PAYE = 'PAYE',
-        PARTIELLEMENT_PAYE = 'PARTIELLEMENT_PAYE',
-        EN_RETARD = 'EN_RETARD',
-        ANNULE = 'ANNULE',
-    }
     export enum modeReglement {
         VIREMENT = 'VIREMENT',
         CARTE_BANCAIRE = 'CARTE_BANCAIRE',
@@ -46,6 +41,14 @@ export namespace FactureFournisseurCreateRequest {
         PRELEVEMENT = 'PRELEVEMENT',
         PAYPAL = 'PAYPAL',
         AUTRE = 'AUTRE',
+    }
+    export enum statut {
+        BROUILLON = 'BROUILLON',
+        ENVOYE = 'ENVOYE',
+        PAYE = 'PAYE',
+        PARTIELLEMENT_PAYE = 'PARTIELLEMENT_PAYE',
+        EN_RETARD = 'EN_RETARD',
+        ANNULE = 'ANNULE',
     }
 }
 

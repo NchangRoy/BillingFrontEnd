@@ -5,8 +5,8 @@
 import type { LigneDevisCreateRequest } from './LigneDevisCreateRequest';
 export type DevisCreateRequest = {
     numeroDevis?: string;
-    dateCreation: string;
-    dateValidite: string;
+    dateCreation?: string;
+    dateValidite?: string;
     type?: string;
     statut?: DevisCreateRequest.statut;
     idClient: string;
@@ -28,7 +28,7 @@ export type DevisCreateRequest = {
     remiseGlobalePourcentage?: number;
     remiseGlobaleMontant?: number;
     validiteOffreJours?: number;
-    applyVat: boolean;
+    applyVat?: boolean;
     dateSysteme?: string;
     modeReglement?: DevisCreateRequest.modeReglement;
     nosRef?: string;
@@ -37,8 +37,8 @@ export type DevisCreateRequest = {
     referalClientId?: string;
     pdfPath?: string;
     organizationId?: string;
-
-    createdBy?:string;
+    agencyId?: string;
+    createdBy?: string;
 };
 export namespace DevisCreateRequest {
     export enum statut {

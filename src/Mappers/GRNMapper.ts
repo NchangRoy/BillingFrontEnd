@@ -61,25 +61,20 @@ const mapLineItem = (line: LineBonReception): GoodsReceiptLineResponse => ({
  */
 export const mapGRNResponseToInternal = (apiData: BondeReceptionResponse): GoodsReceiptNoteResponse => {
     return {
-        idGRN: apiData.idGRN,
-        grnNumber: apiData.grnNumber,
-        supplierId: apiData.supplierId,
-        supplierName: apiData.supplierName,
-        transporterCompanyName: apiData.transporterCompanyName,
-        vehicleNumber: apiData.vehicleNumber,
-        purchaseOrderId: apiData.purchaseOrderId,
-        purchaseOrderNumber: apiData.purchaseOrderNumber,
+        idGRN: apiData.idBonReception,
+        grnNumber: apiData.numeroReception,
+        supplierId: apiData.idFournisseur,
+        supplierName: apiData.nomFournisseur,
+        transporterCompanyName: apiData.agenceDeTransport,
+        purchaseOrderId: apiData.idBonAchat,
+        purchaseOrderNumber: apiData.numeroBonAchat,
         // Keep as is for UI or format if you want consistent display
-        receiptDate: apiData.receiptDate,
-        documentDate: apiData.documentDate,
-        systemDate: apiData.systemDate,
-        status: mapStatus(apiData.status),
+        receiptDate: apiData.dateReception,
+        systemDate: apiData.dateSysteme,
+        status: mapStatus(apiData.statut),
         lines: apiData.lines?.map(mapLineItem) || [],
-        preparedBy: apiData.preparedBy,
-        inspectedBy: apiData.inspectedBy,
-        approvedBy: apiData.approvedBy,
-        remarks: apiData.remarks,
-        createdAt: apiData.createdAt,
+        remarks: apiData.notes,
+        createdAt: apiData.dateSysteme,
         updatedAt: apiData.updatedAt,
     };
 };
@@ -89,35 +84,30 @@ export const mapGRNResponseToInternal = (apiData: BondeReceptionResponse): Goods
  */
 export const mapInternalToBondeReceptionCreateRequest = (data: GoodsReceiptNoteResponse): BondeReceptionCreateRequest => {
     return {
-        grnNumber: data.grnNumber,
-        supplierId: data.supplierId,
-        supplierName: data.supplierName,
-        transporterCompanyName: data.transporterCompanyName,
-        vehicleNumber: data.vehicleNumber,
-        purchaseOrderId: data.purchaseOrderId,
-        purchaseOrderNumber: data.purchaseOrderNumber,
+        numeroReception: data.grnNumber,
+        idFournisseur: data.supplierId,
+        nomFournisseur: data.supplierName,
+        agenceDeTransport: data.transporterCompanyName,
+        idBonAchat: data.purchaseOrderId,
+        numeroBonAchat: data.purchaseOrderNumber,
         // Convert to LocalDateTime for Backend
-        receiptDate: formatToLocalDateTime(data.receiptDate),
-        documentDate: formatToLocalDateTime(data.documentDate),
-        systemDate: formatToLocalDateTime(data.systemDate),
-        status: mapInternalStatusToApi(data.status),
+        dateReception: formatToLocalDateTime(data.receiptDate),
+        dateSysteme: formatToLocalDateTime(data.systemDate),
+        statut: mapInternalStatusToApi(data.status),
         lines: data.lines?.map(mapInternalLineToApi) || [],
-        preparedBy: data.preparedBy,
-        inspectedBy: data.inspectedBy,
-        approvedBy: data.approvedBy,
-        remarks: data.remarks,
+        notes: data.remarks,
     };
 };
 
-const mapInternalStatusToApi = (internalStatus?: GoodReceiptResponse.statut): BondeReceptionCreateRequest.status | undefined => {
+const mapInternalStatusToApi = (internalStatus?: GoodReceiptResponse.statut): BondeReceptionCreateRequest.statut | undefined => {
     if (!internalStatus) return undefined;
     switch (internalStatus) {
-        case GoodReceiptResponse.statut.DRAFT: return BondeReceptionCreateRequest.status.DRAFT;
-        case GoodReceiptResponse.statut.PARTIALLY_RECEIVED: return BondeReceptionCreateRequest.status.PARTIALLY_RECEIVED;
-        case GoodReceiptResponse.statut.RECEIVED: return BondeReceptionCreateRequest.status.RECEIVED;
-        case GoodReceiptResponse.statut.REJECTED: return BondeReceptionCreateRequest.status.REJECTED;
-        case GoodReceiptResponse.statut.ANNULE: return BondeReceptionCreateRequest.status.ANNULE;
-        default: return BondeReceptionCreateRequest.status.DRAFT;
+        case GoodReceiptResponse.statut.DRAFT: return BondeReceptionCreateRequest.statut.DRAFT;
+        case GoodReceiptResponse.statut.PARTIALLY_RECEIVED: return BondeReceptionCreateRequest.statut.PARTIALLY_RECEIVED;
+        case GoodReceiptResponse.statut.RECEIVED: return BondeReceptionCreateRequest.statut.RECEIVED;
+        case GoodReceiptResponse.statut.REJECTED: return BondeReceptionCreateRequest.statut.REJECTED;
+        case GoodReceiptResponse.statut.ANNULE: return BondeReceptionCreateRequest.statut.ANNULE;
+        default: return BondeReceptionCreateRequest.statut.DRAFT;
     }
 };
 

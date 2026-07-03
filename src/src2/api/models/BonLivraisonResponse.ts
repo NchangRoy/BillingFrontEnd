@@ -2,29 +2,30 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { LigneBonLivraisonResponse } from './LigneBonLivraisonResponse';
+import type { LigneBonLivraison } from './LigneBonLivraison';
 export type BonLivraisonResponse = {
     idBonLivraison?: string;
     numeroBonLivraison?: string;
-    nomDestinataire?: string;
-    adresseDestinataire?: string;
-    contactDestinataire?: string;
-    nomAgence?: string;
-    adresseAgence?: string;
-    contactAgence?: string;
-    dateLivraison?: string;
-    dateEcheance?: string;
-    lines?: Array<LigneBonLivraisonResponse>;
-    totalAmount?: number;
-    termsAndConditions?: string;
-    purchaseOrderNumber?: string;
-    createdAt?: string;
-    updatedAt?: string;
+    idSaleOrder?: string;
+    saleOrderNumber?: string;
     idClient?: string;
     nomClient?: string;
+    adresseClient?: string;
+    emailClient?: string;
+    telephoneClient?: string;
+    lignes?: Array<LigneBonLivraison>;
+    montantHT?: number;
+    montantTVA?: number;
+    montantTTC?: number;
+    dateLivraison?: string;
     statut?: BonLivraisonResponse.statut;
-    transporteur?: string;
-    numeroSuivi?: string;
+    notes?: string;
+    createdBy?: string;
+    dateSysteme?: string;
+    updatedAt?: string;
+    organizationId?: string;
+    agencyId?: string;
+    partial?: boolean;
 };
 export namespace BonLivraisonResponse {
     export enum statut {
@@ -32,6 +33,7 @@ export namespace BonLivraisonResponse {
         PRET_A_EXPEDIER = 'PRET_A_EXPEDIER',
         EXPEDIE = 'EXPEDIE',
         LIVRE = 'LIVRE',
+        PARTIELLE = 'PARTIELLE',
         RETOURNE = 'RETOURNE',
         ANNULE = 'ANNULE',
     }

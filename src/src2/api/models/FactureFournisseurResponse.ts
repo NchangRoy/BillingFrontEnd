@@ -4,53 +4,38 @@
 /* eslint-disable */
 import type { LineFactureFournisseur } from './LineFactureFournisseur';
 export type FactureFournisseurResponse = {
-    idFacture?: string;
+    idFactureFournisseur?: string;
     numeroFacture?: string;
-    dateFacturation?: string;
-    dateEcheance?: string;
-    dateSysteme?: string;
-    etat?: FactureFournisseurResponse.etat;
-    type?: string;
     idFournisseur?: string;
-    nomFournisseru?: string;
+    nomFournisseur?: string;
     adresseFournisseur?: string;
     emailFournisseur?: string;
     telephoneFournisseur?: string;
+    lines?: Array<LineFactureFournisseur>;
     montantHT?: number;
     montantTVA?: number;
     montantTTC?: number;
     montantTotal?: number;
+    modeReglement?: FactureFournisseurResponse.modeReglement;
+    nbreEcheance?: number;
     montantRestant?: number;
-    finalAmount?: number;
-    remiseGlobalePourcentage?: number;
-    remiseGlobaleMontant?: number;
+    dateFacture?: string;
+    dateEcheance?: string;
+    statut?: FactureFournisseurResponse.statut;
     applyVat?: boolean;
     devise?: string;
-    tauxChange?: number;
-    modeReglement?: FactureFournisseurResponse.modeReglement;
-    conditionsPaiement?: string;
-    nbreEcheance?: number;
-    nosRef?: string;
-    vosRef?: string;
-    referenceCommande?: string;
-    idGRN?: string;
-    numeroGRN?: string;
-    lignesFacture?: Array<LineFactureFournisseur>;
     notes?: string;
+    pdfPath?: string;
     createdBy?: string;
-    approvedBy?: string;
+    idBonReception?: string;
+    numeroBonReception?: string;
     createdAt?: string;
     updatedAt?: string;
+    dateSysteme?: string;
+    organizationId?: string;
+    agencyId?: string;
 };
 export namespace FactureFournisseurResponse {
-    export enum etat {
-        BROUILLON = 'BROUILLON',
-        ENVOYE = 'ENVOYE',
-        PAYE = 'PAYE',
-        PARTIELLEMENT_PAYE = 'PARTIELLEMENT_PAYE',
-        EN_RETARD = 'EN_RETARD',
-        ANNULE = 'ANNULE',
-    }
     export enum modeReglement {
         VIREMENT = 'VIREMENT',
         CARTE_BANCAIRE = 'CARTE_BANCAIRE',
@@ -59,6 +44,14 @@ export namespace FactureFournisseurResponse {
         PRELEVEMENT = 'PRELEVEMENT',
         PAYPAL = 'PAYPAL',
         AUTRE = 'AUTRE',
+    }
+    export enum statut {
+        BROUILLON = 'BROUILLON',
+        ENVOYE = 'ENVOYE',
+        PAYE = 'PAYE',
+        PARTIELLEMENT_PAYE = 'PARTIELLEMENT_PAYE',
+        EN_RETARD = 'EN_RETARD',
+        ANNULE = 'ANNULE',
     }
 }
 

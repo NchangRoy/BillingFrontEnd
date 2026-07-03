@@ -1,17 +1,17 @@
 'use client'
-import {  UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation';
-import { 
+import {
   PersonOutline, // Changed from EmailOutlined
-  LockOutlined, 
-  VisibilityOutlined, 
+  LockOutlined,
+  VisibilityOutlined,
   VisibilityOffOutlined,
   LoginOutlined
 } from "@mui/icons-material";
-import { SellerAuthResponse } from '@/src/src2/api/services/ExternalServices.ts/SellerAuthResponse';
+import { ApiError, AuthService } from '@/src/src2/api';
 import { mapAuthToUpdatedSeller } from '@/src/Mappers/SellerAuthMapper';
+import { getStoredSeller } from '@/src/api/session';
 
 const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -20,57 +20,35 @@ const LoginForm = () => {
     password: '',
     rememberMe: false
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router=useRouter()
 
+  useEffect(() => {
+    if (getStoredSeller()?.accessToken) {
+      router.replace('/dashboard');
+    }
+  }, [router]);
 
-
-const loginSellerFetch = async (username: string, password: string): Promise<SellerAuthResponse> => {
-  const response = await fetch('http://192.168.50.1:8081/sellers/login', {
-    method: 'POST',
-    headers: {
-      'Accept': '*/*',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ username, password }),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || 'Authentication failed');
-  }
-
-  return response.json();
-};
-
-  
-
-
-  const handleSubmit =async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login Attempt:", formData);
+    setError(null);
+    setIsSubmitting(true);
 
-      //send request to authenticate user
-
-     const data=await loginSellerFetch(formData.username,formData.password)
-     
-
-     const sellerdate=mapAuthToUpdatedSeller(data)
-     localStorage.setItem("seller",JSON.stringify(sellerdate))
-console.log(sellerdate)
-router.push("/dashboard")
-
-   /*
-    if(formData.username=="alice_smith"){
-      localStorage.setItem("seller",JSON.stringify(seller1))
-      router.push("/dashboard")
+    try {
+      const data = await AuthService.login({
+        username: formData.username,
+        password: formData.password,
+      });
+      const sellerData = mapAuthToUpdatedSeller(data);
+      localStorage.setItem("seller", JSON.stringify(sellerData));
+      router.push(sellerData.mustChangePassword ? "/change-password" : "/dashboard");
+    } catch (err) {
+      const message = err instanceof ApiError ? (err.body?.message ?? err.message) : 'Authentication failed';
+      setError(message);
+    } finally {
+      setIsSubmitting(false);
     }
-    else if(formData.username=="bob_johnson"){
-      localStorage.setItem("seller",JSON.stringify(seller2))
-      
-    }
-   */
-   
-    // Add your authentication logic here
   };
 
   const inputWrapper = "flex items-center gap-3 bg-gray-50 border border-gray-100 px-4 py-3 rounded-xl focus-within:border-secondary-mid focus-within:bg-white focus-within:ring-4 focus-within:ring-secondary-mid/5 transition-all duration-200";
@@ -145,12 +123,20 @@ router.push("/dashboard")
             <label htmlFor="remember" className="text-sm text-gray-500 font-medium cursor-pointer">Remember me</label>
           </div>
 
+          {/* Error Message */}
+          {error && (
+            <p className="text-sm text-red-500 font-medium bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+              {error}
+            </p>
+          )}
+
           {/* Submit Button */}
-          <button 
-            type="submit" 
-            className="w-full py-4 bg-secondary-mid text-white rounded-2xl font-bold text-sm shadow-lg shadow-secondary-mid/25 hover:bg-secondary-mid/90 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full py-4 bg-secondary-mid text-white rounded-2xl font-bold text-sm shadow-lg shadow-secondary-mid/25 hover:bg-secondary-mid/90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Sign In to Dashboard
+            {isSubmitting ? 'Signing in…' : 'Sign In to Dashboard'}
           </button>
         </form>
 

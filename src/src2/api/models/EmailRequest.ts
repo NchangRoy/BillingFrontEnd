@@ -3,11 +3,12 @@
 /* tslint:disable */
 /* eslint-disable */
 export type EmailRequest = {
-    id?: string;
     htmlContent?: string;
+    id?: string;
+    organizationRaisonSociale?: string;
     canView?: boolean;
     canAccept?: boolean;
     canReject?: boolean;
     canModify?: boolean;
-    organizationRaisonSociale?: string;
 };
+

@@ -26,38 +26,36 @@ export const mapBackendResponseToUI = (apiRes: BonLivraisonResponse): DeliveryNo
         // Client Info
         idClient: apiRes.idClient,
         nomClient: apiRes.nomClient,
-        
-        // Recipient Info (Mapped from backend naming)
-        recipientName: apiRes.nomDestinataire,
-        recipientAddress: apiRes.adresseDestinataire,
-        recipientPhone: apiRes.contactDestinataire,
 
-        deliveryAgency: apiRes.nomAgence,
+        // Recipient Info (backend no longer tracks a distinct recipient - fall back to client)
+        recipientName: apiRes.nomClient,
+        recipientAddress: apiRes.adresseClient,
+        recipientPhone: apiRes.telephoneClient,
 
         // Dates
         deliveryDate: apiRes.dateLivraison,
-        dueDate: apiRes.dateEcheance,
 
         // Status
         etat: mapBackendStatusToUI(apiRes.statut),
-  
-        // Line Items (using 'lines' and 'totalAmount' as per your OpenAPI)
-        lines: apiRes.lines?.map(l => ({
-            productId: l.productId,
-            idProduit: l.productId,
+
+        // Line Items
+        lines: apiRes.lignes?.map(l => ({
+            productId: l.idProduit,
+            idProduit: l.idProduit,
             description: l.description,
-            quantity: l.quantity,
-            unitPrice: l.unitPrice,
-            amount: l.amount
+            quantity: l.quantite,
+            unitPrice: l.prixUnitaire,
+            amount: l.montant
         })),
 
-        totalAmount: apiRes.totalAmount,
-        termsAndConditions: apiRes.termsAndConditions,
-        
-        // Reference (Mapped to purchaseOrderNumber in your response)
-        SaleOrderNumber: apiRes.purchaseOrderNumber,
+        totalAmount: apiRes.montantTTC,
+        termsAndConditions: apiRes.notes,
 
-        createdAt: apiRes.createdAt,
+        // Reference
+        idSaleOrder: apiRes.idSaleOrder,
+        SaleOrderNumber: apiRes.saleOrderNumber,
+
+        createdAt: apiRes.dateSysteme,
         updatedAt: apiRes.updatedAt
     };
 };
@@ -72,9 +70,6 @@ export const mapDeliveryNoteToRequest = (
         numeroBonLivraison: dn.deliveryNoteNumber,
         idClient: dn.idClient ?? '',
         nomClient: dn.nomClient,
-        nomDestinataire: dn.recipientName,
-        adresseDestinataire: dn.recipientAddress,
-        contactDestinataire: dn.recipientPhone,
         nomAgence: dn.deliveryAgency,
 
         // LocalDateTime Formatting (Stripping 'Z' for backend)
@@ -96,8 +91,8 @@ export const mapDeliveryNoteToRequest = (
             montant: line.amount,
         })),
 
-        montantTotal: dn.totalAmount,
-        conditionsGenerales: dn.termsAndConditions,
+        montantTTC: dn.totalAmount,
+        notes: dn.termsAndConditions,
     };
 };
 

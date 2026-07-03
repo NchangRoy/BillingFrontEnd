@@ -5,8 +5,8 @@
 export type LigneDevisCreateRequest = {
     quantite: number;
     description?: string;
-    debit: number;
-    credit: number;
+    debit?: number;
+    credit?: number;
     isTaxLine?: boolean;
     idProduit?: string;
     nomProduit?: string;

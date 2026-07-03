@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import SearchIcon from "@mui/icons-material/Search";
 import { Trash2, Pencil, Plus, Package, ShoppingBag } from "lucide-react";
 import { UpdatedBackOrderResponse, BackOrderLine } from '@/src/api/models/UpdatedBackOrderResponse';
-import { ProductControllerService } from '@/src/src2/api';
+import { ProductsService } from '@/src/src2/api';
 import { UpdatedProductResponse } from '@/src/api/models/UpdatedProductResponse';
 import { toast } from 'sonner';
 
@@ -33,7 +33,7 @@ const BackOrderDetails = ({ backOrder, setBackOrder }: Props) => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const data = await ProductControllerService.getAllProducts() as unknown as UpdatedProductResponse[];
+        const data = await ProductsService.getAllProducts() as unknown as UpdatedProductResponse[];
         setProducts(data);
       } catch {
         // fall back to empty — non-blocking

@@ -16,7 +16,7 @@ export class FactureFournisseurControllerService {
      */
     public static updateFacture1(
         id: string,
-        requestBody: FactureFournisseurResponse,
+        requestBody: FactureFournisseurCreateRequest,
     ): CancelablePromise<FactureFournisseurResponse> {
         return __request(OpenAPI, {
             method: 'PUT',
@@ -51,6 +51,38 @@ export class FactureFournisseurControllerService {
             url: '/api/facture-fournisseurs',
             body: requestBody,
             mediaType: 'application/json',
+        });
+    }
+    /**
+     * @param organizationId
+     * @returns FactureFournisseurResponse OK
+     * @throws ApiError
+     */
+    public static getByOrganizationId3(
+        organizationId: string,
+    ): CancelablePromise<Array<FactureFournisseurResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/facture-fournisseurs/organisation/{organizationId}',
+            path: {
+                'organizationId': organizationId,
+            },
+        });
+    }
+    /**
+     * @param agencyId
+     * @returns FactureFournisseurResponse OK
+     * @throws ApiError
+     */
+    public static getByAgencyId3(
+        agencyId: string,
+    ): CancelablePromise<Array<FactureFournisseurResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/facture-fournisseurs/agence/{agencyId}',
+            path: {
+                'agencyId': agencyId,
+            },
         });
     }
 }

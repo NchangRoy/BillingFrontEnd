@@ -14,6 +14,8 @@ export type PaiementResponse = {
     idFacture?: string;
     createdAt?: string;
     updatedAt?: string;
+    organizationId?: string;
+    agencyId?: string;
 };
 export namespace PaiementResponse {
     export enum modePaiement {

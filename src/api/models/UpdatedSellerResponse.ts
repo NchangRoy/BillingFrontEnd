@@ -26,6 +26,7 @@ export enum Permission {
 // Updated seller type
 // -------------------------
 export type UpdatedSellerResponse = {
+  accessToken: string;
   Id:string,
   username: string;
   agency: string;
@@ -62,6 +63,8 @@ export type UpdatedSellerResponse = {
      salesPointAddress:string;
 
      createdAt:string;
+
+     mustChangePassword: boolean;
 };
 
 

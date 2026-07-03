@@ -27,6 +27,9 @@ export type BonAchatRequest = {
     preparedBy?: string;
     approvedBy?: string;
     remarks?: string;
+    organizationId?: string;
+    agencyId?: string;
+    createdBy?: string;
     lines: Array<LigneBonAchatRequest>;
 };
 export namespace BonAchatRequest {

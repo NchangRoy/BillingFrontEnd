@@ -14,7 +14,6 @@ export type LineBonReception = {
     damagedQuantity?: number;
     excessQuantity?: number;
     rate?: number;
-    discount?: number;
     lineAmount?: number;
 };
 

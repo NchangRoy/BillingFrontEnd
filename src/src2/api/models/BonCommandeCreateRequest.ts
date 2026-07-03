@@ -39,6 +39,7 @@ export type BonCommandeCreateRequest = {
     notes?: string;
     createdBy?: string;
     organizationId?: string;
+    agencyId?: string;
 };
 export namespace BonCommandeCreateRequest {
     export enum statut {

@@ -19,34 +19,32 @@ export const mapCreditNoteToRequest = (
 ): NoteCreditRequest => {
     return {
         numeroNoteCredit: cn.numeroCreditNote,
-        numeroFacture: cn.numeroFactureOrigine,
-        
+        numeroFactureOrigine: cn.numeroFactureOrigine,
+
         // Enforced Datetime
-        dateFacturation: ensureIsoString(cn.dateEmission),
+        dateEmission: ensureIsoString(cn.dateEmission),
         dateSysteme: ensureIsoString(cn.dateSysteme),
-        
+
         idClient: cn.idClient,
         nomClient: cn.nomClient,
         adresseClient: cn.adresseClient,
         emailClient: cn.emailClient,
         telephoneClient: cn.telephoneClient,
-        
+
         montantHT: cn.montantHT,
         montantTVA: cn.montantTVA,
         montantTTC: cn.montantTTC,
-        montantTotal: cn.montantTTC, 
-        finalAmount: cn.finalAmount,
-        applyVat: cn.applyVat,
+        montantTotal: cn.montantTTC,
         devise: cn.devise,
-        
-        etat: cn.etat as unknown as NoteCreditRequest.etat,
+
+        statut: cn.etat as unknown as NoteCreditRequest.statut,
         modeReglement: mapPaymentMode(cn.modeReglement),
-        
-        lignesFacture: (cn.lignesCreditNote ?? []).map(mapLigneToNoteCredit),
-        
+
+        lignesNoteCredit: (cn.lignesCreditNote ?? []).map(mapLigneToNoteCredit),
+
         notes: cn.notes,
         pdfPath: cn.pdfPath,
-        type: cn.reason, 
+        motif: cn.reason,
     };
 };
 
@@ -57,36 +55,35 @@ export const mapCNResponseToInternalCreditNote = (
     res: NoteCreditResponse
 ): UpdatedCreditNoteResponse => {
     return {
-        idCreditNote: res.idCNoteCredit,
+        idCreditNote: res.idNoteCredit,
         numeroCreditNote: res.numeroNoteCredit,
-        idFactureOrigine: undefined, 
-        numeroFactureOrigine: res.numeroFacture,
-        
+        idFactureOrigine: res.idFactureOrigine,
+        numeroFactureOrigine: res.numeroFactureOrigine,
+
         // Enforced Datetime
-        dateEmission: ensureIsoString(res.dateFacturation),
+        dateEmission: ensureIsoString(res.dateEmission),
         dateSysteme: ensureIsoString(res.dateSysteme),
         createdAt: ensureIsoString(res.createdAt),
         updatedAt: ensureIsoString(res.updatedAt),
-        
-        etat: res.etat as unknown as CreditNoteResponse.etat,
-        reason: res.type as unknown as CreditNoteResponse.reason,
-        
+
+        etat: res.statut as unknown as CreditNoteResponse.etat,
+        reason: res.motif as unknown as CreditNoteResponse.reason,
+
         idClient: res.idClient,
         nomClient: res.nomClient,
         adresseClient: res.adresseClient,
         emailClient: res.emailClient,
         telephoneClient: res.telephoneClient,
-        
+
         montantHT: res.montantHT,
         montantTVA: res.montantTVA,
         montantTTC: res.montantTTC,
-        applyVat: res.applyVat,
-        finalAmount: res.finalAmount,
+        finalAmount: res.montantTotal,
         devise: res.devise,
-        
+
         modeReglement: mapResponsePaymentMode(res.modeReglement),
-        lignesCreditNote: res.lignesFacture || [],
-        
+        lignesCreditNote: res.lignesNoteCredit || [],
+
         notes: res.notes,
         pdfPath: res.pdfPath,
     };

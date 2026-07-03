@@ -2,6 +2,8 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { SaleSize } from './SaleSize';
+import type { SaleSizePromotion } from './SaleSizePromotion';
 export type ProductResponse = {
     idProduit?: string;
     nomProduit?: string;
@@ -16,25 +18,11 @@ export type ProductResponse = {
     createdAt?: string;
     updatedAt?: string;
     uom?: string;
+    allowedSaleSizes?: Array<SaleSize>;
+    activePromotions?: Array<SaleSizePromotion>;
+    stockQuantity?: number;
     availableQuantity?: number;
     reservedQuantity?: number;
-    stockQuantity?: number;
     organizationId?: string;
-    allowedSaleSizes?: Array<{
-        size?: string;
-        unitPrice?: number;
-        unitPriceWithTax?: number;
-        minQuantity?: number;
-        active?: boolean;
-        isNegotiable?: boolean;
-        minNegotiationPercentage?: number;
-    }>;
-    activePromotions?: Array<{
-        saleSize?: string;
-        startDate?: string;
-        endDate?: string;
-        promotionalPrice?: number;
-        discountPercentage?: number;
-        active?: boolean;
-    }>;
 };
+

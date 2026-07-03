@@ -2,11 +2,13 @@ import { BackOrderRequest, BackOrderResponse, LigneBackOrder } from '../src2/api
 import { UpdatedBackOrderResponse, BackOrderLine, BackOrderStatus } from '../api/models/UpdatedBackOrderResponse';
 
 export const mapBackOrderResponseToUI = (res: BackOrderResponse): UpdatedBackOrderResponse => ({
-    id: res.id,
+    id: res.idBackOrder,
     idBonAchat: res.idBonAchat,
+    numeroBonAchat: res.numeroBonAchat,
+    supplierName: res.nomFournisseur,
     statut: res.statut as unknown as BackOrderStatus.statut,
     lignes: res.lignes?.map(mapLigneToUI) ?? [],
-    remarques: res.remarques,
+    remarques: res.notes,
     createdAt: res.createdAt,
     updatedAt: res.updatedAt,
     organizationId: res.organizationId,
@@ -17,30 +19,31 @@ export const mapBackOrderArrayToUI = (list: BackOrderResponse[]): UpdatedBackOrd
     list.map(mapBackOrderResponseToUI);
 
 export const mapUIToBackOrderRequest = (ui: UpdatedBackOrderResponse): BackOrderRequest => ({
-    idBonAchat: ui.idBonAchat,
+    idBonAchat: ui.idBonAchat ?? '',
+    numeroBonAchat: ui.numeroBonAchat,
+    nomFournisseur: ui.supplierName,
     statut: ui.statut as unknown as BackOrderRequest.statut,
     lignes: ui.lignes?.map(mapLineToRequest) ?? [],
-    remarques: ui.remarques,
+    notes: ui.remarques,
     organizationId: ui.organizationId,
     agencyId: ui.agencyId,
 });
 
 const mapLigneToUI = (l: LigneBackOrder): BackOrderLine => ({
-    id: l.id,
-    productId: l.productId,
-    productName: l.productName,
+    id: l.idProduit,
+    productId: l.idProduit,
+    productName: l.nomProduit,
     quantiteCommandee: l.quantiteCommandee,
     quantiteRecue: l.quantiteRecue,
-    quantiteManquante: l.quantiteManquante,
-    unitPrice: l.unitPrice,
+    quantiteManquante: l.quantiteEnAttente,
+    unitPrice: l.prixUnitaire,
 });
 
 const mapLineToRequest = (l: BackOrderLine): LigneBackOrder => ({
-    id: l.id,
-    productId: l.productId,
-    productName: l.productName,
+    idProduit: l.productId,
+    nomProduit: l.productName,
     quantiteCommandee: l.quantiteCommandee,
     quantiteRecue: l.quantiteRecue,
-    quantiteManquante: l.quantiteManquante,
-    unitPrice: l.unitPrice,
+    quantiteEnAttente: l.quantiteManquante,
+    prixUnitaire: l.unitPrice,
 });

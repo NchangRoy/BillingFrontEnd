@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { UpdatedProductResponse, produits, ClientSaleSize } from '@/src/api/models/UpdatedProductResponse';
+import { UpdatedProductResponse, ClientSaleSize } from '@/src/api/models/UpdatedProductResponse';
 import SearchIcon from "@mui/icons-material/Search";
 import { Trash2, Pencil,Lock, Plus, ShoppingCart, Tag, Calculator, Receipt } from "lucide-react";
 import { UpdatedClientResponse } from '@/src/api/models/UpdatedClientResponse';
 import { UpdatedDevisResponse } from '@/src/api/models/UpdatedDevisResponse';
 import SummaryCard from '../../../components/SummaryCard';
 import { Permission, UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
+import { ProductsService } from '@/src/src2/api';
 
 const inputStyles = "w-full border border-gray-200 rounded-lg outline-none py-2 px-3 focus:ring-2 focus:ring-secondary-mid/10 focus:border-secondary-mid transition-all text-sm text-gray-700 bg-white shadow-sm placeholder:text-gray-300";
 const labelStyles = "text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1 block ml-0.5";
@@ -20,6 +21,7 @@ interface Props {
 
 const QuotationDetails = ({ client, quotation, setQuotation }: Props) => {
   const [productSearch, setProductSearch] = useState("");
+  const [produits, setProduits] = useState<UpdatedProductResponse[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<UpdatedProductResponse[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<UpdatedProductResponse | null>(null);
   const [showProductResults, setShowProductResults] = useState(false);
@@ -49,6 +51,15 @@ const QuotationDetails = ({ client, quotation, setQuotation }: Props) => {
   }
 }, [seller]); // This dependency is key
 
+  // Load Products for the seller's organization
+  useEffect(() => {
+    if (!seller?.organizationId) return;
+    ProductsService.getProductsByOrganization(seller.organizationId)
+      .then(data => setProduits(data as unknown as UpdatedProductResponse[]))
+      .catch(() => {
+        // fall back to empty — non-blocking
+      });
+  }, [seller?.organizationId]);
 
   // 1. Filter Products
   useEffect(() => {
@@ -65,7 +76,7 @@ const QuotationDetails = ({ client, quotation, setQuotation }: Props) => {
       filtered = filtered.filter(p => (p.stockQuantity ?? 0) > 0);
     }
     setFilteredProducts(filtered);
-  }, [productSearch, selectedProduct, filterAvailable]);
+  }, [productSearch, selectedProduct, filterAvailable, produits]);
 
   // 2. Handle Price and Discount Logic for the Entry Form
   useEffect(() => {

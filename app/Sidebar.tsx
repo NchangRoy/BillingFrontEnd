@@ -19,7 +19,16 @@ import {
   MenuBook as JournalSectionIcon,
   AutoStories as GeneralLedgerIcon,
   HistoryEdu as AuditLogIcon,
-  AccountBalanceWallet as PaymentJournalIcon
+  AccountBalanceWallet as PaymentJournalIcon,
+  AdminPanelSettings as AdminSectionIcon,
+  Apartment as OrganizationIcon,
+  Groups as SellersIcon,
+  ContactPage as CustomersIcon,
+  Warehouse as SuppliersIcon,
+  PointOfSale as SalesPointsIcon,
+  PlayCircleOutline as SessionsIcon,
+  Inventory2 as ProductsIcon,
+  Settings as SettingsIcon
 } from "@mui/icons-material";
 
 const iconMap: Record<string, React.ElementType> = {
@@ -38,7 +47,16 @@ const iconMap: Record<string, React.ElementType> = {
   JournalSectionIcon,
   GeneralLedgerIcon,
   AuditLogIcon,
-  PaymentJournalIcon
+  PaymentJournalIcon,
+  AdminSectionIcon,
+  OrganizationIcon,
+  SellersIcon,
+  CustomersIcon,
+  SuppliersIcon,
+  SalesPointsIcon,
+  SessionsIcon,
+  ProductsIcon,
+  SettingsIcon
 };
 
 const MENU_SECTIONS = [
@@ -76,6 +94,28 @@ const MENU_SECTIONS = [
       { content: "Purchase Order Journal", Icon: "GeneralLedgerIcon", path: "/journals/purchasing" },
       { content: "Client Invoice Journal", Icon: "PaymentJournalIcon", path: "/journals/payments" },
       { content: "Supplier Invoice Journal", Icon: "AuditLogIcon", path: "/journals/audit" },
+    ],
+  },
+  {
+    id: "orgs",
+    label: "Organization",
+    icon: "OrganizationIcon",
+    items: [
+      { content: "Agencies", Icon: "OrganizationIcon", path: "/organization/agencies" },
+      { content: "Sellers", Icon: "SellersIcon", path: "/organization/sellers" },
+      { content: "Customers", Icon: "CustomersIcon", path: "/organization/customers" },
+      { content: "Suppliers", Icon: "SuppliersIcon", path: "/organization/fournisseurs" },
+      { content: "Sale Points", Icon: "SalesPointsIcon", path: "/organization/salespoints" },
+      { content: "Sessions", Icon: "SessionsIcon", path: "/organization/sessions" },
+      { content: "Products", Icon: "ProductsIcon", path: "/organization/products" },
+    ],
+  },
+  {
+    id: "settings",
+    label: "Settings",
+    icon: "SettingsIcon",
+    items: [
+      { content: "Preferences", Icon: "SettingsIcon", path: "/settings" },
     ],
   },
 ];

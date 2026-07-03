@@ -2,11 +2,13 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { 
-  SearchIcon, MenuIcon, SettingsIcon, LogOut, User, 
-  ShieldCheck, MapPin, Store, Building2, Mail, ChevronDown 
+import { useRouter } from "next/navigation";
+import {
+  SearchIcon, MenuIcon, SettingsIcon, LogOut, User,
+  ShieldCheck, MapPin, Store, Building2, Mail, ChevronDown
 } from "lucide-react";
 import { UpdatedSellerResponse } from "@/src/api/models/UpdatedSellerResponse";
+import { clearSession, getStoredSeller } from "@/src/api/session";
 import NotificationHeaderIcon from "./NotificationHeaderIcon";
 
 interface Props {
@@ -18,17 +20,16 @@ const Navbar = ({ name, signedIn }: Props) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [seller, setSeller] = useState<UpdatedSellerResponse | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   useEffect(() => {
-    const stored = localStorage.getItem("seller");
-    if (stored) {
-      try {
-        setSeller(JSON.parse(stored));
-      } catch (e) {
-        console.error("Failed to parse seller data", e);
-      }
-    }
+    setSeller(getStoredSeller());
   }, []);
+
+  const handleLogout = () => {
+    clearSession();
+    router.replace("/login");
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -174,7 +175,7 @@ const Navbar = ({ name, signedIn }: Props) => {
                   </div>
 
                   <div className="p-2 mt-1 border-t border-gray-100 bg-gray-50/50">
-                    <button className="flex items-center gap-3 w-full px-4 py-3 text-sm font-black text-red-500 transition-all rounded-xl hover:bg-red-50 active:scale-[0.98]">
+                    <button onClick={handleLogout} className="flex items-center gap-3 w-full px-4 py-3 text-sm font-black text-red-500 transition-all rounded-xl hover:bg-red-50 active:scale-[0.98]">
                       <div className="p-1.5 bg-red-100 rounded-lg"><LogOut size={16} /></div>
                       Logout Session
                     </button>

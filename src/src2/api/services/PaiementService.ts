@@ -10,7 +10,7 @@ import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
 export class PaiementService {
     /**
-     * Get paiement by ID
+     * Récupérer un paiement par ID
      * @param id
      * @returns PaiementResponse OK
      * @throws ApiError
@@ -48,7 +48,7 @@ export class PaiementService {
         });
     }
     /**
-     * Delete paiement
+     * Supprimer un paiement
      * @param id
      * @returns any OK
      * @throws ApiError
@@ -65,7 +65,7 @@ export class PaiementService {
         });
     }
     /**
-     * Get all paiements
+     * Récupérer tous les paiements
      * @returns PaiementResponse OK
      * @throws ApiError
      */
@@ -89,6 +89,23 @@ export class PaiementService {
             url: '/api/paiement',
             body: requestBody,
             mediaType: 'application/json',
+        });
+    }
+    /**
+     * Récupérer les paiements par organisation
+     * @param organizationId
+     * @returns PaiementResponse OK
+     * @throws ApiError
+     */
+    public static getPaiementsByOrganizationId(
+        organizationId: string,
+    ): CancelablePromise<Array<PaiementResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/paiement/organisation/{organizationId}',
+            path: {
+                'organizationId': organizationId,
+            },
         });
     }
     /**
@@ -122,6 +139,23 @@ export class PaiementService {
             url: '/api/paiement/client/{clientId}',
             path: {
                 'clientId': clientId,
+            },
+        });
+    }
+    /**
+     * Récupérer les paiements par agence
+     * @param agencyId
+     * @returns PaiementResponse OK
+     * @throws ApiError
+     */
+    public static getPaiementsByAgencyId(
+        agencyId: string,
+    ): CancelablePromise<Array<PaiementResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/paiement/agence/{agencyId}',
+            path: {
+                'agencyId': agencyId,
             },
         });
     }

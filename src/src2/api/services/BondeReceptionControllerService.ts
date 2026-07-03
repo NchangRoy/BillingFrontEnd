@@ -85,4 +85,36 @@ export class BondeReceptionControllerService {
             mediaType: 'application/json',
         });
     }
+    /**
+     * @param organizationId
+     * @returns BondeReceptionResponse OK
+     * @throws ApiError
+     */
+    public static getByOrganizationId1(
+        organizationId: string,
+    ): CancelablePromise<Array<BondeReceptionResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/facturation/bon-receptions/organisation/{organizationId}',
+            path: {
+                'organizationId': organizationId,
+            },
+        });
+    }
+    /**
+     * @param agencyId
+     * @returns BondeReceptionResponse OK
+     * @throws ApiError
+     */
+    public static getByAgencyId1(
+        agencyId: string,
+    ): CancelablePromise<Array<BondeReceptionResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/facturation/bon-receptions/agence/{agencyId}',
+            path: {
+                'agencyId': agencyId,
+            },
+        });
+    }
 }

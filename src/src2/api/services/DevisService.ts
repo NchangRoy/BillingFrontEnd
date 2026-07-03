@@ -4,65 +4,12 @@
 /* eslint-disable */
 import type { DevisCreateRequest } from '../models/DevisCreateRequest';
 import type { DevisResponse } from '../models/DevisResponse';
+import type { EmailRequest } from '../models/EmailRequest';
 import type { EnrichedDevisResponse } from '../models/EnrichedDevisResponse';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
 export class DevisService {
-
-
-
-    /**
-     * Envoyer un devis par email avec PDF généré
-     * @param id L'identifiant du devis
-     * @param htmlContent Le contenu HTML généré pour le PDF
-     * @returns any OK
-     * @throws ApiError
-     */
-    public static 
-    sendDevisEmail(
-        id: string,
-        htmlContent: string,
-        permissions:any,
-        organizationRaisonSociale:string
-    ): CancelablePromise<any> {
-        console.log("Sending email request")
-        const body={
-                id: id,
-                htmlContent: htmlContent,
-                canView:permissions["view"],
-                canAccept:permissions["accept"],
-                canReject:permissions["reject"],
-                canModify:permissions["modify"],
-                organizationRaisonSociale
-            }
-            console.log(body)
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/api/devis/email',
-            body: body,
-            mediaType: 'application/json',
-        });
-    }
-
-    
-    /**
-     * Récupérer les devis enrichis pour un journal de vente
-     * @param orgId UUID de l'organisation
-     * @returns EnrichedDevisResponse OK
-     * @throws ApiError
-     */
-    public static getEnrichedDevis(
-        orgId: string,
-    ): CancelablePromise<Array<EnrichedDevisResponse>> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/devis/enriched/{orgId}',
-            path: {
-                'orgId': orgId,
-            },
-        });
-    }
     /**
      * Récupérer un devis par ID
      * @param devisId
@@ -121,34 +68,29 @@ export class DevisService {
     /**
      * Refuser un devis
      * @param devisId
-     * @param motifRefus
-     * @returns DevisResponse OK
+     * @returns any OK
      * @throws ApiError
      */
     public static refuserDevis(
         devisId: string,
-        motifRefus?: string,
-    ): CancelablePromise<DevisResponse> {
+    ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/api/devis/{devisId}/refuser',
             path: {
                 'devisId': devisId,
             },
-            query: {
-                'motifRefus': motifRefus,
-            },
         });
     }
     /**
      * Accepter un devis
      * @param devisId
-     * @returns DevisResponse OK
+     * @returns any OK
      * @throws ApiError
      */
     public static accepterDevis(
         devisId: string,
-    ): CancelablePromise<DevisResponse> {
+    ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/api/devis/{devisId}/accepter',
@@ -185,39 +127,34 @@ export class DevisService {
         });
     }
     /**
-     * Récupérer les devis par statut
-     * @param statut
-     * @returns DevisResponse OK
+     * @param requestBody
+     * @returns any OK
      * @throws ApiError
      */
-    public static getDevisByStatut(
-        statut: 'BROUILLON' | 'ENVOYE' | 'ACCEPTE' | 'REFUSE' | 'EXPIRE' | 'ANNULE' | 'CONVERTI_EN_FACTURE',
-    ): CancelablePromise<Array<DevisResponse>> {
+    public static sendQuotationEmail(
+        requestBody: EmailRequest,
+    ): CancelablePromise<any> {
         return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/devis/statut/{statut}',
-            path: {
-                'statut': statut,
-            },
+            method: 'POST',
+            url: '/api/devis/email',
+            body: requestBody,
+            mediaType: 'application/json',
         });
     }
     /**
-     * Récupérer les devis par période
-     * @param dateDebut
-     * @param dateFin
+     * Récupérer les devis par organisation
+     * @param organizationId
      * @returns DevisResponse OK
      * @throws ApiError
      */
-    public static getDevisByPeriode(
-        dateDebut: string,
-        dateFin: string,
+    public static getDevisByOrganizationId(
+        organizationId: string,
     ): CancelablePromise<Array<DevisResponse>> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/devis/periode',
-            query: {
-                'dateDebut': dateDebut,
-                'dateFin': dateFin,
+            url: '/api/devis/organisation/{organizationId}',
+            path: {
+                'organizationId': organizationId,
             },
         });
     }
@@ -239,30 +176,36 @@ export class DevisService {
         });
     }
     /**
-     * Récupérer les devis expirés
-     * @returns DevisResponse OK
+     * Enrichir les devis
+     * @param orgId
+     * @returns EnrichedDevisResponse OK
      * @throws ApiError
      */
-    public static getDevisExpires(): CancelablePromise<Array<DevisResponse>> {
+    public static getEnrichedDevis(
+        orgId: string,
+    ): CancelablePromise<Array<EnrichedDevisResponse>> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/devis/expires',
+            url: '/api/devis/enriched/{orgId}',
+            path: {
+                'orgId': orgId,
+            },
         });
     }
     /**
-     * Récupérer les devis d'un client
-     * @param clientId
+     * Récupérer les devis par agence
+     * @param agencyId
      * @returns DevisResponse OK
      * @throws ApiError
      */
-    public static getDevisByClient(
-        clientId: string,
+    public static getDevisByAgencyId(
+        agencyId: string,
     ): CancelablePromise<Array<DevisResponse>> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/devis/client/{clientId}',
+            url: '/api/devis/agence/{agencyId}',
             path: {
-                'clientId': clientId,
+                'agencyId': agencyId,
             },
         });
     }

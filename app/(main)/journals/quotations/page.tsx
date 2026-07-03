@@ -6,7 +6,7 @@ import {
   MoreHorizontal, Eye, Building2, User, X, Store, Calendar, 
   ChevronRight, ArrowUpDown, Download
 } from "lucide-react";
-import { EnrichedDevisResponse, StatutDevis } from '@/src/src2/api/models/EnrichedDevisResponse';
+import { EnrichedDevisResponse } from '@/src/src2/api/models/EnrichedDevisResponse';
 import { DevisService } from '@/src/src2/api';
 import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
 import { toast } from 'sonner';
@@ -56,12 +56,12 @@ const SalesJournalPage = () => {
 
   const filteredData = useMemo(() => {
     return data.filter(item => {
-      const matchesSearch = !filters.search || item.numeroDevis.toLowerCase().includes(filters.search.toLowerCase());
+      const matchesSearch = !filters.search || (item.numeroDevis ?? '').toLowerCase().includes(filters.search.toLowerCase());
       const matchesStatus = filters.status === "ALL" || item.statut === filters.status;
       const matchesAgency = filters.agency === "ALL" || item.agencyName === filters.agency;
       const matchesClient = !filters.client || (item.nomClient && item.nomClient.toLowerCase().includes(filters.client.toLowerCase()));
       const matchesSalesPoint = filters.salesPoint === "ALL" || item.salesPointName === filters.salesPoint;
-      const itemDate = new Date(item.dateCreation);
+      const itemDate = new Date(item.dateCreation ?? 0);
       const start = filters.startDate ? new Date(filters.startDate) : null;
       const end = filters.endDate ? new Date(filters.endDate) : null;
       if (end) end.setHours(23, 59, 59, 999);
@@ -84,12 +84,12 @@ const SalesJournalPage = () => {
     setFilters(prev => ({ ...prev, [key]: resetValue }));
   };
 
-  const getStatusColor = (statut: StatutDevis) => {
+  const getStatusColor = (statut?: EnrichedDevisResponse.statut) => {
     switch (statut) {
-      case StatutDevis.VALIDE: return "bg-emerald-50 text-emerald-600 border-emerald-200";
-      case StatutDevis.BROUILLON: return "bg-secondary-super-light text-secondary-mid border-secondary-light";
-      case StatutDevis.REJETE: return "bg-red-50 text-red-600 border-red-200";
-      case StatutDevis.EXPIRE: return "bg-amber-50 text-amber-600 border-amber-200";
+      case EnrichedDevisResponse.statut.ACCEPTE: return "bg-emerald-50 text-emerald-600 border-emerald-200";
+      case EnrichedDevisResponse.statut.BROUILLON: return "bg-secondary-super-light text-secondary-mid border-secondary-light";
+      case EnrichedDevisResponse.statut.REFUSE: return "bg-red-50 text-red-600 border-red-200";
+      case EnrichedDevisResponse.statut.EXPIRE: return "bg-amber-50 text-amber-600 border-amber-200";
       default: return "bg-slate-50 text-slate-500 border-slate-200";
     }
   };
@@ -159,7 +159,7 @@ const SalesJournalPage = () => {
           <div className="relative">
             <select className="w-full px-4 py-2.5 bg-secondary-super-light border border-secondary-light/50 rounded-xl text-sm font-black text-secondary-mid appearance-none text-center cursor-pointer hover:bg-secondary-mid hover:text-white transition-all outline-none" value={filters.status} onChange={(e) => setFilters({...filters, status: e.target.value})}>
               <option value="ALL">Status: All</option>
-              {Object.values(StatutDevis).map(s => <option key={s} value={s}>{s}</option>)}
+              {Object.values(EnrichedDevisResponse.statut).map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
         </div>
@@ -245,7 +245,7 @@ const SalesJournalPage = () => {
                   <td className="px-8 py-5">
                     <div className="flex flex-col">
                       <span className="font-black text-primary group-hover:text-secondary-mid transition-colors">{item.numeroDevis}</span>
-                      <span className="text-[11px] font-bold text-secondary-gray flex items-center gap-1 mt-0.5"><Calendar size={10}/> {new Date(item.dateCreation).toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: 'numeric'})}</span>
+                      <span className="text-[11px] font-bold text-secondary-gray flex items-center gap-1 mt-0.5"><Calendar size={10}/> {new Date(item.dateCreation ?? 0).toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: 'numeric'})}</span>
                     </div>
                   </td>
                   <td className="px-8 py-5">

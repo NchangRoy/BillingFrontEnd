@@ -90,4 +90,38 @@ export class BonDAchatService {
             mediaType: 'application/json',
         });
     }
+    /**
+     * Récupérer les bons d'achat par organisation
+     * @param organizationId
+     * @returns BonAchatResponse OK
+     * @throws ApiError
+     */
+    public static getByOrganizationId5(
+        organizationId: string,
+    ): CancelablePromise<Array<BonAchatResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/bons-achat/organisation/{organizationId}',
+            path: {
+                'organizationId': organizationId,
+            },
+        });
+    }
+    /**
+     * Récupérer les bons d'achat par agence
+     * @param agencyId
+     * @returns BonAchatResponse OK
+     * @throws ApiError
+     */
+    public static getByAgencyId5(
+        agencyId: string,
+    ): CancelablePromise<Array<BonAchatResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/bons-achat/agence/{agencyId}',
+            path: {
+                'agencyId': agencyId,
+            },
+        });
+    }
 }

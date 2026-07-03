@@ -194,6 +194,23 @@ export class TaxeService {
         });
     }
     /**
+     * Récupérer les taxes par organisation
+     * @param organizationId
+     * @returns TaxeResponse OK
+     * @throws ApiError
+     */
+    public static getTaxesByOrganizationId(
+        organizationId: string,
+    ): CancelablePromise<Array<TaxeResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/taxes/organisation/{organizationId}',
+            path: {
+                'organizationId': organizationId,
+            },
+        });
+    }
+    /**
      * Récupérer une taxe par nom
      * @param nomTaxe
      * @returns TaxeResponse OK
@@ -275,6 +292,23 @@ export class TaxeService {
             query: {
                 'minTaux': minTaux,
                 'maxTaux': maxTaux,
+            },
+        });
+    }
+    /**
+     * Récupérer les taxes par agence
+     * @param agencyId
+     * @returns TaxeResponse OK
+     * @throws ApiError
+     */
+    public static getTaxesByAgencyId(
+        agencyId: string,
+    ): CancelablePromise<Array<TaxeResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/taxes/agence/{agencyId}',
+            path: {
+                'agencyId': agencyId,
             },
         });
     }

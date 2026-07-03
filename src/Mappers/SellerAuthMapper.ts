@@ -1,5 +1,5 @@
-import { UpdatedSellerResponse } from "../api/models/UpdatedSellerResponse";
-import { SellerAuthResponse } from "../src2/api/services/ExternalServices.ts/SellerAuthResponse";
+import { Permission, SaleSize, UpdatedSellerResponse } from "../api/models/UpdatedSellerResponse";
+import { SellerAuthResponse } from "../src2/api/models/SellerAuthResponse";
 
 /**
  * Converts a SellerAuthResponse (Backend DTO) to UpdatedSellerResponse (Frontend Model)
@@ -7,35 +7,39 @@ import { SellerAuthResponse } from "../src2/api/services/ExternalServices.ts/Sel
  */
 export const mapAuthToUpdatedSeller = (data: SellerAuthResponse): UpdatedSellerResponse => {
   return {
+    // Auth
+    accessToken: data.accessToken ?? '',
+
     // Basic Info & Renaming
-    Id: data.id,
-    username: data.username,
-    agency: data.agencyName,       // Mapping agencyName to agency
-    salePoint: data.salesPointName, // Mapping salesPointName to salePoint
-    
+    Id: data.Id ?? '',
+    username: data.username ?? '',
+    agency: data.agency ?? '',
+    salePoint: data.salePoint ?? '',
+
     // Collections
-    Permissions: data.permissions,
-    permittedSaleSizes: data.permittedSaleSizes,
+    Permissions: (data.Permissions ?? []) as Permission[],
+    permittedSaleSizes: (data.permittedSaleSizes ?? []) as SaleSize[],
 
     // Organization Info (The Company)
-    organizationId: data.organizationId,
-    organizationName: data.organizationName,
+    organizationId: data.organizationId ?? '',
+    organizationName: data.organizationName ?? '',
     organizationLogoUri: data.organizationLogoUri ?? '', // Ensure string, not null
-    organizationEmail: data.organizationEmail,
+    organizationEmail: data.organizationEmail ?? '',
     taxNumber: data.taxNumber ?? '',
 
     // Agency Info (The Branch)
-    agencyId: data.agencyId,
+    agencyId: data.agencyId ?? '',
     agencyEmail: data.agencyEmail ?? '',
     agencyPhone: data.agencyPhone ?? '',
-    agencyCity: data.agencyCity,
-    agencyAddress: data.agencyAddress,
+    agencyCity: data.agencyCity ?? '',
+    agencyAddress: data.agencyAddress ?? '',
 
     // Sales Point Info
-    salesPointId: data.salesPointId,
-    salesPointAddress: data.salesPointAddress,
+    salesPointId: data.salesPointId ?? '',
+    salesPointAddress: data.salesPointAddress ?? '',
 
     // Meta
-    createdAt: data.createdAt
+    createdAt: data.createdAt ?? '',
+    mustChangePassword: data.mustChangePassword ?? false
   };
 };

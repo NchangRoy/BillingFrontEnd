@@ -1,13 +1,15 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { UpdatedProductResponse, produits } from '@/src/api/models/UpdatedProductResponse';
+import { UpdatedProductResponse } from '@/src/api/models/UpdatedProductResponse';
 import SearchIcon from "@mui/icons-material/Search";
 import { Trash2, Pencil, Plus, Package, Tag, Calculator, Receipt, Truck } from "lucide-react";
 import { UpdatedClientResponse } from '@/src/api/models/UpdatedClientResponse';
 import { UpdatedSupplierFactureResponse, LigneSupplierFactureResponse } from '@/src/api/models/UpdatedSupplierFactureResponse';
 import SummaryCard from '@/components/SummaryCard';
 import { GoodsReceiptNoteResponse } from '@/src/api/models/GoodsReceiptNote';
+import { ProductsService } from '@/src/src2/api';
+import { getStoredSeller } from '@/src/api/session';
 
 // Updated Styles using your theme variables
 const inputStyles = "w-full border border-secondary-light rounded-lg outline-none py-2 px-3 focus:ring-2 focus:ring-secondary/10 focus:border-secondary transition-all text-sm text-primary bg-white shadow-sm placeholder:text-secondary-gray";
@@ -22,6 +24,7 @@ interface Props {
 
 const SupplierInvoiceDetails = ({ supplier, invoice, setInvoice, selectedGRN }: Props) => {
   const [productSearch, setProductSearch] = useState("");
+  const [produits, setProduits] = useState<UpdatedProductResponse[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<UpdatedProductResponse[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<UpdatedProductResponse | null>(null);
   const [showProductResults, setShowProductResults] = useState(false);
@@ -29,6 +32,17 @@ const SupplierInvoiceDetails = ({ supplier, invoice, setInvoice, selectedGRN }: 
   const [quantity, setQuantity] = useState<number>(1);
 
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Load Products for the seller's organization
+  useEffect(() => {
+    const orgId = getStoredSeller()?.organizationId;
+    if (!orgId) return;
+    ProductsService.getProductsByOrganization(orgId)
+      .then(data => setProduits(data as unknown as UpdatedProductResponse[]))
+      .catch(() => {
+        // fall back to empty — non-blocking
+      });
+  }, []);
 
   // 1. Filter Products
   useEffect(() => {
@@ -46,7 +60,7 @@ const SupplierInvoiceDetails = ({ supplier, invoice, setInvoice, selectedGRN }: 
       filtered = filtered.filter(p => receivedIds?.includes(p.idProduit));
     }
     setFilteredProducts(filtered);
-  }, [productSearch, selectedProduct, selectedGRN]);
+  }, [productSearch, selectedProduct, selectedGRN, produits]);
 
   // 2. Default Cost Logic
   useEffect(() => {

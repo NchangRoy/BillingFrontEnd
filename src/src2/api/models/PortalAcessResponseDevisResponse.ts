@@ -4,9 +4,10 @@
 /* eslint-disable */
 import type { DevisResponse } from './DevisResponse';
 export type PortalAcessResponseDevisResponse = {
-    canView?: boolean;
-    canAccept?: boolean;
-    canReject?: boolean;
-    canModify?: boolean;
     data?: DevisResponse;
+    canView?: boolean;
+    canModify?: boolean;
+    canReject?: boolean;
+    canAccept?: boolean;
 };
+

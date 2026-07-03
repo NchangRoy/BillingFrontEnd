@@ -10,5 +10,7 @@ export type TaxeCreateRequest = {
     porteTaxe?: string;
     montant: number;
     positionFiscale?: string;
+    organizationId?: string;
+    agencyId?: string;
 };
 

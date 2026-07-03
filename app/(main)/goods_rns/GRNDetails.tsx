@@ -1,11 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { UpdatedProductResponse, produits } from '@/src/api/models/UpdatedProductResponse';
+import { UpdatedProductResponse } from '@/src/api/models/UpdatedProductResponse';
 import SearchIcon from "@mui/icons-material/Search";
 import { Trash2, Plus, Package, ClipboardCheck, AlertCircle, Pencil, ShieldCheck, XCircle } from "lucide-react";
 import { GoodsReceiptNoteResponse,GoodReceiptResponse, GoodsReceiptLineResponse } from '@/src/api/models/GoodsReceiptNote';
 import SummaryCard from '@/components/SummaryCard';
+import { ProductsService } from '@/src/src2/api';
+import { getStoredSeller } from '@/src/api/session';
 
 const inputStyles = "w-full border border-gray-200 rounded-lg outline-none py-2 px-3 focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all text-sm text-gray-700 bg-white shadow-sm placeholder:text-gray-300";
 const labelStyles = "text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1 block ml-0.5";
@@ -17,9 +19,20 @@ interface Props {
 
 const GRNDetails = ({ grn, setGrn }: Props) => {
   const [productSearch, setProductSearch] = useState("");
+  const [products, setProducts] = useState<UpdatedProductResponse[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<UpdatedProductResponse[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<UpdatedProductResponse | null>(null);
   const [showProductResults, setShowProductResults] = useState(false);
+
+  useEffect(() => {
+    const orgId = getStoredSeller()?.organizationId;
+    if (!orgId) return;
+    ProductsService.getProductsByOrganization(orgId)
+      .then(data => setProducts(data as unknown as UpdatedProductResponse[]))
+      .catch(() => {
+        // fall back to empty — non-blocking
+      });
+  }, []);
 
   const [lineData, setLineData] = useState({
     orderedQuantity: 0,
@@ -70,7 +83,7 @@ const GRNDetails = ({ grn, setGrn }: Props) => {
       setFilteredProducts([]);
       return;
     }
-    const filtered = produits.filter(p =>
+    const filtered = products.filter(p =>
       p.idProduit?.toLowerCase().includes(term) ||
       p.nomProduit?.toLowerCase().includes(term)
     );
@@ -109,7 +122,7 @@ const GRNDetails = ({ grn, setGrn }: Props) => {
   };
 
   const handleEdit = (line: GoodsReceiptLineResponse, index: number) => {
-    const productToEdit = produits.find(p => p.idProduit === line.productId);
+    const productToEdit = products.find(p => p.idProduit === line.productId);
     if (productToEdit) {
       setSelectedProduct(productToEdit);
       setProductSearch(productToEdit.nomProduit || "");

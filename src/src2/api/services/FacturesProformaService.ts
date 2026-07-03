@@ -9,6 +9,61 @@ import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
 export class FacturesProformaService {
     /**
+     * Récupérer une facture proforma par ID
+     * @param id
+     * @returns ProformaInvoiceResponse OK
+     * @throws ApiError
+     */
+    public static getProformaById(
+        id: string,
+    ): CancelablePromise<ProformaInvoiceResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/factures-proforma/{id}',
+            path: {
+                'id': id,
+            },
+        });
+    }
+    /**
+     * Mettre à jour une facture proforma
+     * @param id
+     * @param requestBody
+     * @returns ProformaInvoiceResponse OK
+     * @throws ApiError
+     */
+    public static updateFactureProforma(
+        id: string,
+        requestBody: ProformaInvoiceRequest,
+    ): CancelablePromise<ProformaInvoiceResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/factures-proforma/{id}',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+    /**
+     * Supprimer une facture proforma
+     * @param id
+     * @returns any OK
+     * @throws ApiError
+     */
+    public static deleteProforma(
+        id: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/factures-proforma/{id}',
+            path: {
+                'id': id,
+            },
+        });
+    }
+    /**
      * Lister toutes les factures proforma
      * @returns ProformaInvoiceResponse OK
      * @throws ApiError
@@ -19,31 +74,6 @@ export class FacturesProformaService {
             url: '/api/factures-proforma',
         });
     }
-
-
-
-
-     /**
-     * Mettre à jour une facture proforma
-     * @param id UUID of the proforma
-     * @param requestBody Updated data
-     * @returns ProformaInvoiceResponse OK
-     */
-    public static updateFactureProforma(
-        id: string,
-        requestBody: ProformaInvoiceRequest
-    ): CancelablePromise<ProformaInvoiceResponse> {
-        return __request(OpenAPI, {
-            method: 'PUT', // <--- Must be PUT
-            url: '/api/factures-proforma/{id}',
-            path: {
-                'id': id,
-            },
-            body: requestBody,
-            mediaType: 'application/json',
-        });
-    }
-
     /**
      * Créer une nouvelle facture proforma
      * @param requestBody
@@ -67,7 +97,7 @@ export class FacturesProformaService {
      * @returns ProformaInvoiceResponse OK
      * @throws ApiError
      */
-    public static updateStatut(
+    public static updateStatut1(
         id: string,
         statut: 'BROUILLON' | 'ENVOYE' | 'ACCEPTE' | 'REFUSE' | 'EXPIRE' | 'ANNULE' | 'CONVERTI_EN_FACTURE',
     ): CancelablePromise<ProformaInvoiceResponse> {
@@ -83,36 +113,19 @@ export class FacturesProformaService {
         });
     }
     /**
-     * Récupérer une facture proforma par ID
-     * @param id
+     * Récupérer les factures proforma par organisation
+     * @param organizationId
      * @returns ProformaInvoiceResponse OK
      * @throws ApiError
      */
-    public static getProformaById(
-        id: string,
-    ): CancelablePromise<ProformaInvoiceResponse> {
+    public static getProformasByOrganizationId(
+        organizationId: string,
+    ): CancelablePromise<Array<ProformaInvoiceResponse>> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/factures-proforma/{id}',
+            url: '/api/factures-proforma/organisation/{organizationId}',
             path: {
-                'id': id,
-            },
-        });
-    }
-    /**
-     * Supprimer une facture proforma
-     * @param id
-     * @returns any OK
-     * @throws ApiError
-     */
-    public static deleteProforma(
-        id: string,
-    ): CancelablePromise<any> {
-        return __request(OpenAPI, {
-            method: 'DELETE',
-            url: '/api/factures-proforma/{id}',
-            path: {
-                'id': id,
+                'organizationId': organizationId,
             },
         });
     }
@@ -130,6 +143,23 @@ export class FacturesProformaService {
             url: '/api/factures-proforma/client/{idClient}',
             path: {
                 'idClient': idClient,
+            },
+        });
+    }
+    /**
+     * Récupérer les factures proforma par agence
+     * @param agencyId
+     * @returns ProformaInvoiceResponse OK
+     * @throws ApiError
+     */
+    public static getProformasByAgencyId(
+        agencyId: string,
+    ): CancelablePromise<Array<ProformaInvoiceResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/factures-proforma/agence/{agencyId}',
+            path: {
+                'agencyId': agencyId,
             },
         });
     }

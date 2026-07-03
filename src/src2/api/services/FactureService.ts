@@ -161,6 +161,23 @@ export class FactureService {
         });
     }
     /**
+     * Récupérer les factures par organisation
+     * @param organizationId
+     * @returns FactureResponse OK
+     * @throws ApiError
+     */
+    public static getFacturesByOrganizationId(
+        organizationId: string,
+    ): CancelablePromise<Array<FactureResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/factures/organisation/{organizationId}',
+            path: {
+                'organizationId': organizationId,
+            },
+        });
+    }
+    /**
      * Récupérer une facture par numéro
      * @param numeroFacture
      * @returns FactureResponse OK
@@ -239,9 +256,25 @@ export class FactureService {
             },
         });
     }
-
     /**
-     * Comptabiliser une facture (Synchronisation avec le système comptable)
+     * Récupérer les factures par agence
+     * @param agencyId
+     * @returns FactureResponse OK
+     * @throws ApiError
+     */
+    public static getFacturesByAgencyId(
+        agencyId: string,
+    ): CancelablePromise<Array<FactureResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/factures/agence/{agencyId}',
+            path: {
+                'agencyId': agencyId,
+            },
+        });
+    }
+    /**
+     * Comptabiliser une Facture
      * @param factureId
      * @returns any OK
      * @throws ApiError

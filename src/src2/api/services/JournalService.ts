@@ -65,7 +65,7 @@ export class JournalService {
         });
     }
     /**
-     * Récupérer tous les journals
+     * Récupérer tous les journaux
      * @returns JournalResponse OK
      * @throws ApiError
      */
@@ -92,7 +92,7 @@ export class JournalService {
         });
     }
     /**
-     * Récupérer les journals par type
+     * Récupérer les journaux par type
      * @param type
      * @returns JournalResponse OK
      * @throws ApiError
@@ -109,7 +109,7 @@ export class JournalService {
         });
     }
     /**
-     * Rechercher des journals par nom
+     * Rechercher des journaux par nom
      * @param nom
      * @returns JournalResponse OK
      * @throws ApiError
@@ -122,6 +122,23 @@ export class JournalService {
             url: '/api/journals/search',
             query: {
                 'nom': nom,
+            },
+        });
+    }
+    /**
+     * Récupérer les journaux par organisation
+     * @param organizationId
+     * @returns JournalResponse OK
+     * @throws ApiError
+     */
+    public static getJournalsByOrganizationId(
+        organizationId: string,
+    ): CancelablePromise<Array<JournalResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/journals/organisation/{organizationId}',
+            path: {
+                'organizationId': organizationId,
             },
         });
     }
@@ -143,7 +160,7 @@ export class JournalService {
         });
     }
     /**
-     * Compter les journals par type
+     * Compter les journaux par type
      * @param type
      * @returns number OK
      * @throws ApiError
@@ -156,6 +173,23 @@ export class JournalService {
             url: '/api/journals/count/type/{type}',
             path: {
                 'type': type,
+            },
+        });
+    }
+    /**
+     * Récupérer les journaux par agence
+     * @param agencyId
+     * @returns JournalResponse OK
+     * @throws ApiError
+     */
+    public static getJournalsByAgencyId(
+        agencyId: string,
+    ): CancelablePromise<Array<JournalResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/journals/agence/{agencyId}',
+            path: {
+                'agencyId': agencyId,
             },
         });
     }

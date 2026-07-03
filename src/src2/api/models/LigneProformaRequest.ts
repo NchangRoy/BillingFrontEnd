@@ -8,6 +8,7 @@ export type LigneProformaRequest = {
     description?: string;
     quantite: number;
     prixUnitaire?: number;
+    montantTotal?: number;
     remisePourcentage?: number;
     remiseMontant?: number;
     tauxTva?: number;

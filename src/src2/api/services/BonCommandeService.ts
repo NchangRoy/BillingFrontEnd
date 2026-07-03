@@ -9,7 +9,7 @@ import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
 export class BonCommandeService {
     /**
-     * Get bon commande by ID
+     * Récupérer un bon de commande par ID
      * @param id
      * @returns BonCommandeResponse OK
      * @throws ApiError
@@ -26,7 +26,7 @@ export class BonCommandeService {
         });
     }
     /**
-     * Update bon commande by ID
+     * Mettre à jour un bon de commande
      * @param id
      * @param requestBody
      * @returns BonCommandeResponse OK
@@ -47,7 +47,7 @@ export class BonCommandeService {
         });
     }
     /**
-     * Get all bons de commande
+     * Récupérer tous les bons de commande
      * @returns BonCommandeResponse OK
      * @throws ApiError
      */
@@ -80,7 +80,7 @@ export class BonCommandeService {
      * @returns BonCommandeResponse OK
      * @throws ApiError
      */
-    public static updateStatut2(
+    public static updateStatut3(
         id: string,
         statut: 'BROUILLON' | 'VALIDE' | 'EN_COURS' | 'EXPEDIE' | 'LIVRE' | 'RECU_PARTIEL' | 'RECU' | 'REJETE' | 'ANNULE',
     ): CancelablePromise<BonCommandeResponse> {
@@ -92,6 +92,40 @@ export class BonCommandeService {
             },
             query: {
                 'statut': statut,
+            },
+        });
+    }
+    /**
+     * Récupérer les bons de commande par organisation
+     * @param organizationId
+     * @returns BonCommandeResponse OK
+     * @throws ApiError
+     */
+    public static getByOrganizationId6(
+        organizationId: string,
+    ): CancelablePromise<Array<BonCommandeResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/bon-commande/organisation/{organizationId}',
+            path: {
+                'organizationId': organizationId,
+            },
+        });
+    }
+    /**
+     * Récupérer les bons de commande par agence
+     * @param agencyId
+     * @returns BonCommandeResponse OK
+     * @throws ApiError
+     */
+    public static getByAgencyId6(
+        agencyId: string,
+    ): CancelablePromise<Array<BonCommandeResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/bon-commande/agence/{agencyId}',
+            path: {
+                'agencyId': agencyId,
             },
         });
     }

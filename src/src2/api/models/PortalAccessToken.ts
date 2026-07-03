@@ -3,14 +3,19 @@
 /* tslint:disable */
 /* eslint-disable */
 export type PortalAccessToken = {
-    id?: string;
+    tokenId?: number;
     token?: string;
-    resourceId?: string;
     resourceType?: PortalAccessToken.resourceType;
+    resourceId?: string;
     clientEmail?: string;
-    createdAt?: string;
+    canView?: boolean;
+    canModify?: boolean;
+    canAccept?: boolean;
+    canReject?: boolean;
     expiresAt?: string;
     used?: boolean;
+    usedAt?: string;
+    createdAt?: string;
 };
 export namespace PortalAccessToken {
     export enum resourceType {
@@ -21,3 +26,4 @@ export namespace PortalAccessToken {
         PURCHASE_ORDER = 'PURCHASE_ORDER',
     }
 }
+

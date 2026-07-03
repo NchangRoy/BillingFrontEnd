@@ -4,25 +4,23 @@
 /* eslint-disable */
 import type { LineBonReception } from './LineBonReception';
 export type BondeReceptionCreateRequest = {
-    grnNumber?: string;
-    supplierId?: string;
-    supplierName?: string;
-    transporterCompanyName?: string;
-    vehicleNumber?: string;
-    purchaseOrderId?: string;
-    purchaseOrderNumber?: string;
-    receiptDate?: string;
-    documentDate?: string;
-    systemDate?: string;
-    status?: BondeReceptionCreateRequest.status;
+    numeroReception?: string;
+    idFournisseur?: string;
+    nomFournisseur?: string;
     lines?: Array<LineBonReception>;
-    preparedBy?: string;
-    inspectedBy?: string;
-    approvedBy?: string;
-    remarks?: string;
+    dateReception?: string;
+    statut?: BondeReceptionCreateRequest.statut;
+    notes?: string;
+    createdBy?: string;
+    dateSysteme?: string;
+    numeroBonAchat?: string;
+    idBonAchat?: string;
+    agenceDeTransport?: string;
+    organizationId?: string;
+    agencyId?: string;
 };
 export namespace BondeReceptionCreateRequest {
-    export enum status {
+    export enum statut {
         DRAFT = 'DRAFT',
         PARTIALLY_RECEIVED = 'PARTIALLY_RECEIVED',
         RECEIVED = 'RECEIVED',

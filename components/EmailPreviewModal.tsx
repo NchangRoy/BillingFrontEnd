@@ -6,6 +6,7 @@ import { UpdatedDevisResponse } from '@/src/api/models/UpdatedDevisResponse';
 import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
 import { toast } from 'sonner';
 import { DevisService } from '@/src/src2/api/services/DevisService';
+import { EmailRequest } from '@/src/src2/api/models/EmailRequest';
 import { generateQuotationHTML } from '@/src/api/printGenerators/quotationPrint';
 import { generateQRBase64 } from '@/src/api/Utils/qrCode';
 
@@ -59,7 +60,16 @@ const EmailPreviewModal = ({ isOpen, onClose, onSend, data, clientEmail }: Email
     }
     setIsSending(true);
     try {
-      await DevisService.sendDevisEmail(data.idDevis.toString(), previewHtml, permissions,seller.organizationName);
+      const emailRequest: EmailRequest = {
+        id: data.idDevis.toString(),
+        htmlContent: previewHtml,
+        organizationRaisonSociale: seller.organizationName,
+        canView: permissions.view,
+        canAccept: permissions.accept,
+        canReject: permissions.reject,
+        canModify: permissions.modify,
+      };
+      await DevisService.sendQuotationEmail(emailRequest);
       toast.success("Quotation sent successfully!");
       if (onSend) onSend(permissions);
       onClose();

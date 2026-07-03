@@ -11,6 +11,8 @@ export type PaiementUpdateRequest = {
     compteBancaireF?: string;
     memo?: string;
     idFacture?: string;
+    organizationId?: string;
+    agencyId?: string;
 };
 export namespace PaiementUpdateRequest {
     export enum modePaiement {

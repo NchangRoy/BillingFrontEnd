@@ -3,11 +3,15 @@
 /* tslint:disable */
 /* eslint-disable */
 export type LigneBackOrder = {
-    id?: string;
-    productId?: string;
-    productName?: string;
+    idProduit?: string;
+    referenceProduit?: string;
+    nomProduit?: string;
+    unite?: string;
     quantiteCommandee?: number;
     quantiteRecue?: number;
-    quantiteManquante?: number;
-    unitPrice?: number;
+    quantiteEnAttente?: number;
+    prixUnitaire?: number;
+    montantTotal?: number;
+    notes?: string;
 };
+

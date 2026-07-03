@@ -4,7 +4,7 @@
 /* eslint-disable */
 import type { LigneProformaResponse } from './LigneProformaResponse';
 export type ProformaInvoiceResponse = {
-    idProformaInvoice?: string;
+    idFactureProforma?: string;
     numeroProformaInvoice?: string;
     dateCreation?: string;
     type?: string;
@@ -15,7 +15,7 @@ export type ProformaInvoiceResponse = {
     adresseClient?: string;
     emailClient?: string;
     telephoneClient?: string;
-    lignes?: Array<LigneProformaResponse>;
+    lignesFactureProforma?: Array<LigneProformaResponse>;
     montantHT?: number;
     montantTVA?: number;
     montantTTC?: number;
@@ -34,8 +34,6 @@ export type ProformaInvoiceResponse = {
     remiseGlobalePourcentage?: number;
     remiseGlobaleMontant?: number;
     validiteOffreJours?: number;
-    createdAt?: string;
-    updatedAt?: string;
     applyVat?: boolean;
     dateSysteme?: string;
     modeReglement?: ProformaInvoiceResponse.modeReglement;
@@ -44,6 +42,11 @@ export type ProformaInvoiceResponse = {
     nbreEcheance?: number;
     referalClientId?: string;
     finalAmount?: number;
+    createdAt?: string;
+    updatedAt?: string;
+    organizationId?: string;
+    agencyId?: string;
+    createdBy?: string;
 };
 export namespace ProformaInvoiceResponse {
     export enum statut {

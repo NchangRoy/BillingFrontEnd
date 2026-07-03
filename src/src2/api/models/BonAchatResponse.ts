@@ -32,6 +32,7 @@ export type BonAchatResponse = {
     createdAt?: string;
     updatedAt?: string;
     organizationId?: string;
+    agencyId?: string;
 };
 export namespace BonAchatResponse {
     export enum status {

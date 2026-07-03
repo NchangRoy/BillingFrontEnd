@@ -3,7 +3,6 @@
 /* tslint:disable */
 /* eslint-disable */
 export type LigneProformaResponse = {
-    idLigneProforma?: string;
     idProduit?: string;
     nomProduit?: string;
     description?: string;

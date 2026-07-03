@@ -8,5 +8,7 @@ export type JournalResponse = {
     type?: string;
     createdAt?: string;
     updatedAt?: string;
+    organizationId?: string;
+    agencyId?: string;
 };
 

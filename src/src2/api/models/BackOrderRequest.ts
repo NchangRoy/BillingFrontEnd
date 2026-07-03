@@ -4,12 +4,20 @@
 /* eslint-disable */
 import type { LigneBackOrder } from './LigneBackOrder';
 export type BackOrderRequest = {
-    idBonAchat?: string;
-    lignes?: Array<LigneBackOrder>;
+    numeroBackOrder?: string;
+    idBonAchat: string;
+    numeroBonAchat?: string;
+    idFournisseur?: string;
+    nomFournisseur?: string;
+    lignes: Array<LigneBackOrder>;
+    dateCreation?: string;
+    dateLivraisonPrevue?: string;
+    dateSysteme?: string;
     statut?: BackOrderRequest.statut;
-    remarques?: string;
+    notes?: string;
     organizationId?: string;
     agencyId?: string;
+    createdBy?: string;
 };
 export namespace BackOrderRequest {
     export enum statut {
@@ -19,3 +27,4 @@ export namespace BackOrderRequest {
         ANNULE = 'ANNULE',
     }
 }
+
