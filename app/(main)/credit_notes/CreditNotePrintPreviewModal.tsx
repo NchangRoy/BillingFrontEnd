@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { UpdatedCreditNoteResponse } from '@/src/api/models/UpdatedCreditNoteResponse';
+import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
 
 interface PrintPreviewProps {
   isOpen: boolean;
@@ -11,6 +12,19 @@ interface PrintPreviewProps {
 }
 
 const CreditNotePrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: PrintPreviewProps) => {
+  const [seller, setSeller] = useState<UpdatedSellerResponse | null>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("seller");
+    if (stored) {
+      try {
+        setSeller(JSON.parse(stored));
+      } catch (e) {
+        console.error("Failed to parse seller data", e);
+      }
+    }
+  }, []);
+
   if (!isOpen) return null;
 
   // --- Internal Helpers ---
@@ -68,8 +82,12 @@ const CreditNotePrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: 
               {/* Branding Header */}
               <div className="flex justify-between items-start border-b-2 border-primary pb-8 mb-10">
                 <div>
-                  <div className="h-16 w-16 bg-primary rounded-2xl mb-6 flex items-center justify-center text-white font-black text-3xl shadow-lg uppercase">
-                    {data.nomClient?.charAt(0) || 'C'}
+                  <div className="h-16 w-16 bg-primary rounded-2xl mb-6 flex items-center justify-center text-white font-black text-3xl shadow-lg uppercase overflow-hidden">
+                    {seller?.organizationLogoUri ? (
+                      <img src={seller.organizationLogoUri} alt="Org Logo" className="h-full w-full object-contain" />
+                    ) : (
+                      seller?.organizationName?.charAt(0) || 'C'
+                    )}
                   </div>
                   <h1 className="text-4xl font-black text-primary tracking-tighter italic">CREDIT NOTE</h1>
                   <div className="mt-4 flex gap-8">
@@ -87,11 +105,11 @@ const CreditNotePrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: 
                 </div>
                 
                 <div className="text-right">
-                  <p className="font-black text-sm text-primary uppercase mb-2">Your Business Name</p>
+                  <p className="font-black text-sm text-primary uppercase mb-2">{seller?.organizationName || 'Your Business Name'}</p>
                   <address className="text-[10px] text-secondary-gray leading-relaxed not-italic">
-                    123 Business Avenue, Akwa<br />
-                    Douala, Cameroon<br />
-                    <span className="font-bold">TAX ID:</span> M01234567890<br />
+                    {seller?.agencyAddress}<br />
+                    {seller?.agencyCity}, Cameroon<br />
+                    <span className="font-bold">TAX ID:</span> {seller?.taxNumber || 'N/A'}<br />
                   </address>
                 </div>
               </div>

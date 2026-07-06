@@ -7,14 +7,14 @@ import { Save, PackageCheck, Truck, Calculator } from "lucide-react";
 // API & Types
 import SalesOrderLogistics from "./SalesOrderLogistics";
 
-import { UpdatedClientResponse, clients } from "@/src/api/models/UpdatedClientResponse";
+import { UpdatedClientResponse } from "@/src/api/models/UpdatedClientResponse";
 import { SalesOrderResponse } from "@/src/api/models/UpdatedSalesOrder";
 import { UpdatedSalesOrderResponse } from "@/src/api/models/UpdatedSalesOrder";
 // Sub-components (Assuming you have these adapted for Sales Orders)
 import ClientHeader from "./ClientHeader";
-import SalesOrderDetails from "./SalesOrderDetails"; 
+import SalesOrderDetails from "./SalesOrderDetails";
 import { mapSalesOrderToBonCommandeRequest } from "@/src/Mappers/BonCommandeMapper";
-import { BonCommandeService } from "@/src/src2/api";
+import { BonCommandeService, ClientsService } from "@/src/src2/api";
 import { toast } from 'sonner';
 
 interface Props {
@@ -27,6 +27,14 @@ interface Props {
 const CreateSalesOrderModal = ({ isOpen, onClose, clientData, orderData }: Props) => {
   const [selectedClient, setSelectedClient] = useState<UpdatedClientResponse | undefined>(clientData);
   const [salesOrder, setSalesOrder] = useState<UpdatedSalesOrderResponse | undefined>();
+  const [clients, setClients] = useState<UpdatedClientResponse[]>([]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    ClientsService.getAllClients()
+      .then((data) => setClients(data as unknown as UpdatedClientResponse[]))
+      .catch(() => toast.error("Failed to load clients."));
+  }, [isOpen]);
 
   // 1. INITIALIZATION LOGIC
   useEffect(() => {

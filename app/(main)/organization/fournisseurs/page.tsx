@@ -3,16 +3,18 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Search, Truck, Mail, Phone, Building2, Tag,
-  CheckCircle2, XCircle, ChevronRight, MoreVertical, ShieldCheck
+  CheckCircle2, XCircle, ChevronRight, MoreVertical, ShieldCheck, UserCheck
 } from "lucide-react";
-import { FournisseursService, FournisseurResponse } from "@/src/src2/api";
+import { FournisseursService, FournisseurResponse, ProducerAssignmentsService, ProducerAssignmentResponse } from "@/src/src2/api";
+import { getStoredSeller } from "@/src/api/session";
 import { toast } from "sonner";
 import TableSkeleton from "@/components/TableSkeleton";
 import EmptyState from "@/components/EmptyState";
 import ActionButton from "@/components/ActionButton";
 import SaleConfigModal from "./SaleConfigModal";
+import AssignSellerModal from "./AssignSellerModal";
 
-const COLUMNS = ["Supplier", "Contact", "Type", "Sale Sizes", "Status", ""];
+const COLUMNS = ["Supplier", "Contact", "Type", "Sale Sizes", "Assigned Seller", "Status", ""];
 
 const TYPE_LABELS: Record<string, string> = {
   PARTICULIER: "Individual",
@@ -26,6 +28,8 @@ const FournisseursAdminPage = () => {
   const [search, setSearch] = useState("");
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [configFournisseur, setConfigFournisseur] = useState<FournisseurResponse | null>(null);
+  const [assignFournisseur, setAssignFournisseur] = useState<FournisseurResponse | null>(null);
+  const [assignments, setAssignments] = useState<Record<string, ProducerAssignmentResponse>>({});
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -51,13 +55,32 @@ const FournisseursAdminPage = () => {
     }
   }, []);
 
+  const fetchAssignments = useCallback(async () => {
+    const org = getStoredSeller();
+    if (!org?.organizationId) return;
+    try {
+      const res = await ProducerAssignmentsService.listByOrganization(org.organizationId);
+      const byFournisseurId: Record<string, ProducerAssignmentResponse> = {};
+      res.forEach((a) => { if (a.fournisseurId) byFournisseurId[a.fournisseurId] = a; });
+      setAssignments(byFournisseurId);
+    } catch (error) {
+      console.error("Error fetching assignments:", error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchFournisseurs();
-  }, [fetchFournisseurs]);
+    fetchAssignments();
+  }, [fetchFournisseurs, fetchAssignments]);
 
   const handleConfigModalClose = (updated: boolean) => {
     setConfigFournisseur(null);
     if (updated) fetchFournisseurs();
+  };
+
+  const handleAssignModalClose = (updated: boolean) => {
+    setAssignFournisseur(null);
+    if (updated) fetchAssignments();
   };
 
   const filteredFournisseurs = useMemo(() => {
@@ -181,6 +204,15 @@ const FournisseursAdminPage = () => {
                       </div>
                     </td>
                     <td className="px-8 py-5">
+                      {fournisseur.idFournisseur && assignments[fournisseur.idFournisseur] ? (
+                        <span className="flex items-center gap-1.5 px-3 py-1 w-fit bg-secondary-super-light text-secondary-mid rounded-lg text-[10px] font-black uppercase tracking-widest">
+                          <UserCheck size={11} /> {assignments[fournisseur.idFournisseur].sellerName || "Assigned"}
+                        </span>
+                      ) : (
+                        <span className="text-[11px] font-bold text-secondary-gray">Unassigned</span>
+                      )}
+                    </td>
+                    <td className="px-8 py-5">
                       {fournisseur.actif ? (
                         <span className="flex items-center gap-1.5 px-3 py-1 w-fit bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-lg text-[10px] font-black uppercase tracking-widest">
                           <CheckCircle2 size={11} /> Active
@@ -211,6 +243,16 @@ const FournisseursAdminPage = () => {
                           >
                             <ShieldCheck size={14} />
                           </ActionButton>
+                          <ActionButton
+                            label="Assign Seller"
+                            onClick={() => {
+                              setAssignFournisseur(fournisseur);
+                              setActiveMenuId(null);
+                            }}
+                            className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 transition-all text-secondary-mid"
+                          >
+                            <UserCheck size={14} />
+                          </ActionButton>
                         </div>
                       )}
                     </td>
@@ -223,6 +265,7 @@ const FournisseursAdminPage = () => {
       </div>
 
       <SaleConfigModal isOpen={!!configFournisseur} fournisseur={configFournisseur} onClose={handleConfigModalClose} />
+      <AssignSellerModal isOpen={!!assignFournisseur} fournisseur={assignFournisseur} onClose={handleAssignModalClose} />
     </div>
   );
 };

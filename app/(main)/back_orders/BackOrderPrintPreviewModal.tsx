@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { UpdatedBackOrderResponse } from '@/src/api/models/UpdatedBackOrderResponse';
+import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
 
 interface Props {
   isOpen: boolean;
@@ -11,6 +12,19 @@ interface Props {
 }
 
 const BackOrderPrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: Props) => {
+  const [seller, setSeller] = useState<UpdatedSellerResponse | null>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("seller");
+    if (stored) {
+      try {
+        setSeller(JSON.parse(stored));
+      } catch (e) {
+        console.error("Failed to parse seller data", e);
+      }
+    }
+  }, []);
+
   if (!isOpen) return null;
 
   const formatDate = (d?: string) =>
@@ -67,19 +81,23 @@ const BackOrderPrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: P
               {/* Header */}
               <div className="flex justify-between items-start border-b-2 border-primary pb-8 mb-10">
                 <div>
-                  <div className="h-16 w-16 bg-secondary-mid rounded-2xl mb-6 flex items-center justify-center text-white font-black text-3xl shadow-lg uppercase">
-                    {data.supplierName?.charAt(0) || 'B'}
+                  <div className="h-16 w-16 bg-secondary-mid rounded-2xl mb-6 flex items-center justify-center text-white font-black text-3xl shadow-lg uppercase overflow-hidden">
+                    {seller?.organizationLogoUri ? (
+                      <img src={seller.organizationLogoUri} alt="Org Logo" className="h-full w-full object-contain" />
+                    ) : (
+                      seller?.organizationName?.charAt(0) || 'B'
+                    )}
                   </div>
                   <h1 className="text-4xl font-black text-primary tracking-tighter italic">BACK ORDER</h1>
                   <div className="mt-4 flex gap-8">
                     <div className="space-y-1">
                       <p className="text-[9px] text-secondary-gray font-bold uppercase tracking-widest">BO Reference</p>
-                      <p className="text-sm font-black text-secondary-mid">{data.id || 'DRAFT'}</p>
+                      <p className="text-sm font-black text-secondary-mid">{data.numeroBackOrder || 'DRAFT'}</p>
                     </div>
-                    {data.idBonAchat && (
+                    {data.numeroBonLivraison && (
                       <div className="space-y-1">
-                        <p className="text-[9px] text-secondary-gray font-bold uppercase tracking-widest">Purchase Order</p>
-                        <p className="text-sm font-black text-primary">{data.idBonAchat}</p>
+                        <p className="text-[9px] text-secondary-gray font-bold uppercase tracking-widest">Delivery Order</p>
+                        <p className="text-sm font-black text-primary">{data.numeroBonLivraison}</p>
                       </div>
                     )}
                     <div className="space-y-1">
@@ -92,11 +110,11 @@ const BackOrderPrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: P
                 </div>
 
                 <div className="text-right">
-                  <p className="font-black text-sm text-primary uppercase mb-2">Your Business Name</p>
+                  <p className="font-black text-sm text-primary uppercase mb-2">{seller?.organizationName || 'Your Business Name'}</p>
                   <address className="text-[10px] text-secondary-gray leading-relaxed not-italic">
-                    123 Business Avenue, Akwa<br />
-                    Douala, Cameroon<br />
-                    <span className="font-bold">TAX ID:</span> M01234567890<br />
+                    {seller?.agencyAddress}<br />
+                    {seller?.agencyCity}, Cameroon<br />
+                    <span className="font-bold">TAX ID:</span> {seller?.taxNumber || 'N/A'}<br />
                   </address>
                 </div>
               </div>
@@ -104,8 +122,8 @@ const BackOrderPrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: P
               {/* Info Grid */}
               <div className="grid grid-cols-2 gap-12 mb-12">
                 <div>
-                  <p className="text-[10px] font-black text-secondary-mid uppercase mb-4 tracking-widest border-l-2 border-secondary-mid pl-3">Supplier Details</p>
-                  <p className="text-base font-black text-primary mb-1">{data.supplierName || '---'}</p>
+                  <p className="text-[10px] font-black text-secondary-mid uppercase mb-4 tracking-widest border-l-2 border-secondary-mid pl-3">Client Details</p>
+                  <p className="text-base font-black text-primary mb-1">{data.nomClient || '---'}</p>
                   {data.remarques && (
                     <p className="text-xs text-secondary-gray leading-relaxed mt-2 italic">
                       Note: {data.remarques}

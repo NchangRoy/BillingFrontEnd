@@ -3,17 +3,33 @@
 /* tslint:disable */
 /* eslint-disable */
 export type SellerUIPermissionsRequest = {
+    sectionSalesManagement?: boolean;
     salesQuotations?: boolean;
-    salesProformaInvoices?: boolean;
+    salesProformaInvoice?: boolean;
     salesSalesOrders?: boolean;
     salesInvoices?: boolean;
-    salesDeliveryNotes?: boolean;
+    salesDeliveryNote?: boolean;
     salesCreditNotes?: boolean;
-    salesStoreCredit?: boolean;
     salesBackOrders?: boolean;
-    purchasingPurchaseOrders?: boolean;
-    purchasingGoodsRns?: boolean;
+    sectionPurchasingLogistics?: boolean;
+    purchasingPurchaseOrder?: boolean;
+    purchasingGoodsReceiptNote?: boolean;
     purchasingSupplierInvoice?: boolean;
-    journalsQuotations?: boolean;
+    sectionAccountingJournals?: boolean;
+    journalsQuotation?: boolean;
+    journalsSaleOrder?: boolean;
+    journalsPurchaseOrder?: boolean;
+    journalsClientInvoice?: boolean;
+    journalsSupplierInvoice?: boolean;
+    sectionOrganization?: boolean;
+    organizationAgencies?: boolean;
+    organizationSellers?: boolean;
+    organizationCustomers?: boolean;
+    organizationSuppliers?: boolean;
+    organizationSalePoints?: boolean;
+    organizationSessions?: boolean;
+    organizationProducts?: boolean;
+    sectionSettings?: boolean;
+    settingsPreferences?: boolean;
 };
 

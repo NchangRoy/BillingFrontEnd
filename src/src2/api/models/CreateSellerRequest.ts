@@ -7,6 +7,7 @@ export type CreateSellerRequest = {
     email: string;
     firstName: string;
     lastName: string;
+    role?: 'POS_SELLER' | 'SELLER' | 'AGENCY_MANAGER' | 'OWNER';
     agency?: string;
     salePoint?: string;
     permissions?: Array<string>;

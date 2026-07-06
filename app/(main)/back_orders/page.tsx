@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useMemo, useRef, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import DropDown from "@mui/icons-material/ArrowDropDown"
 import SearchIcon from "@mui/icons-material/Search"
 import AddIcon from "@mui/icons-material/Add"
@@ -10,7 +11,9 @@ import { UpdatedBackOrderResponse, BackOrderStatus, MOCK_BACK_ORDERS } from '@/s
 import { UpdatedClientResponse } from '@/src/api/models/UpdatedClientResponse'
 import CreateBackOrderModal from './CreateBackOrderModal'
 import { BackOrderService } from '@/src/src2/api/services/BackOrderService'
+import { ClientsService } from '@/src/src2/api'
 import { mapBackOrderArrayToUI } from '@/src/Mappers/BackOrderMapper'
+import { mapBackOrderToDeliveryNote } from '@/src/api/transformation/backOrderTransformation'
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
 import EmptyState from '@/components/EmptyState'
@@ -18,9 +21,9 @@ import { useLoading } from '@/components/LoadingContext'
 import ActionButton from '@/components/ActionButton'
 
 const columns = {
-  "BO Reference": "id",
-  "Purchase Order": "idBonAchat",
-  "Supplier": "supplierName",
+  "BO Reference": "numeroBackOrder",
+  "Delivery Order": "numeroBonLivraison",
+  "Client": "nomClient",
   "Status": "statut",
   "Lines": "lignes",
   "Created At": "createdAt",
@@ -33,9 +36,8 @@ const statusColors: Record<string, string> = {
   ANNULE: 'bg-red-50 text-red-600',
 }
 
-const MOCK_SUPPLIERS: UpdatedClientResponse[] = []
-
 const BackOrdersPage = () => {
+  const router = useRouter()
   const menuRef = useRef<HTMLDivElement>(null)
 
   const [showStatusMenu, setShowStatusMenu] = useState(false)
@@ -46,7 +48,7 @@ const BackOrdersPage = () => {
   const [menuPosition, setMenuPosition] = useState<{ top: number; right: number } | null>(null)
   const [clickedOrder, setClickedOrder] = useState<UpdatedBackOrderResponse | undefined>()
   const [backOrders, setBackOrders] = useState<UpdatedBackOrderResponse[]>(MOCK_BACK_ORDERS)
-  const [suppliers, setSuppliers] = useState<UpdatedClientResponse[]>(MOCK_SUPPLIERS)
+  const [clients, setClients] = useState<UpdatedClientResponse[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const { showLoader, hideLoader, showError } = useLoading()
 
@@ -69,12 +71,18 @@ const BackOrdersPage = () => {
     fetchData()
   }, [isModalOpen])
 
+  useEffect(() => {
+    ClientsService.getAllClients()
+      .then((data) => setClients(data as unknown as UpdatedClientResponse[]))
+      .catch(() => toast.error("Failed to load clients."))
+  }, [])
+
   const filteredOrders = useMemo(() => {
     return backOrders.filter(item => {
       const matchesSearch =
-        item.supplierName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.idBonAchat?.toLowerCase().includes(searchTerm.toLowerCase())
+        item.nomClient?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.numeroBackOrder?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.numeroBonLivraison?.toLowerCase().includes(searchTerm.toLowerCase())
       const matchesStatus = !selectedStatus || item.statut === selectedStatus
       return matchesSearch && matchesStatus
     })
@@ -82,7 +90,12 @@ const BackOrdersPage = () => {
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      const target = e.target as HTMLElement
+      // The click that opens the menu also reaches this document listener (its
+      // bubble arrives here after React's own handler already ran), so ignore
+      // clicks on the trigger button itself — only a genuine outside click should close it.
+      if (target?.closest('[data-kebab-trigger]')) return
+      if (menuRef.current && !menuRef.current.contains(target)) {
         setActiveMenuId(null)
       }
     }
@@ -104,7 +117,10 @@ const BackOrdersPage = () => {
       label: "Transform",
       icon: <RefreshCw size={14} />,
       action: (o: UpdatedBackOrderResponse) => {
-        toast.info(`Transforming back order ${o.id} into a new PO...`)
+        const deliveryNote = mapBackOrderToDeliveryNote(o)
+        localStorage.setItem("deliveryNote", JSON.stringify(deliveryNote))
+        localStorage.setItem("modalOpen", "open")
+        router.push('/delivery_notes')
       },
       color: "text-emerald-600"
     },
@@ -139,6 +155,12 @@ const BackOrdersPage = () => {
     if (key === 'createdAt') {
       return order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-GB') : '—'
     }
+    if (key === 'numeroBackOrder') {
+      return order.numeroBackOrder || order.id || '—'
+    }
+    if (key === 'numeroBonLivraison') {
+      return order.numeroBonLivraison || order.idBonLivraison || '—'
+    }
     return (order as any)[key] || "—"
   }
 
@@ -149,7 +171,7 @@ const BackOrdersPage = () => {
       <div className='flex flex-col md:flex-row md:items-center justify-between gap-6'>
         <div>
           <h1 className='text-secondary text-4xl font-black tracking-tight'>Back Orders</h1>
-          <p className='text-gray-500 mt-1 font-medium'>Track missing and partially delivered supplier items</p>
+          <p className='text-gray-500 mt-1 font-medium'>Track missing and partially delivered client items</p>
         </div>
 
         <div className='flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto'>
@@ -157,7 +179,7 @@ const BackOrdersPage = () => {
             <input
               type="text"
               className='border-none outline-none text-gray-700 w-full bg-transparent text-sm font-medium'
-              placeholder='Search BO #, PO # or supplier...'
+              placeholder='Search BO #, DN # or client...'
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -226,6 +248,7 @@ const BackOrdersPage = () => {
                   ))}
                   <td className="px-6 py-4 text-right">
                     <button
+                      data-kebab-trigger
                       onClick={(e) => {
                         e.stopPropagation()
                         if (activeMenuId === order.id) {
@@ -284,7 +307,7 @@ const BackOrdersPage = () => {
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           backOrderData={clickedOrder}
-          suppliers={suppliers}
+          clients={clients}
         />
       )}
 

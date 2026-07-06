@@ -130,19 +130,19 @@ export class BackOrderService {
         });
     }
     /**
-     * Récupérer les back-orders par bon d'achat
-     * @param idBonAchat
+     * Récupérer les back-orders par bon de livraison
+     * @param idBonLivraison
      * @returns BackOrderResponse OK
      * @throws ApiError
      */
-    public static getByIdBonAchat(
-        idBonAchat: string,
+    public static getByIdBonLivraison(
+        idBonLivraison: string,
     ): CancelablePromise<Array<BackOrderResponse>> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/facturation/back-orders/bon-achat/{idBonAchat}',
+            url: '/api/v1/facturation/back-orders/bon-livraison/{idBonLivraison}',
             path: {
-                'idBonAchat': idBonAchat,
+                'idBonLivraison': idBonLivraison,
             },
         });
     }

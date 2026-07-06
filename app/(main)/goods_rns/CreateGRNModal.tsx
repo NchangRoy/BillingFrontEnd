@@ -6,13 +6,13 @@ import { Save, Receipt, Truck } from "lucide-react";
 
 // API & Types
 import { GoodsReceiptNoteResponse,GoodReceiptResponse } from "@/src/api/models/GoodsReceiptNote";
-import { UpdatedClientResponse, clients } from "@/src/api/models/UpdatedClientResponse";
+import { UpdatedClientResponse } from "@/src/api/models/UpdatedClientResponse";
 
 // GRN Sub-components
 import ClientHeader from "./ClientHeader";
 import GRNDetails from "./GRNDetails";
 import { mapInternalToBondeReceptionCreateRequest } from "@/src/Mappers/GRNMapper";
-import { BondeReceptionControllerService } from "@/src/src2/api";
+import { BondeReceptionControllerService, FournisseursService } from "@/src/src2/api";
 import { toast } from 'sonner';
 interface Props {
   isOpen: boolean;
@@ -24,6 +24,19 @@ interface Props {
 const CreateGRNModal = ({ isOpen, onClose, clientData, grnData }: Props) => {
   const [selectedClient, setSelectedClient] = useState<UpdatedClientResponse | undefined>(clientData);
   const [grn, setGrn] = useState<GoodsReceiptNoteResponse | undefined>();
+  const [producers, setProducers] = useState<UpdatedClientResponse[]>([]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    FournisseursService.getAllFournisseurs()
+      .then((data) => setProducers(data.map((f) => ({
+        ...f,
+        idClient: f.idFournisseur,
+        typeClient: f.typeFournisseur as unknown as UpdatedClientResponse["typeClient"],
+        codeClient: f.codeFournisseur,
+      })) as unknown as UpdatedClientResponse[]))
+      .catch(() => toast.error("Failed to load suppliers."));
+  }, [isOpen]);
 
   // 1. INITIALIZATION LOGIC
   useEffect(() => {
@@ -135,7 +148,7 @@ const CreateGRNModal = ({ isOpen, onClose, clientData, grnData }: Props) => {
         {/* BODY */}
         <div className="flex-1 overflow-y-auto p-8 space-y-8 bg-gray-50/50">
           <ClientHeader
-            producers={clients} 
+            producers={producers}
             setMainSelectedProducer={setSelectedClient}
             selectedProducer={selectedClient}
             grn={grn as any} 

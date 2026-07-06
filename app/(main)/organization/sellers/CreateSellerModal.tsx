@@ -12,11 +12,21 @@ interface Props {
   onClose: (created: boolean) => void;
 }
 
+type SalesPersonnelRole = 'POS_SELLER' | 'SELLER' | 'AGENCY_MANAGER' | 'OWNER';
+
+const ROLE_OPTIONS: { value: SalesPersonnelRole; label: string; description: string }[] = [
+  { value: "POS_SELLER", label: "POS Seller", description: "Point-of-sale checkout only" },
+  { value: "SELLER", label: "Seller", description: "Standard sales personnel" },
+  { value: "AGENCY_MANAGER", label: "Agency Manager", description: "Manages an agency's sellers and sessions" },
+  { value: "OWNER", label: "Owner", description: "Full organization access" },
+];
+
 const emptyForm = {
   firstName: "",
   lastName: "",
   username: "",
   email: "",
+  role: "SELLER" as SalesPersonnelRole,
 };
 
 // Strips accents/punctuation and joins as firstname.lastname, e.g. "Jean" "Dûpont" -> "jean.dupont"
@@ -70,10 +80,11 @@ const CreateSellerModal = ({ isOpen, onClose }: Props) => {
         email: form.email,
         firstName: form.firstName,
         lastName: form.lastName,
+        role: form.role,
         organizationId: seller.organizationId,
         organizationName: seller.organizationName || undefined,
       });
-      toast.success(`Seller created. Temporary password: ${res.temporaryPassword}`, { duration: 15000 });
+      toast.success(`Sales personnel created. Temporary password: ${res.temporaryPassword} — POS PIN: ${res.pin}`, { duration: 15000 });
       onClose(true);
     } catch (error) {
       const message = error instanceof ApiError ? (error.body?.message ?? error.message) : "Failed to create seller. Please try again.";
@@ -103,8 +114,8 @@ const CreateSellerModal = ({ isOpen, onClose }: Props) => {
               <UserPlus size={24} />
             </div>
             <div>
-              <h2 className="text-xl font-black text-secondary uppercase tracking-tight">New Seller</h2>
-              <p className="text-xs text-gray-400 font-bold">Invite a seller to this organization</p>
+              <h2 className="text-xl font-black text-secondary uppercase tracking-tight">New Sales Personnel</h2>
+              <p className="text-xs text-gray-400 font-bold">Invite sales personnel to this organization</p>
             </div>
           </div>
           <button onClick={() => onClose(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
@@ -140,6 +151,27 @@ const CreateSellerModal = ({ isOpen, onClose }: Props) => {
                   onChange={(e) => handleNameChange("lastName", e.target.value)}
                 />
               </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className={label}>Role</label>
+            <div className="grid grid-cols-2 gap-3">
+              {ROLE_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setForm({ ...form, role: option.value })}
+                  className={`text-left p-3 rounded-xl border-2 transition-all ${
+                    form.role === option.value
+                      ? "border-secondary-mid bg-secondary-super-light/50"
+                      : "border-gray-100 bg-white hover:border-gray-200"
+                  }`}
+                >
+                  <p className="text-sm font-black text-secondary">{option.label}</p>
+                  <p className="text-[10px] text-gray-400 font-medium mt-0.5">{option.description}</p>
+                </button>
+              ))}
             </div>
           </div>
 
@@ -190,7 +222,7 @@ const CreateSellerModal = ({ isOpen, onClose }: Props) => {
             className="flex items-center gap-2 bg-secondary-mid hover:bg-secondary text-white px-8 py-3 rounded-xl font-black text-sm shadow-lg disabled:opacity-50 disabled:grayscale transition-all active:scale-95"
           >
             <Save size={18} />
-            {isSaving ? "INVITING…" : "INVITE SELLER"}
+            {isSaving ? "INVITING…" : "INVITE SALES PERSONNEL"}
           </button>
         </div>
       </div>

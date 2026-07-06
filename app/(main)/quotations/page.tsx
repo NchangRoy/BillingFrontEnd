@@ -14,10 +14,11 @@ import {
   Clock, 
   CheckCircle2, 
   XCircle, 
-  FileText, 
+  FileText,
   ChevronRight ,
-  SendHorizonal
-  
+  SendHorizonal,
+  Globe
+
 } from "lucide-react";
 import { toast } from 'sonner'
 // API & Types
@@ -97,6 +98,23 @@ const Quotation = () => {
   findDevis();
 }, [isModalOpen]);
   
+  useEffect(() => {
+    const modalOpen = localStorage.getItem("modalOpen");
+    if (modalOpen === "open") {
+      const quotationString = localStorage.getItem("quotationFromProposal");
+      if (quotationString) {
+        setActiveMenuId(null);
+        setClickedQuotation(JSON.parse(quotationString));
+        const clientString = localStorage.getItem("quotationClientFromProposal");
+        if (clientString) setClient(JSON.parse(clientString));
+        setIsModalOpen(true);
+        localStorage.removeItem("quotationFromProposal");
+        localStorage.removeItem("quotationClientFromProposal");
+        localStorage.setItem("modalOpen", "close");
+      }
+    }
+  }, []);
+
   const filteredQuotations = useMemo(() => {
     return quotations.filter((item) => {
       const matchesSearch = 
@@ -149,6 +167,18 @@ const Quotation = () => {
     localStorage.setItem("modalOpen", "open");
     router.push("/sales_orders");
   }
+
+  const handleSendToPortal = async (quotation: UpdatedDevisResponse) => {
+    if (!quotation.idDevis) return;
+    setActiveMenuId(null);
+    try {
+      await DevisService.sendToPortal(quotation.idDevis);
+      setQuotations(prev => prev.map(q => q.idDevis === quotation.idDevis ? { ...q, statut: 'ENVOYE' as any } : q));
+      toast.success(`${quotation.numeroDevis} sent — client can now view it in their portal.`);
+    } catch (error: any) {
+      toast.error(error?.body?.message || "Failed to send quotation to the client's portal.");
+    }
+  };
 
 
   return (
@@ -346,6 +376,15 @@ const Quotation = () => {
                           className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-purple-800 transition-all"
                         >
                           <SendHorizonal size={14} />
+                        </ActionButton>
+
+                        {/* Send to Portal */}
+                        <ActionButton
+                          label="Send to Portal"
+                          onClick={() => handleSendToPortal(quotation)}
+                          className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-blue-700 transition-all"
+                        >
+                          <Globe size={14} />
                         </ActionButton>
 
                         {/* Delete */}

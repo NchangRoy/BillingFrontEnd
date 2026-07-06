@@ -8,6 +8,7 @@ export type SellerListItemResponse = {
     email?: string;
     firstName?: string;
     lastName?: string;
+    role?: 'POS_SELLER' | 'SELLER' | 'AGENCY_MANAGER' | 'OWNER';
     agency?: string;
     salePoint?: string;
     permissions?: Array<'NEGOTIATE_PRICE' | 'APPLY_DISCOUNT' | 'OVERRIDE_PRICE' | 'APPROVE_DOCUMENT'>;
@@ -16,6 +17,7 @@ export type SellerListItemResponse = {
     agencyId?: string;
     salesPointId?: string;
     mustChangePassword?: boolean;
+    pin?: string;
     createdAt?: string;
 };
 

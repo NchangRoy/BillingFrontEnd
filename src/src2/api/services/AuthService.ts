@@ -10,6 +10,23 @@ import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
 export class AuthService {
     /**
+     * Try Out login
+     * Authenticates directly against Kernel using the org the account already belongs to, auto-provisioning a local seller on first use. Does not create new organizations.
+     * @param requestBody
+     * @returns SellerAuthResponse OK
+     * @throws ApiError
+     */
+    public static tryOut(
+        requestBody: LoginRequest,
+    ): CancelablePromise<SellerAuthResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/auth/try-out',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+    /**
      * Seller login
      * Returns full seller profile with org and agency details on success.
      * @param requestBody

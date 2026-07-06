@@ -6,7 +6,8 @@ import { Save, Package } from "lucide-react";
 
 import { UpdatedBackOrderResponse, BackOrderStatus } from "@/src/api/models/UpdatedBackOrderResponse";
 import { UpdatedClientResponse } from "@/src/api/models/UpdatedClientResponse";
-import SupplierHeader from "./SupplierHeader";
+import { UpdatedSellerResponse } from "@/src/api/models/UpdatedSellerResponse";
+import ClientHeader from "./ClientHeader";
 import BackOrderDetails from "./BackOrderDetails";
 import { mapUIToBackOrderRequest } from "@/src/Mappers/BackOrderMapper";
 import { BackOrderService } from "@/src/src2/api/services/BackOrderService";
@@ -15,14 +16,20 @@ import { toast } from "sonner";
 interface Props {
   isOpen: boolean;
   onClose: (param: boolean) => void;
-  supplierData?: UpdatedClientResponse;
+  clientData?: UpdatedClientResponse;
   backOrderData?: UpdatedBackOrderResponse;
-  suppliers: UpdatedClientResponse[];
+  clients: UpdatedClientResponse[];
 }
 
-const CreateBackOrderModal = ({ isOpen, onClose, supplierData, backOrderData, suppliers }: Props) => {
-  const [selectedSupplier, setSelectedSupplier] = useState<UpdatedClientResponse | undefined>(supplierData);
+const CreateBackOrderModal = ({ isOpen, onClose, clientData, backOrderData, clients }: Props) => {
+  const [selectedClient, setSelectedClient] = useState<UpdatedClientResponse | undefined>(clientData);
   const [backOrder, setBackOrder] = useState<UpdatedBackOrderResponse | undefined>();
+  const [seller, setSeller] = useState<UpdatedSellerResponse | null>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("seller");
+    if (stored) setSeller(JSON.parse(stored));
+  }, []);
 
   // Init
   useEffect(() => {
@@ -30,22 +37,26 @@ const CreateBackOrderModal = ({ isOpen, onClose, supplierData, backOrderData, su
       document.body.style.overflow = "hidden";
       if (backOrderData) {
         setBackOrder(backOrderData);
-        setSelectedSupplier(supplierData);
+        setSelectedClient(clientData);
       } else {
+        const agency = seller?.agency || "HQ";
+        const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+        const suffix = Math.floor(1000 + Math.random() * 9000).toString();
         setBackOrder({
+          numeroBackOrder: `${agency}-BO-${dateStr}-${suffix}`,
           statut: BackOrderStatus.statut.EN_ATTENTE,
           lignes: [],
           remarques: "",
           createdAt: new Date().toISOString(),
         });
-        setSelectedSupplier(supplierData);
+        setSelectedClient(clientData);
       }
     } else {
       document.body.style.overflow = "unset";
       setBackOrder(undefined);
     }
     return () => { document.body.style.overflow = "unset"; };
-  }, [isOpen, backOrderData, supplierData]);
+  }, [isOpen, backOrderData, clientData]);
 
   // Save
   const handleSave = async () => {
@@ -53,7 +64,12 @@ const CreateBackOrderModal = ({ isOpen, onClose, supplierData, backOrderData, su
 
     const finalPayload: UpdatedBackOrderResponse = {
       ...backOrder,
-      supplierName: selectedSupplier?.raisonSociale,
+      idClient: selectedClient?.idClient,
+      nomClient: selectedClient?.raisonSociale,
+      adresseClient: selectedClient?.adresse,
+      emailClient: selectedClient?.email,
+      telephoneClient: selectedClient?.telephone,
+      organizationId: seller?.organizationId,
       updatedAt: new Date().toISOString(),
     };
 
@@ -96,10 +112,10 @@ const CreateBackOrderModal = ({ isOpen, onClose, supplierData, backOrderData, su
                 {backOrderData ? "Edit Back Order" : "New Back Order"}
               </h2>
               <div className="flex items-center gap-3">
-                <p className="text-xs text-secondary-gray font-bold">{backOrder?.id || "Draft"}</p>
-                {backOrder?.idBonAchat && (
+                <p className="text-xs text-secondary-gray font-bold">{backOrder?.numeroBackOrder || "Draft"}</p>
+                {backOrder?.numeroBonLivraison && (
                   <span className="text-[10px] bg-secondary-super-light text-secondary-mid px-2 py-0.5 rounded border border-secondary-light font-black uppercase">
-                    PO: {backOrder.idBonAchat}
+                    DN: {backOrder.numeroBonLivraison}
                   </span>
                 )}
               </div>
@@ -112,10 +128,10 @@ const CreateBackOrderModal = ({ isOpen, onClose, supplierData, backOrderData, su
 
         {/* BODY */}
         <div className="flex-1 overflow-y-auto p-8 space-y-8">
-          <SupplierHeader
-            suppliers={suppliers}
-            setSelectedSupplier={setSelectedSupplier}
-            selectedSupplier={selectedSupplier}
+          <ClientHeader
+            clients={clients}
+            setSelectedClient={setSelectedClient}
+            selectedClient={selectedClient}
             backOrder={backOrder as any}
             setBackOrder={setBackOrder as any}
           />
@@ -143,7 +159,7 @@ const CreateBackOrderModal = ({ isOpen, onClose, supplierData, backOrderData, su
             </button>
             <button
               onClick={handleSave}
-              disabled={(backOrder?.lignes?.length ?? 0) === 0}
+              disabled={!backOrder?.idBonLivraison || (backOrder?.lignes?.length ?? 0) === 0}
               className="flex items-center gap-3 bg-secondary-mid hover:bg-primary text-white px-10 py-4 rounded-xl font-black text-sm shadow-xl shadow-secondary/20 transition-all active:scale-95 disabled:opacity-30"
             >
               <Save size={20} />

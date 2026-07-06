@@ -127,7 +127,7 @@ export const mapUIToProformaRequest = (
         dateSysteme: ensureDateTime(uiModel.dateSysteme),
         
         // References & Terms
-        modeReglement: uiModel.modeReglement as unknown as ProformaInvoiceRequest.modeReglement,
+        modeReglement: (uiModel.modeReglement || ProformaInvoiceRequest.modeReglement.AUTRE) as unknown as ProformaInvoiceRequest.modeReglement,
         conditionsPaiement: uiModel.conditionsPaiement,
         notes: uiModel.notes,
         referenceExterne: uiModel.referenceExterne,

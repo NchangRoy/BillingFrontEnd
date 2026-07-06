@@ -9,12 +9,12 @@ import { Pencil, Trash2, MoreVertical, Printer, Mail } from "lucide-react";
 
 // Updated API Imports
 import { UpdatedCreditNoteResponse, CreditNoteResponse, MOCK_CREDIT_NOTES } from '@/src/api/models/UpdatedCreditNoteResponse'
-import { UpdatedClientResponse, clients } from '@/src/api/models/UpdatedClientResponse'
+import { UpdatedClientResponse } from '@/src/api/models/UpdatedClientResponse'
 
 // Logic Components
 import CreateCreditNoteModal from './CreateCreditNoteModal'
 import PrintPreviewModal from './CreditNotePrintPreviewModal'
-import { NoteCreditControllerService } from '@/src/src2/api'
+import { NoteCreditControllerService, ClientsService } from '@/src/src2/api'
 import { mapCreditNoteArrayToInternalArray } from '@/src/Mappers/CreditNoteMapper'
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
@@ -47,9 +47,16 @@ const CreditNote = () => {
   const [clickedNote, setClickedNote] = useState<UpdatedCreditNoteResponse | undefined>();
   const [creditNotes, setCreditNotes] = useState<UpdatedCreditNoteResponse[]>(MOCK_CREDIT_NOTES);
   const [client, setClient] = useState<UpdatedClientResponse | undefined>()
+  const [clients, setClients] = useState<UpdatedClientResponse[]>([]);
   const [showMenu,setShowMenu]=useState<boolean>(false)
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const { showLoader, hideLoader, showError } = useLoading()
+
+  useEffect(() => {
+    ClientsService.getAllClients()
+      .then((data) => setClients(data as unknown as UpdatedClientResponse[]))
+      .catch(() => toast.error("Failed to load clients."));
+  }, []);
 
   // Load Data from API
   useEffect(() => {

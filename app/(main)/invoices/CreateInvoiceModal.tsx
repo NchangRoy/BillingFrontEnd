@@ -6,7 +6,7 @@ import { Save, Receipt, Calculator } from "lucide-react";
 
 // API & Types
 import { FactureResponse } from "@/src/api";
-import { UpdatedClientResponse, clients } from "@/src/api/models/UpdatedClientResponse";
+import { UpdatedClientResponse } from "@/src/api/models/UpdatedClientResponse";
 import { UpdatedFactureResponse } from "@/src/api/models/UpdatedFactureResponse";
 // Assuming you have equivalent sub-components for Invoices
 import ClientHeader from "./ClientHeader"; // Ensure this handles UpdatedFactureResponse
@@ -16,7 +16,7 @@ import { mapUpdatedFactureToCreateRequest } from "@/src/Mappers/FactureMapper";
 import { FactureService } from "@/src/src2/api/services/FactureService";
 import { useRouter } from "next/navigation";
 import { UpdatedSellerResponse } from "@/src/api/models/UpdatedSellerResponse";
-import { ClientService } from "@/src/src2/api/services/ClientService";
+import { ClientsService } from "@/src/src2/api";
 import { toast } from 'sonner';
 
 interface Props {
@@ -31,26 +31,22 @@ const CreateInvoiceModal = ({ isOpen, onClose, clientData, factureData }: Props)
   const [selectedClient, setSelectedClient] = useState<UpdatedClientResponse | undefined>(clientData);
   const [facture, setFacture] = useState<UpdatedFactureResponse | undefined>();
   const [seller,setSeller]=useState<UpdatedSellerResponse>()
-   const [clientss,setClients]=useState<UpdatedClientResponse[]>(clients)
-      const clientService=new ClientService()
+  const [clients, setClients] = useState<UpdatedClientResponse[]>([]);
           useEffect( () => {
             // Ensuring code runs only on client
             const stored = localStorage.getItem("seller");
-            //fetch clients
-          const fetchUsers=async ()=>{
-             try {
-              const data=await clientService.getClients()
-              setClients(data)
-              console.log(data)
-
-            } catch (error) {
-              console.log("error fetching clients")
-            }
-          }
             if (stored) {
               setSeller(JSON.parse(stored));
             }
           }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    ClientsService.getAllClients()
+      .then((data) => setClients(data as unknown as UpdatedClientResponse[]))
+      .catch(() => toast.error("Failed to load clients."));
+  }, [isOpen]);
+
   const router=useRouter()
   // 1. INITIALIZATION LOGIC
   useEffect(() => {

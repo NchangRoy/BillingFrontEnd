@@ -6,13 +6,14 @@ import { Save, Undo2, AlertCircle, FileText } from "lucide-react";
 
 // API & Types
 import { UpdatedCreditNoteResponse, CreditNoteResponse } from "@/src/api/models/UpdatedCreditNoteResponse";
-import { UpdatedClientResponse, clients } from "@/src/api/models/UpdatedClientResponse";
+import { UpdatedClientResponse } from "@/src/api/models/UpdatedClientResponse";
+import { UpdatedSellerResponse } from "@/src/api/models/UpdatedSellerResponse";
 
 // Equivalent UI Components (You'll need to adapt these or use your existing ones)
-import ClientHeader from "./ClientHeader"; 
+import ClientHeader from "./ClientHeader";
 import CreditNoteDetails from "./CreditNoteDetails"; // Similar to InvoiceDetails but handles reasons
 import { mapCreditNoteToRequest } from "@/src/Mappers/CreditNoteMapper";
-import { NoteCreditControllerService } from "@/src/src2/api";
+import { NoteCreditControllerService, ClientsService } from "@/src/src2/api";
 import { toast } from 'sonner';
 
 interface Props {
@@ -25,6 +26,20 @@ interface Props {
 const CreateCreditNoteModal = ({ isOpen, onClose, clientData, creditNoteData }: Props) => {
   const [selectedClient, setSelectedClient] = useState<UpdatedClientResponse | undefined>(clientData);
   const [creditNote, setCreditNote] = useState<UpdatedCreditNoteResponse | undefined>();
+  const [clients, setClients] = useState<UpdatedClientResponse[]>([]);
+  const [seller, setSeller] = useState<UpdatedSellerResponse | null>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("seller");
+    if (stored) setSeller(JSON.parse(stored));
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    ClientsService.getAllClients()
+      .then((data) => setClients(data as unknown as UpdatedClientResponse[]))
+      .catch(() => toast.error("Failed to load clients."));
+  }, [isOpen]);
 
   // 1. INITIALIZATION LOGIC
   useEffect(() => {
@@ -76,8 +91,10 @@ const CreateCreditNoteModal = ({ isOpen, onClose, clientData, creditNoteData }: 
       
       // Totals
       finalAmount: creditNote.montantTTC,
-      
+
       // Metadata
+      organizationId: seller?.organizationId,
+      createdBy: seller?.Id,
       updatedAt: new Date().toISOString()
     };
 

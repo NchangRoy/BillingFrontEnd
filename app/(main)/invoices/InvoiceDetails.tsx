@@ -39,7 +39,7 @@ const InvoiceDetails
   const [currentRemiseLine, setCurrentRemiseLine] = useState<number>(0);
   const [quantity, setQuantity] = useState<number>(1);
   const [filterAvailable, setfilterAvailable] = useState<boolean>(false);
-  const [products, setProducts] = useState<UpdatedProductResponse[]>(produits);
+  const [products, setProducts] = useState<UpdatedProductResponse[]>([]);
 
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -57,7 +57,7 @@ useEffect(() => {
 
     try {
       console.log("🔄 Fetching products for org:", seller.organizationId);
-      const data = await ProductsService.getProductsByOrganization("3fa85f64-5717-4562-b3fc-2c963f66afa6") as unknown as UpdatedProductResponse[];
+      const data = await ProductsService.getProductsByOrganization(seller.organizationId) as unknown as UpdatedProductResponse[];
       
       // Update both state lists
       setProducts(data);
@@ -86,7 +86,7 @@ useEffect(() => {
     }
 
     console.log("🚀 Attempting connection for Org:", orgId);
-    const socket = new WebSocket(`ws://localhost:8080/ws-stock?orgId=3fa85f64-5717-4562-b3fc-2c963f66afa6&sellerId=${seller.Id}`);
+    const socket = new WebSocket(`ws://localhost:8080/ws-stock?orgId=${orgId}&sellerId=${seller.Id}`);
     
     // Use a local variable to track if this specific effect instance is still "alive"
     let isActive = true; 

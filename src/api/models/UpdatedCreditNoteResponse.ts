@@ -33,6 +33,8 @@ export type UpdatedCreditNoteResponse = {
     
     notes?: string;
     pdfPath?: string;
+    organizationId?: string;
+    createdBy?: string;
     createdAt?: string;
     updatedAt?: string;
 };

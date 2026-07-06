@@ -10,12 +10,12 @@ import { Pencil, Trash2, MoreVertical, Printer, Truck } from "lucide-react";
 // API & Models
 import { FactureResponse, UpdatedSupplierFactureResponse } from '@/src/api/models/UpdatedSupplierFactureResponse'
 import { MOCK_SUPPLIER_FACTURES } from '@/src/api/models/UpdatedSupplierFactureResponse'
-import { clients } from '@/src/api/models/UpdatedClientResponse'
+import { UpdatedClientResponse } from '@/src/api/models/UpdatedClientResponse'
 
 // Logic Components
 import CreateSupplierInvoiceModal from './CreateSupplierInvoiceModal'
 import SupplierInvoicePrintPreviewModal from './SupplierInvoicePrintPreviewModal'
-import { FactureFournisseurControllerService } from '@/src/src2/api'
+import { FactureFournisseurControllerService, FournisseursService } from '@/src/src2/api'
 import { mapBackendFactureFournisseurArrayToInternal } from '@/src/Mappers/SupplierFactureMapper'
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
@@ -59,8 +59,20 @@ const SupplierFactures = () => {
   const [clickedFacture, setClickedFacture] = useState<UpdatedSupplierFactureResponse | undefined>();
   const [factures, setFactures] = useState<UpdatedSupplierFactureResponse[]>(MOCK_SUPPLIER_FACTURES);
   const [selectedSupplier, setSelectedSupplier] = useState<any | undefined>();
+  const [clients, setClients] = useState<UpdatedClientResponse[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const { showLoader, hideLoader, showError } = useLoading()
+
+  useEffect(() => {
+    FournisseursService.getAllFournisseurs()
+      .then((data) => setClients(data.map((f) => ({
+        ...f,
+        idClient: f.idFournisseur,
+        typeClient: f.typeFournisseur as unknown as UpdatedClientResponse["typeClient"],
+        codeClient: f.codeFournisseur,
+      })) as unknown as UpdatedClientResponse[]))
+      .catch(() => toast.error("Failed to load suppliers."));
+  }, []);
 
     useEffect(() => {
     const findDevis = async () => {
@@ -96,20 +108,21 @@ const SupplierFactures = () => {
         const invoiceData: UpdatedSupplierFactureResponse = JSON.parse(invoiceString);
         setClickedFacture(invoiceData);
 
-        // Attempt to find and set the supplier info for the modal context
-        // Matching on the supplier ID (adjust key name if your model uses supplierId or idClient)
-        const supplierMatch = clients.find(c => c.idClient === invoiceData.idFournisseur);
-        console.log(supplierMatch)
-        setSelectedSupplier(supplierMatch);
-
         // Cleanup
         localStorage.setItem("modalOpen", "close");
-       
+
         localStorage.removeItem("supplier_invoice");
-        
+
       }
     }
   }, []);
+
+  // Resolve the supplier once both the reopened invoice and the live supplier list are available.
+  useEffect(() => {
+    if (!clickedFacture || !clients.length) return;
+    const supplierMatch = clients.find(c => c.idClient === clickedFacture.idFournisseur);
+    if (supplierMatch) setSelectedSupplier(supplierMatch);
+  }, [clients, clickedFacture]);
 
   // 3. Filter Logic
   const filteredFactures = useMemo(() => {

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import CloseIcon from "@mui/icons-material/Close";
-import { PlayCircle, Save } from "lucide-react";
+import { PlayCircle, Save, Clock } from "lucide-react";
 import {
   AgenciesService, ApiError, KernelAgencyResponse,
   SalesPointResponse, SalesPointsService,
@@ -33,6 +33,7 @@ const CreateSessionModal = ({ isOpen, onClose }: Props) => {
   const [salesPoints, setSalesPoints] = useState<SalesPointResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [scheduleForLater, setScheduleForLater] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
@@ -41,6 +42,7 @@ const CreateSessionModal = ({ isOpen, onClose }: Props) => {
     }
     document.body.style.overflow = "hidden";
     setForm(emptyForm);
+    setScheduleForLater(false);
 
     const orgId = getStoredSeller()?.organizationId;
     if (!orgId) return;
@@ -80,17 +82,23 @@ const CreateSessionModal = ({ isOpen, onClose }: Props) => {
     if (!form.sellerId || !form.salesPointId || !form.openingAmount) return;
     setIsSaving(true);
     try {
-      await SessionsService.open({
+      const payload = {
         salesPointId: form.salesPointId,
         sellerId: form.sellerId,
         openingAmount: Number(form.openingAmount),
         startTime: form.startTime || undefined,
         endTime: form.endTime || undefined,
-      });
-      toast.success("Session opened successfully.");
+      };
+      if (scheduleForLater) {
+        await SessionsService.schedule(payload);
+        toast.success("Session scheduled. The seller will start it themselves from the POS terminal.");
+      } else {
+        await SessionsService.open(payload);
+        toast.success("Session opened successfully.");
+      }
       onClose(true);
     } catch (error) {
-      const message = error instanceof ApiError ? (error.body?.message ?? error.message) : "Failed to open session. Please try again.";
+      const message = error instanceof ApiError ? (error.body?.message ?? error.message) : "Failed to save session. Please try again.";
       toast.error(message);
     } finally {
       setIsSaving(false);
@@ -117,8 +125,14 @@ const CreateSessionModal = ({ isOpen, onClose }: Props) => {
               <PlayCircle size={24} />
             </div>
             <div>
-              <h2 className="text-xl font-black text-secondary uppercase tracking-tight">Open Session</h2>
-              <p className="text-xs text-gray-400 font-bold">Start a seller's session on a sale point</p>
+              <h2 className="text-xl font-black text-secondary uppercase tracking-tight">
+                {scheduleForLater ? "Schedule Session" : "Open Session"}
+              </h2>
+              <p className="text-xs text-gray-400 font-bold">
+                {scheduleForLater
+                  ? "The seller starts this themselves from the POS terminal"
+                  : "Start a seller's session on a sale point"}
+              </p>
             </div>
           </div>
           <button onClick={() => onClose(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
@@ -132,6 +146,23 @@ const CreateSessionModal = ({ isOpen, onClose }: Props) => {
             <p className="text-sm text-gray-400 font-medium">Loading agencies, sellers and sale points…</p>
           ) : (
             <>
+              <button
+                type="button"
+                onClick={() => setScheduleForLater(!scheduleForLater)}
+                className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
+                  scheduleForLater ? "border-secondary-mid bg-secondary-super-light/50" : "border-gray-100 bg-white"
+                }`}
+              >
+                <Clock size={18} className={scheduleForLater ? "text-secondary-mid" : "text-gray-300"} />
+                <div className="text-left flex-1">
+                  <p className="text-xs font-black uppercase tracking-widest text-gray-700">Schedule for later</p>
+                  <p className="text-[11px] text-gray-400 font-medium">Seller starts it themselves on the POS terminal, instead of opening it now</p>
+                </div>
+                <div className={`w-10 h-6 rounded-full flex items-center px-0.5 transition-colors shrink-0 ${scheduleForLater ? "bg-secondary-mid justify-end" : "bg-gray-200 justify-start"}`}>
+                  <div className="w-5 h-5 rounded-full bg-white shadow-sm" />
+                </div>
+              </button>
+
               <div className="space-y-2">
                 <label className={label}>Agency</label>
                 <div className={inputWrapper}>
@@ -245,7 +276,7 @@ const CreateSessionModal = ({ isOpen, onClose }: Props) => {
             className="flex items-center gap-2 bg-secondary-mid hover:bg-secondary text-white px-8 py-3 rounded-xl font-black text-sm shadow-lg disabled:opacity-50 disabled:grayscale transition-all active:scale-95"
           >
             <Save size={18} />
-            {isSaving ? "OPENING…" : "OPEN SESSION"}
+            {isSaving ? (scheduleForLater ? "SCHEDULING…" : "OPENING…") : (scheduleForLater ? "SCHEDULE SESSION" : "OPEN SESSION")}
           </button>
         </div>
       </div>

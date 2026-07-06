@@ -5,11 +5,11 @@ import CloseIcon from "@mui/icons-material/Close";
 import { Save, Truck, Split, AlertTriangle, Package } from "lucide-react";
 
 import { DeliveryNoteResponse } from "@/src/api/models/DeliveryNoteResponse";
-import { UpdatedClientResponse, clients } from "@/src/api/models/UpdatedClientResponse";
+import { UpdatedClientResponse } from "@/src/api/models/UpdatedClientResponse";
 import ClientHeader from "./ClientHeader";
 import DeliveryNoteDetails from "./DeliveryNoteDetails";
 import DeliveryNoteLogistics from "./DeliveryNoteLogistics";
-import { BonDeLivraisonService } from "@/src/src2/api";
+import { BonDeLivraisonService, ClientsService } from "@/src/src2/api";
 import { mapDeliveryNoteToRequest } from "@/src/Mappers/DeliveryNoteMapper";
 import { BackOrderService } from "@/src/src2/api/services/BackOrderService";
 import { BackOrderRequest } from "@/src/src2/api/models/BackOrderRequest";
@@ -28,6 +28,14 @@ const CreateDeliveryNoteModal = ({ isOpen, onClose, clientData, deliveryNoteData
   const [isPartial, setIsPartial] = useState(false);
   const [showBackOrderPrompt, setShowBackOrderPrompt] = useState(false);
   const [pendingPayload, setPendingPayload] = useState<DeliveryNoteResponse | null>(null);
+  const [clients, setClients] = useState<UpdatedClientResponse[]>([]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    ClientsService.getAllClients()
+      .then((data) => setClients(data as unknown as UpdatedClientResponse[]))
+      .catch(() => toast.error("Failed to load clients."));
+  }, [isOpen]);
 
   // Init
   useEffect(() => {

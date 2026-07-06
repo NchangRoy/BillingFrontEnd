@@ -5,10 +5,13 @@
 import type { LigneBackOrder } from './LigneBackOrder';
 export type BackOrderRequest = {
     numeroBackOrder?: string;
-    idBonAchat: string;
-    numeroBonAchat?: string;
-    idFournisseur?: string;
-    nomFournisseur?: string;
+    idBonLivraison: string;
+    numeroBonLivraison?: string;
+    idClient?: string;
+    nomClient?: string;
+    adresseClient?: string;
+    emailClient?: string;
+    telephoneClient?: string;
     lignes: Array<LigneBackOrder>;
     dateCreation?: string;
     dateLivraisonPrevue?: string;

@@ -61,7 +61,15 @@ const CreditNoteDetails = ({ client, creditNote, setCreditNote }: Props) => {
     setFilteredProducts(filtered);
   }, [productSearch, selectedProduct, produits]);
 
- 
+  // 2. Derive the refund unit price from the product's price at the selected tier
+  useEffect(() => {
+    if (!selectedProduct || !selectedSize) {
+      setUnitPrice(0);
+      return;
+    }
+    const sizeConfig = selectedProduct.allowedSaleSizes?.find(s => s.size === selectedSize);
+    setUnitPrice(sizeConfig?.unitPrice || 0);
+  }, [selectedProduct, selectedSize]);
 
   // 3. Totals Calculation (HT, TVA, TTC) - Credit Notes are usually negative or "Balance"
   useEffect(() => {
@@ -184,7 +192,20 @@ return (
                 onFocus={() => setShowProductResults(true)} placeholder="Search Product..."
               />
             </div>
-            {/* ... Results dropdown using hover:bg-secondary-super-light */}
+            {showProductResults && filteredProducts.length > 0 && (
+              <div className="absolute z-50 w-full mt-2 bg-white border border-secondary-light rounded-xl shadow-2xl max-h-48 overflow-auto">
+                {filteredProducts.map(p => (
+                  <div key={p.idProduit} onClick={() => {
+                    setSelectedProduct(p);
+                    setProductSearch(p.nomProduit || "");
+                    setShowProductResults(false);
+                  }} className="px-4 py-3 hover:bg-secondary-super-light cursor-pointer border-b last:border-none flex justify-between items-center">
+                    <span className="text-sm font-bold text-primary">{p.nomProduit}</span>
+                    <span className="text-[10px] font-mono text-secondary-gray">{p.idProduit}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="col-span-4 md:col-span-2">
@@ -204,11 +225,38 @@ return (
 
           <div className="col-span-12 md:col-span-2 pt-[21px]">
             <button
-              type="button" onClick={addLine} disabled={!selectedProduct}
-              className="w-full bg-secondary-mid hover:bg-primary text-white rounded-xl h-[38px] shadow-lg shadow-secondary/20 transition-all flex items-center justify-center"
+              type="button" onClick={addLine} disabled={!selectedProduct || !selectedSize}
+              className="w-full bg-secondary-mid hover:bg-primary text-white rounded-xl h-[38px] shadow-lg shadow-secondary/20 transition-all flex items-center justify-center disabled:opacity-30"
             >
               <Plus size={20} />
             </button>
+          </div>
+
+          <div className="col-span-12 mt-2">
+            <label className={labelStyles}>Pricing Tier</label>
+            <div className="flex flex-wrap gap-2 p-3 bg-secondary-background/50 rounded-xl border border-dashed border-secondary-light min-h-[58px]">
+              {selectedProduct ? (
+                selectedProduct.allowedSaleSizes?.filter(s => (client?.allowedSaleSizes?.includes(s.size as any) && seller?.permittedSaleSizes.includes(s.size as any))).map((s) => (
+                  <button
+                    key={s.size}
+                    type="button"
+                    onClick={() => setSelectedSize(s.size)}
+                    className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                      selectedSize === s.size
+                        ? "bg-secondary-mid text-white shadow-md transform scale-105"
+                        : "bg-white text-secondary-gray border border-secondary-light hover:border-secondary-mid/30 shadow-sm"
+                    }`}
+                  >
+                    {s.size.replace('_', ' ')}
+                  </button>
+                ))
+              ) : (
+                <div className="flex items-center gap-2 h-full ml-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-secondary-light animate-pulse" />
+                  <span className="text-[10px] text-secondary-gray italic font-medium">Select a product...</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

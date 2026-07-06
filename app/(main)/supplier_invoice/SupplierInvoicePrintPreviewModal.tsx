@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { UpdatedSupplierFactureResponse, FactureResponse } from '@/src/api/models/UpdatedSupplierFactureResponse';
+import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
 import { Truck, MapPin, Phone, Hash, Calendar, FileText, Receipt } from "lucide-react";
 
 interface PrintPreviewProps {
@@ -12,6 +13,19 @@ interface PrintPreviewProps {
 }
 
 const SupplierInvoicePrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: PrintPreviewProps) => {
+  const [seller, setSeller] = useState<UpdatedSellerResponse | null>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("seller");
+    if (stored) {
+      try {
+        setSeller(JSON.parse(stored));
+      } catch (e) {
+        console.error("Failed to parse seller data", e);
+      }
+    }
+  }, []);
+
   if (!isOpen) return null;
 
   const formatCurrency = (amount?: number) =>
@@ -57,18 +71,22 @@ const SupplierInvoicePrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrin
               {/* Branding & Header */}
               <div className="flex justify-between items-start border-b-4 border-primary pb-6 mb-8">
                 <div>
-                  <div className="h-16 w-16 bg-primary rounded-2xl mb-4 flex items-center justify-center text-white font-black text-3xl shadow-lg">
-                    {data.nomFournisseru?.charAt(0) || 'F'}
+                  <div className="h-16 w-16 bg-primary rounded-2xl mb-4 flex items-center justify-center text-white font-black text-3xl shadow-lg overflow-hidden">
+                    {seller?.organizationLogoUri ? (
+                      <img src={seller.organizationLogoUri} alt="Org Logo" className="h-full w-full object-contain" />
+                    ) : (
+                      seller?.organizationName?.charAt(0) || 'F'
+                    )}
                   </div>
                   <h1 className="text-3xl font-black text-primary tracking-tighter uppercase italic">Purchase Invoice</h1>
                   <p className="text-sm font-black text-secondary mt-1">{data.numeroFacture || 'DRAFT-INV'}</p>
                 </div>
-                
+
                 <div className="text-right">
-                  <p className="font-black text-sm text-primary uppercase">Your Company Name</p>
+                  <p className="font-black text-sm text-primary uppercase">{seller?.organizationName || 'Your Company Name'}</p>
                   <p className="text-[10px] text-secondary-gray mt-1 leading-relaxed">
-                    Headquarters • Douala, Cameroon<br/>
-                    RCCM: RC/DLA/2026/B/001 • NIU: M0102030405
+                    {seller?.agencyAddress}, {seller?.agencyCity}, Cameroon<br/>
+                    TAX ID: {seller?.taxNumber || 'N/A'}
                   </p>
                   <div className={`mt-4 inline-block px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${
                     data.etat === FactureResponse.etat.PAYE ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-secondary-super-light text-secondary border-secondary-light'

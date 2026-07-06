@@ -8,11 +8,11 @@ import ClientHeader from "./ClientHeader";
 import QuotationDetails from "./QuotationDetails";
 import { CheckCircle2, Save,Receipt } from "lucide-react";
 import { DevisResponse } from "@/src/api";
-import { clients, UpdatedClientResponse } from "@/src/api/models/UpdatedClientResponse";
+import { UpdatedClientResponse } from "@/src/api/models/UpdatedClientResponse";
 import { UpdatedDevisResponse } from "@/src/api/models/UpdatedDevisResponse";
 import { MOCK_QUOTATIONS } from "@/src/api/models/UpdatedDevisResponse";
 import { mapUpdatedResponseToCreateRequest } from "@/src/Mappers/DevisMapper";
-import { DevisService } from "@/src/src2/api";
+import { DevisService, ClientsService } from "@/src/src2/api";
 import { toast } from 'sonner';
 import { UpdatedSellerResponse } from "@/src/api/models/UpdatedSellerResponse";
 interface Props {
@@ -43,6 +43,8 @@ const QuotationFormModal = ({ isOpen, onClose,clientData,quotationData}: Props) 
 
   const [quotation, setQuotation] = useState<UpdatedDevisResponse | undefined>();
 
+  const [clients, setClients] = useState<UpdatedClientResponse[]>([]);
+
 
 
       const [seller,setSeller]=useState<UpdatedSellerResponse>()
@@ -53,7 +55,14 @@ const QuotationFormModal = ({ isOpen, onClose,clientData,quotationData}: Props) 
             setSeller(JSON.parse(stored));
           }
         }, []);
-  
+
+      useEffect(() => {
+        if (!isOpen) return;
+        ClientsService.getAllClients()
+          .then((data) => setClients(data as unknown as UpdatedClientResponse[]))
+          .catch(() => toast.error("Failed to load clients."));
+      }, [isOpen]);
+
 
 
 
@@ -153,18 +162,16 @@ const finalPayload: UpdatedDevisResponse = {
     console.log(request)
 
   try {
-    if (!quotationData) {
-      // MODE CRÉATION
+    if (!quotationData?.idDevis) {
+      // MODE CRÉATION (also covers a prefilled-but-not-yet-saved draft, e.g. transformed from a proposal)
       await DevisService.createDevis(request);
       console.log("Devis créé");
     } else {
       // MODE ÉDITION
-      if (quotationData.idDevis) {
-        await DevisService.updateDevis(quotationData.idDevis, request);
-        console.log("Devis mis à jour");
-      }
+      await DevisService.updateDevis(quotationData.idDevis, request);
+      console.log("Devis mis à jour");
     }
-    
+
     toast.success(quotationData?.idDevis ? "Quotation updated successfully." : "Quotation created successfully.")
     router.refresh();
     onClose(false);
@@ -214,7 +221,7 @@ const finalPayload: UpdatedDevisResponse = {
           </div>
           <div>
             <h2 className="text-xl font-black text-secondary uppercase tracking-tight">
-              {quotationData ? "Edit Quotation" : "New Quotation"}
+              {quotationData?.idDevis ? "Edit Quotation" : "New Quotation"}
             </h2>
             <p className="text-xs text-gray-400 font-bold">{quotation?.numeroDevis}</p>
           </div>
@@ -263,7 +270,7 @@ const finalPayload: UpdatedDevisResponse = {
               className="flex items-center gap-2 bg-secondary-mid hover:bg-secondary text-white px-8 py-3 rounded-xl font-black text-sm shadow-lg disabled:opacity-50 disabled:grayscale transition-all active:scale-95"
             >
               <Save size={18} />
-              {quotationData ? "UPDATE QUOTATION" : "SAVE & GENERATE DEVIS"}
+              {quotationData?.idDevis ? "UPDATE QUOTATION" : "SAVE & GENERATE DEVIS"}
             </button>
          </div>
       </div>

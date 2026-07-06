@@ -21,14 +21,14 @@ import {
 // API & Models
 import { GoodReceiptResponse, GoodsReceiptNoteResponse } from '@/src/api/models/GoodsReceiptNote'
 import { MOCK_GOODS_RN } from '@/src/api/models/GoodsReceiptNote'
-import { UpdatedClientResponse, clients } from '@/src/api/models/UpdatedClientResponse'
+import { UpdatedClientResponse } from '@/src/api/models/UpdatedClientResponse'
 import { MOCK_PURCHASE_ORDERS, PurchaseOrderResponse } from '@/src/api/models/PurchaseOrderLine'
 
 // Logic Components
 import CreateGRNModal from './CreateGRNModal'
 import GRNPrintPreviewModal from './GRNPrintPreviewModal'
 import { generateFactureFromPOandGRN } from '@/src/api/transformation/supplierInvoice'
-import { BonDAchatService, BondeReceptionControllerService } from '@/src/src2/api'
+import { BonDAchatService, BondeReceptionControllerService, FournisseursService } from '@/src/src2/api'
 import { mapGRNArrayToInternalArray } from '@/src/Mappers/GRNMapper'
 import { mapBackendBAArrayToUIArray } from '@/src/Mappers/BonAchatMapper'
 import { toast } from 'sonner'
@@ -63,9 +63,21 @@ const GoodsReceiptNotes = () => {
   const [clickedGRN, setClickedGRN] = useState<GoodsReceiptNoteResponse | undefined>();
   const [grnList, setGrnList] = useState<GoodsReceiptNoteResponse[]>(MOCK_GOODS_RN);
   const [client, setClient] = useState<UpdatedClientResponse | undefined>()
+  const [clients, setClients] = useState<UpdatedClientResponse[]>([]);
   const [purchaseOrders,setPurchaseOrders]=useState<PurchaseOrderResponse[]>(MOCK_PURCHASE_ORDERS)
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const { showLoader, hideLoader, showError } = useLoading()
+
+  useEffect(() => {
+    FournisseursService.getAllFournisseurs()
+      .then((data) => setClients(data.map((f) => ({
+        ...f,
+        idClient: f.idFournisseur,
+        typeClient: f.typeFournisseur as unknown as UpdatedClientResponse["typeClient"],
+        codeClient: f.codeFournisseur,
+      })) as unknown as UpdatedClientResponse[]))
+      .catch(() => toast.error("Failed to load suppliers."));
+  }, []);
 
   // Load Data from API
    useEffect(() => {
@@ -104,15 +116,18 @@ const GoodsReceiptNotes = () => {
         const grnData: GoodsReceiptNoteResponse = JSON.parse(grnString)
         setClickedGRN(grnData)
 
-        // Find supplier/client info
-        const supplierInfo = clients.find(c => c.idClient === grnData.supplierId);
-        setClient(supplierInfo)
-
         // Cleanup the actual data key
         localStorage.removeItem("GRN")
       }
     }
   }, []);
+
+  // Resolve the supplier once both the reopened GRN and the live supplier list are available.
+  useEffect(() => {
+    if (!clickedGRN || !clients.length) return;
+    const supplierInfo = clients.find(c => c.idClient === clickedGRN.supplierId);
+    if (supplierInfo) setClient(supplierInfo);
+  }, [clients, clickedGRN]);
 
   // 3. Filter Logic
   const filteredGRNs = useMemo(() => {

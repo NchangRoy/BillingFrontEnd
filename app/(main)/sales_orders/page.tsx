@@ -20,13 +20,13 @@ import {
 } from "lucide-react";
 
 // Updated Imports for Sales Orders
-import { UpdatedClientResponse, clients } from '@/src/api/models/UpdatedClientResponse'
+import { UpdatedClientResponse } from '@/src/api/models/UpdatedClientResponse'
 import { UpdatedSalesOrderResponse, SalesOrderResponse } from '@/src/api/models/UpdatedSalesOrder';
 import { MOCK_SALES_ORDERS } from '@/src/api/models/UpdatedSalesOrder'
 import CreateSalesOrderModal from './CreateSalesOrderModal'
 import SalesOrderPrintPreviewModal from './SalesOrderPrintPreviewModal'
 import { mapSalesOrderToDeliveryNote, mapSalesOrderToFacture } from '@/src/api/transformation/saleorderTranformation'
-import { BonCommandeService } from '@/src/src2/api'
+import { BonCommandeService, ClientsService } from '@/src/src2/api'
 import { mapBonCommandeListToSalesOrderList } from '@/src/Mappers/BonCommandeMapper'
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
@@ -59,10 +59,17 @@ const SalesOrders = () => {
   const [showTransformSub, setShowTransformSub] = useState<boolean>(false); // Added missing state
   const [clickedOrder, setClickedOrder] = useState<UpdatedSalesOrderResponse | undefined>();
   
-  const [orders, setOrders] = useState<UpdatedSalesOrderResponse[]>(MOCK_SALES_ORDERS); 
+  const [orders, setOrders] = useState<UpdatedSalesOrderResponse[]>(MOCK_SALES_ORDERS);
   const [client, setClient] = useState<UpdatedClientResponse | undefined>()
+  const [clients, setClients] = useState<UpdatedClientResponse[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const { showLoader, hideLoader, showError } = useLoading()
+
+  useEffect(() => {
+    ClientsService.getAllClients()
+      .then((data) => setClients(data as unknown as UpdatedClientResponse[]))
+      .catch(() => toast.error("Failed to load clients."));
+  }, []);
 
    useEffect(() => {
     const findDevis = async () => {
@@ -113,11 +120,16 @@ const SalesOrders = () => {
       if (orderString) {
         const order: UpdatedSalesOrderResponse = JSON.parse(orderString)
         setClickedOrder(order)
-        const orderClient = clients.find(c => c.idClient === order.idClient);
-        setClient(orderClient)
       }
     }
   }, [])
+
+  // Resolve the client once both the reopened sales order and the live client list are available.
+  useEffect(() => {
+    if (!clickedOrder || !clients.length) return;
+    const orderClient = clients.find(c => c.idClient === clickedOrder.idClient);
+    if (orderClient) setClient(orderClient);
+  }, [clients, clickedOrder]);
 
   // 4. Filter Logic
   const filteredOrders = useMemo(() => {

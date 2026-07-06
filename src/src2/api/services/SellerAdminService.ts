@@ -36,6 +36,22 @@ export class SellerAdminService {
         });
     }
     /**
+     * Remove a seller from the organization
+     * @param sellerId
+     * @throws ApiError
+     */
+    public static deleteSeller(
+        sellerId: string,
+    ): CancelablePromise<void> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/sellers/{sellerId}',
+            path: {
+                'sellerId': sellerId,
+            },
+        });
+    }
+    /**
      * List sellers for an organization
      * @param organizationId
      * @returns SellerListItemResponse OK

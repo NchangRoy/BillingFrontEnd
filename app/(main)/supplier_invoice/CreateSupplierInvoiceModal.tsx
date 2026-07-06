@@ -6,13 +6,13 @@ import { Save, Truck } from "lucide-react";
 
 // API & Types
 import { FactureResponse, UpdatedSupplierFactureResponse } from "@/src/api/models/UpdatedSupplierFactureResponse";
-import { UpdatedClientResponse, clients } from "@/src/api/models/UpdatedClientResponse";
+import { UpdatedClientResponse } from "@/src/api/models/UpdatedClientResponse";
 
 // Sub-components
 import SupplierHeader from "./SupplierHeader";
 import SupplierInvoiceDetails from "./SupplierInvoiceDetails";
 import { mapInternalToFactureFournisseurCreateRequest } from "@/src/Mappers/SupplierFactureMapper";
-import { FactureFournisseurControllerService } from "@/src/src2/api";
+import { FactureFournisseurControllerService, FournisseursService } from "@/src/src2/api";
 import { UpdatedSellerResponse } from "@/src/api/models/UpdatedSellerResponse";
 import { toast } from 'sonner';
 
@@ -27,11 +27,24 @@ const CreateSupplierInvoiceModal = ({ isOpen, onClose, supplierData, factureData
   const [selectedSupplier, setSelectedSupplier] = useState<UpdatedClientResponse | undefined>(supplierData);
   const [facture, setFacture] = useState<UpdatedSupplierFactureResponse | undefined>();
   const [seller, setSeller] = useState<UpdatedSellerResponse | null>(null);
+  const [suppliers, setSuppliers] = useState<UpdatedClientResponse[]>([]);
     useEffect(() => {
         const stored = localStorage.getItem("seller");
         if (stored) setSeller(JSON.parse(stored));
-        
+
       }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    FournisseursService.getAllFournisseurs()
+      .then((data) => setSuppliers(data.map((f) => ({
+        ...f,
+        idClient: f.idFournisseur,
+        typeClient: f.typeFournisseur as unknown as UpdatedClientResponse["typeClient"],
+        codeClient: f.codeFournisseur,
+      })) as unknown as UpdatedClientResponse[]))
+      .catch(() => toast.error("Failed to load suppliers."));
+  }, [isOpen]);
   // Helper for consistent date strings
   const getTodayStr = () => new Date().toISOString().split('T')[0];
   const getDueDateStr = (days: number) => new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
@@ -60,7 +73,6 @@ const CreateSupplierInvoiceModal = ({ isOpen, onClose, supplierData, factureData
           dateFacturation: getTodayStr(),
           dateEcheance: getDueDateStr(30),
           createdAt: new Date().toISOString(),
-          createdBy:seller?.Id
         };
         setFacture(newFacture as UpdatedSupplierFactureResponse);
         setSelectedSupplier(supplierData);
@@ -88,6 +100,8 @@ const CreateSupplierInvoiceModal = ({ isOpen, onClose, supplierData, factureData
       montantTotal: facture.montantTTC,
       montantRestant: facture.etat === FactureResponse.etat.PAYE ? 0 : facture.montantTTC,
       finalAmount: facture.montantTTC,
+      organizationId: seller?.organizationId,
+      createdBy: seller?.Id,
       updatedAt: new Date().toISOString(),
       
     };
@@ -151,8 +165,8 @@ const CreateSupplierInvoiceModal = ({ isOpen, onClose, supplierData, factureData
         {/* BODY */}
         <div className="flex-1 overflow-y-auto p-8 space-y-8">
           {/* Linked Components */}
-          <SupplierHeader 
-            suppliers={clients}
+          <SupplierHeader
+            suppliers={suppliers}
             selectedSupplier={selectedSupplier}
             setSelectedSupplier={setSelectedSupplier}
             invoice={facture}

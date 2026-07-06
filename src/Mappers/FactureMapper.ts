@@ -27,7 +27,7 @@ export const mapUpdatedFactureToCreateRequest = (
 
     // --- Enums (Cast pour aligner FactureResponse vers FactureCreateRequest) ---
     etat: response.etat as unknown as FactureCreateRequest.etat,
-    modeReglement: response.modeReglement as unknown as FactureCreateRequest.modeReglement,
+    modeReglement: (response.modeReglement || FactureCreateRequest.modeReglement.AUTRE) as unknown as FactureCreateRequest.modeReglement,
     type: response.type || "VENTE",
 
     // --- Données Financières (Correction de l'erreur montantTotal obligatoire) ---

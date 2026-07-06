@@ -21,12 +21,12 @@ import {
 
 // Updated API Imports for Delivery Notes
 import { DeliveryNoteResponse, MOCK_DELIVERY_NOTES } from '@/src/api/models/DeliveryNoteResponse'
-import { UpdatedClientResponse, clients } from '@/src/api/models/UpdatedClientResponse'
+import { UpdatedClientResponse } from '@/src/api/models/UpdatedClientResponse'
 
 // Logic Components
 import CreateDeliveryNoteModal from './CreateDeliveryNoteModal'
 import DeliveryNotePrintPreviewModal from './DeliveryNotePrintPreviewModal'
-import { BonDeLivraisonService } from '@/src/src2/api'
+import { BonDeLivraisonService, ClientsService } from '@/src/src2/api'
 import { mapBackendArrayToDeliveryNoteList } from '@/src/Mappers/DeliveryNoteMapper'
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
@@ -60,8 +60,15 @@ const DeliveryNotes = () => {
   const [clickedNote, setClickedNote] = useState<DeliveryNoteResponse | undefined>();
   const [deliveryNotes, setDeliveryNotes] = useState<DeliveryNoteResponse[]>(MOCK_DELIVERY_NOTES);
   const [client, setClient] = useState<UpdatedClientResponse | undefined>()
+  const [clients, setClients] = useState<UpdatedClientResponse[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const { showLoader, hideLoader, showError } = useLoading()
+
+  useEffect(() => {
+    ClientsService.getAllClients()
+      .then((data) => setClients(data as unknown as UpdatedClientResponse[]))
+      .catch(() => toast.error("Failed to load clients."));
+  }, []);
 
    useEffect(() => {
     const findDevis = async () => {
@@ -98,14 +105,17 @@ const DeliveryNotes = () => {
         const dnData: DeliveryNoteResponse = JSON.parse(dnString)
         setClickedNote(dnData)
 
-        // Match client info
-        const dnClient = clients.find(c => c.idClient === dnData.idClient);
-        setClient(dnClient)
-
         localStorage.removeItem("deliveryNote")
       }
     }
   }, []);
+
+  // Resolve the client once both the reopened delivery note and the live client list are available.
+  useEffect(() => {
+    if (!clickedNote || !clients.length) return;
+    const dnClient = clients.find(c => c.idClient === clickedNote.idClient);
+    if (dnClient) setClient(dnClient);
+  }, [clients, clickedNote]);
 
   // 3. Filter Logic
   const filteredNotes = useMemo(() => {

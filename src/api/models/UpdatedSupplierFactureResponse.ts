@@ -37,9 +37,10 @@ export type UpdatedSupplierFactureResponse = {
     notes?: string;
     
    createdBy?:string;
+    organizationId?: string;
     createdAt?: string;
     updatedAt?: string;
-    
+
 };
 
 export namespace FactureResponse {

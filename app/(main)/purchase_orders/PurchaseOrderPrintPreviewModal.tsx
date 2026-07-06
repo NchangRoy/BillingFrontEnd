@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { PurchaseOrderResponse } from '@/src/api/models/PurchaseOrderLine';
+import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
 import { Truck, MapPin, Phone, Mail, Building2 } from 'lucide-react';
 
 interface PrintPreviewProps {
@@ -12,6 +13,19 @@ interface PrintPreviewProps {
 }
 
 const PurchaseOrderPrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: PrintPreviewProps) => {
+  const [seller, setSeller] = useState<UpdatedSellerResponse | null>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("seller");
+    if (stored) {
+      try {
+        setSeller(JSON.parse(stored));
+      } catch (e) {
+        console.error("Failed to parse seller data", e);
+      }
+    }
+  }, []);
+
   if (!isOpen) return null;
 
   // --- Internal Helpers ---
@@ -69,8 +83,12 @@ const PurchaseOrderPrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint 
               {/* Branding Header */}
               <div className="flex justify-between items-start border-b-2 border-secondary-mid pb-8 mb-10">
                 <div>
-                  <div className="h-16 w-16 bg-secondary-mid rounded-2xl mb-6 flex items-center justify-center text-white font-black text-3xl shadow-lg uppercase">
-                    {data.supplierName?.charAt(0) || 'S'}
+                  <div className="h-16 w-16 bg-secondary-mid rounded-2xl mb-6 flex items-center justify-center text-white font-black text-3xl shadow-lg uppercase overflow-hidden">
+                    {seller?.organizationLogoUri ? (
+                      <img src={seller.organizationLogoUri} alt="Org Logo" className="h-full w-full object-contain" />
+                    ) : (
+                      seller?.organizationName?.charAt(0) || 'S'
+                    )}
                   </div>
                   <h1 className="text-4xl font-black text-secondary-mid tracking-tighter italic">PURCHASE ORDER</h1>
                   <div className="mt-4 flex gap-8">
@@ -86,11 +104,11 @@ const PurchaseOrderPrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint 
                 </div>
                 
                 <div className="text-right">
-                  <p className="font-black text-sm text-secondary-mid uppercase mb-2">Your Company Name</p>
+                  <p className="font-black text-sm text-secondary-mid uppercase mb-2">{seller?.organizationName || 'Your Company Name'}</p>
                   <address className="text-[10px] text-secondary-gray leading-relaxed not-italic">
-                    123 Warehouse Logistics St.<br />
-                    Douala, Cameroon<br />
-                    <span className="font-bold">Contact:</span> procurement@yourbusiness.com<br />
+                    {seller?.agencyAddress}<br />
+                    {seller?.agencyCity}, Cameroon<br />
+                    <span className="font-bold">Contact:</span> {seller?.organizationEmail}<br />
                   </address>
                 </div>
               </div>

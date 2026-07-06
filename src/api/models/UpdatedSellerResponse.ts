@@ -1,3 +1,5 @@
+import { SellerUIPermissionsResponse } from "../../src2/api/models/SellerUIPermissionsResponse";
+
 // -------------------------
 // Sale size enum
 // -------------------------
@@ -16,7 +18,17 @@ export enum Permission {
   APPLY_DISCOUNT = 'APPLY_DISCOUNT',
   OVERRIDE_PRICE = 'OVERRIDE_PRICE',
   APPROVE_DOCUMENT="APPROVE_DOCUMENT",
-  
+
+}
+
+// -------------------------
+// Seller role enum
+// -------------------------
+export enum SellerRole {
+  POS_SELLER = 'POS_SELLER',
+  SELLER = 'SELLER',
+  AGENCY_MANAGER = 'AGENCY_MANAGER',
+  OWNER = 'OWNER',
 }
 
 
@@ -29,6 +41,7 @@ export type UpdatedSellerResponse = {
   accessToken: string;
   Id:string,
   username: string;
+  role: SellerRole;
   agency: string;
   salePoint: string;
 
@@ -65,6 +78,8 @@ export type UpdatedSellerResponse = {
      createdAt:string;
 
      mustChangePassword: boolean;
+
+     uiPermissions?: SellerUIPermissionsResponse | null;
 };
 
 

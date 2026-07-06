@@ -1,4 +1,4 @@
-import { Permission, SaleSize, UpdatedSellerResponse } from "../api/models/UpdatedSellerResponse";
+import { Permission, SaleSize, SellerRole, UpdatedSellerResponse } from "../api/models/UpdatedSellerResponse";
 import { SellerAuthResponse } from "../src2/api/models/SellerAuthResponse";
 
 /**
@@ -13,6 +13,7 @@ export const mapAuthToUpdatedSeller = (data: SellerAuthResponse): UpdatedSellerR
     // Basic Info & Renaming
     Id: data.Id ?? '',
     username: data.username ?? '',
+    role: (data.role as SellerRole) ?? SellerRole.SELLER,
     agency: data.agency ?? '',
     salePoint: data.salePoint ?? '',
 
@@ -40,6 +41,8 @@ export const mapAuthToUpdatedSeller = (data: SellerAuthResponse): UpdatedSellerR
 
     // Meta
     createdAt: data.createdAt ?? '',
-    mustChangePassword: data.mustChangePassword ?? false
+    mustChangePassword: data.mustChangePassword ?? false,
+
+    uiPermissions: data.uiPermissions ?? null
   };
 };

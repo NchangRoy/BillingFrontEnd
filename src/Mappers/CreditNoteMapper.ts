@@ -45,6 +45,8 @@ export const mapCreditNoteToRequest = (
         notes: cn.notes,
         pdfPath: cn.pdfPath,
         motif: cn.reason,
+        organizationId: cn.organizationId,
+        createdBy: cn.createdBy,
     };
 };
 

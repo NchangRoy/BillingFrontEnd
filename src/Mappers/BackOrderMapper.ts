@@ -3,9 +3,14 @@ import { UpdatedBackOrderResponse, BackOrderLine, BackOrderStatus } from '../api
 
 export const mapBackOrderResponseToUI = (res: BackOrderResponse): UpdatedBackOrderResponse => ({
     id: res.idBackOrder,
-    idBonAchat: res.idBonAchat,
-    numeroBonAchat: res.numeroBonAchat,
-    supplierName: res.nomFournisseur,
+    numeroBackOrder: res.numeroBackOrder,
+    idBonLivraison: res.idBonLivraison,
+    numeroBonLivraison: res.numeroBonLivraison,
+    idClient: res.idClient,
+    nomClient: res.nomClient,
+    adresseClient: res.adresseClient,
+    emailClient: res.emailClient,
+    telephoneClient: res.telephoneClient,
     statut: res.statut as unknown as BackOrderStatus.statut,
     lignes: res.lignes?.map(mapLigneToUI) ?? [],
     remarques: res.notes,
@@ -19,9 +24,14 @@ export const mapBackOrderArrayToUI = (list: BackOrderResponse[]): UpdatedBackOrd
     list.map(mapBackOrderResponseToUI);
 
 export const mapUIToBackOrderRequest = (ui: UpdatedBackOrderResponse): BackOrderRequest => ({
-    idBonAchat: ui.idBonAchat ?? '',
-    numeroBonAchat: ui.numeroBonAchat,
-    nomFournisseur: ui.supplierName,
+    numeroBackOrder: ui.numeroBackOrder,
+    idBonLivraison: ui.idBonLivraison ?? '',
+    numeroBonLivraison: ui.numeroBonLivraison,
+    idClient: ui.idClient,
+    nomClient: ui.nomClient,
+    adresseClient: ui.adresseClient,
+    emailClient: ui.emailClient,
+    telephoneClient: ui.telephoneClient,
     statut: ui.statut as unknown as BackOrderRequest.statut,
     lignes: ui.lignes?.map(mapLineToRequest) ?? [],
     notes: ui.remarques,

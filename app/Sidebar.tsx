@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { getStoredSeller } from "@/src/api/session";
+import { hasPageAccess } from "@/src/api/uiPermissions";
 import {
   Assessment as AssessmentIcon,
   RequestQuote as RequestQuoteIcon,
@@ -66,6 +68,7 @@ const MENU_SECTIONS = [
     icon: "SalesSectionIcon",
     items: [
       { content: "Quotations", Icon: "RequestQuoteIcon", path: "/quotations" },
+      { content: "Quotation Proposals", Icon: "RequestQuoteIcon", path: "/quotation_proposals" },
       { content: "Proforma Invoice", Icon: "ReceiptIcon", path: "/proforma_invoices" },
       { content: "Sales Orders", Icon: "ShoppingCartIcon", path: "/sales_orders" },
       { content: "Invoices", Icon: "ReceiptIcon", path: "/invoices" },
@@ -128,7 +131,15 @@ const Sidebar = () => {
     setOpenSectionId(openSectionId === id ? null : id);
   };
 
-  const currentSection = MENU_SECTIONS.find((s) => s.id === openSectionId);
+  const visibleSections = useMemo(() => {
+    const uiPermissions = getStoredSeller()?.uiPermissions;
+    return MENU_SECTIONS.map((section) => ({
+      ...section,
+      items: section.items.filter((item) => hasPageAccess(item.path, uiPermissions)),
+    })).filter((section) => section.items.length > 0);
+  }, [pathname]);
+
+  const currentSection = visibleSections.find((s) => s.id === openSectionId);
 
   return (
     <div className="flex" style={{ height: '100%', minHeight: '100%' }}>
@@ -146,7 +157,7 @@ const Sidebar = () => {
         </Link>
 
         <nav className="flex-1 flex flex-col items-start py-4">
-          {MENU_SECTIONS.map((section) => {
+          {visibleSections.map((section) => {
             const Icon = iconMap[section.icon];
             const isOpen = openSectionId === section.id;
             const isAnyItemActive = section.items.some((item) => pathname === item.path);

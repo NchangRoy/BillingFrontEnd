@@ -10,9 +10,14 @@ export type BackOrderLine = {
 
 export type UpdatedBackOrderResponse = {
     id?: string;
-    idBonAchat?: string;
-    numeroBonAchat?: string;
-    supplierName?: string;
+    numeroBackOrder?: string;
+    idBonLivraison?: string;
+    numeroBonLivraison?: string;
+    idClient?: string;
+    nomClient?: string;
+    adresseClient?: string;
+    emailClient?: string;
+    telephoneClient?: string;
     statut?: BackOrderStatus.statut;
     lignes?: BackOrderLine[];
     remarques?: string;
@@ -34,9 +39,9 @@ export namespace BackOrderStatus {
 export const MOCK_BACK_ORDERS: UpdatedBackOrderResponse[] = [
     {
         id: 'bo-001',
-        idBonAchat: 'ba-001',
-        numeroBonAchat: 'BA-2026-001',
-        supplierName: 'Fournisseur ACME',
+        idBonLivraison: 'dn-001',
+        numeroBonLivraison: 'DN-2026-001',
+        nomClient: 'Client ACME',
         statut: BackOrderStatus.statut.EN_ATTENTE,
         lignes: [
             { id: 'l1', productId: 'p001', productName: 'Riz 25kg', quantiteCommandee: 100, quantiteRecue: 60, quantiteManquante: 40, unitPrice: 18000 },

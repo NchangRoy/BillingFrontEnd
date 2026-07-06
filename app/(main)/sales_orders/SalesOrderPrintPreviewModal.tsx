@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { UpdatedSalesOrderResponse } from '@/src/api/models/UpdatedSalesOrder';
+import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
 import { Truck, MapPin, Phone } from "lucide-react";
 
 interface PrintPreviewProps {
@@ -12,6 +13,19 @@ interface PrintPreviewProps {
 }
 
 const SalesOrderPrintPreview = ({ isOpen, onClose, data, onConfirmPrint }: PrintPreviewProps) => {
+  const [seller, setSeller] = useState<UpdatedSellerResponse | null>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("seller");
+    if (stored) {
+      try {
+        setSeller(JSON.parse(stored));
+      } catch (e) {
+        console.error("Failed to parse seller data", e);
+      }
+    }
+  }, []);
+
   if (!isOpen) return null;
 
   const formatCurrency = (amount?: number) =>
@@ -57,16 +71,20 @@ const SalesOrderPrintPreview = ({ isOpen, onClose, data, onConfirmPrint }: Print
               {/* Branding */}
               <div className="flex justify-between items-start border-b-2 border-slate-900 pb-6 mb-8">
                 <div>
-                  <div className="h-14 w-14 bg-slate-900 rounded-xl mb-4 flex items-center justify-center text-white font-black text-2xl">
-                    {data.nomClient?.charAt(0) || 'S'}
+                  <div className="h-14 w-14 bg-slate-900 rounded-xl mb-4 flex items-center justify-center text-white font-black text-2xl overflow-hidden">
+                    {seller?.organizationLogoUri ? (
+                      <img src={seller.organizationLogoUri} alt="Org Logo" className="h-full w-full object-contain" />
+                    ) : (
+                      seller?.organizationName?.charAt(0) || 'S'
+                    )}
                   </div>
                   <h1 className="text-3xl font-black text-slate-900 tracking-tighter italic uppercase">Sales Order</h1>
                   <p className="text-sm font-black text-slate-700 mt-2">{data.numeroSalesOrder || 'Draft Order'}</p>
                 </div>
-                
+
                 <div className="text-right">
-                  <p className="font-black text-sm text-slate-900 uppercase">Your Business Name</p>
-                  <p className="text-[10px] text-gray-500 mt-1">Douala, Cameroon • RCCM: RC/DLA/2026/B/001</p>
+                  <p className="font-black text-sm text-slate-900 uppercase">{seller?.organizationName || 'Your Business Name'}</p>
+                  <p className="text-[10px] text-gray-500 mt-1">{seller?.agencyCity}, Cameroon • TAX ID: {seller?.taxNumber || 'N/A'}</p>
                   <div className="mt-4 inline-block bg-slate-100 px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest">
                     Status: {data.statut}
                   </div>

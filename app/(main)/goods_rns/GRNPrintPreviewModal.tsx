@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { GoodsReceiptNoteResponse } from '@/src/api/models/GoodsReceiptNote';
+import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
 
 interface PrintPreviewProps {
   isOpen: boolean;
@@ -11,6 +12,19 @@ interface PrintPreviewProps {
 }
 
 const GRNPrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: PrintPreviewProps) => {
+  const [seller, setSeller] = useState<UpdatedSellerResponse | null>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("seller");
+    if (stored) {
+      try {
+        setSeller(JSON.parse(stored));
+      } catch (e) {
+        console.error("Failed to parse seller data", e);
+      }
+    }
+  }, []);
+
   if (!isOpen) return null;
 
   const formatDate = (dateString?: string) =>
@@ -60,8 +74,12 @@ const GRNPrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: PrintPr
               {/* Branding Header */}
               <div className="flex justify-between items-start border-b-2 border-slate-900 pb-8 mb-10">
                 <div>
-                  <div className="h-16 w-16 bg-slate-900 rounded-2xl mb-6 flex items-center justify-center text-white font-black text-3xl shadow-lg uppercase">
-                    {data.supplierName?.charAt(0) || 'G'}
+                  <div className="h-16 w-16 bg-slate-900 rounded-2xl mb-6 flex items-center justify-center text-white font-black text-3xl shadow-lg uppercase overflow-hidden">
+                    {seller?.organizationLogoUri ? (
+                      <img src={seller.organizationLogoUri} alt="Org Logo" className="h-full w-full object-contain" />
+                    ) : (
+                      seller?.organizationName?.charAt(0) || 'G'
+                    )}
                   </div>
                   <h1 className="text-4xl font-black text-slate-900 tracking-tighter italic uppercase">Goods Receipt Note</h1>
                   <div className="mt-4 flex gap-8">
@@ -79,11 +97,11 @@ const GRNPrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: PrintPr
                 </div>
                 
                 <div className="text-right">
-                  <p className="font-black text-sm text-slate-900 uppercase mb-2">Your Business Name</p>
+                  <p className="font-black text-sm text-slate-900 uppercase mb-2">{seller?.organizationName || 'Your Business Name'}</p>
                   <address className="text-[10px] text-slate-400 leading-relaxed not-italic">
-                    Industrial Zone, Warehouse 4<br />
-                    Douala, Cameroon<br />
-                    <span className="font-bold tracking-widest">Inventory Control Dept.</span>
+                    {seller?.agencyAddress}<br />
+                    {seller?.agencyCity}, Cameroon<br />
+                    <span className="font-bold tracking-widest">TAX ID: {seller?.taxNumber || 'N/A'}</span>
                   </address>
                 </div>
               </div>

@@ -29,6 +29,20 @@ const formatDateTime = (value?: string) => {
   return date.toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 };
 
+const ROLE_LABELS: Record<string, string> = {
+  POS_SELLER: "POS Seller",
+  SELLER: "Seller",
+  AGENCY_MANAGER: "Agency Manager",
+  OWNER: "Owner",
+};
+
+const ROLE_STYLES: Record<string, string> = {
+  POS_SELLER: "bg-blue-50 text-blue-600 border-blue-200",
+  SELLER: "bg-secondary-super-light text-secondary-mid border-secondary-light",
+  AGENCY_MANAGER: "bg-purple-50 text-purple-600 border-purple-200",
+  OWNER: "bg-amber-50 text-amber-700 border-amber-200",
+};
+
 const STATUS_BADGES: Record<string, { label: string; icon: React.ElementType; className: string }> = {
   PENDING: { label: "Pending", icon: HelpCircle, className: "bg-gray-50 text-gray-500 border-gray-200" },
   OPEN: { label: "Open", icon: CheckCircle2, className: "bg-emerald-50 text-emerald-600 border-emerald-200" },
@@ -242,6 +256,11 @@ const SessionsAdminPage = () => {
                           <User size={14} className="text-secondary-mid shrink-0" />
                           <span>{seller?.username || "-"}</span>
                         </div>
+                        {seller?.role && (
+                          <span className={`mt-1 ml-6 inline-block px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border ${ROLE_STYLES[seller.role] || "bg-gray-50 text-gray-500 border-gray-200"}`}>
+                            {ROLE_LABELS[seller.role] || seller.role}
+                          </span>
+                        )}
                       </td>
                       <td className="px-8 py-5">
                         <div className="flex items-center gap-2 text-sm text-primary">

@@ -100,6 +100,22 @@ export class DevisService {
         });
     }
     /**
+     * Envoyer le devis au client via le portail (login requis)
+     * @param devisId
+     * @throws ApiError
+     */
+    public static sendToPortal(
+        devisId: string,
+    ): CancelablePromise<void> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/devis/{devisId}/send-to-portal',
+            path: {
+                'devisId': devisId,
+            },
+        });
+    }
+    /**
      * Récupérer tous les devis
      * @returns DevisResponse OK
      * @throws ApiError

@@ -46,4 +46,24 @@ export class ClientsService {
             url: '/api/tiers/clients/count',
         });
     }
+    /**
+     * (Ré)envoyer les identifiants du portail client
+     * @param id
+     * @param requestBody
+     * @throws ApiError
+     */
+    public static inviteClient(
+        id: string,
+        requestBody: { email: string; name: string },
+    ): CancelablePromise<void> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/tiers/clients/{id}/invite',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
 }

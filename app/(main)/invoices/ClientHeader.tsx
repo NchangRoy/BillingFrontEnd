@@ -17,7 +17,6 @@ import { Search } from 'lucide-react';
 import { DevisResponse, FactureResponse } from '@/src/api';
 import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
 import { getAcronym } from '@/src/src2/api/services/ExternalServices.ts/AcronymService';
-import { ClientService } from '@/src/src2/api/services/ClientService';
 interface Props {
   clients: UpdatedClientResponse[];
   

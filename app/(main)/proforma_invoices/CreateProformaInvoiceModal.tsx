@@ -8,10 +8,10 @@ import ClientHeader from "./ClientHeader";
 import ProformaInvoiceDetails from "./ProformaInvoiceDetails";
 import { CheckCircle2, Save,Receipt } from "lucide-react";
 import { DevisResponse } from "@/src/api";
-import { clients, UpdatedClientResponse } from "@/src/api/models/UpdatedClientResponse";
+import { UpdatedClientResponse } from "@/src/api/models/UpdatedClientResponse";
 import { UpdatedProformaInvoiceResponse,MOCK_PROFORMA_INVOICE } from "@/src/api/models/UpdatedProformaInvoiceResponse";
 import { mapUIToProformaRequest } from "@/src/Mappers/ProformaMapper";
-import { FacturesProformaService } from "@/src/src2/api";
+import { FacturesProformaService, ClientsService } from "@/src/src2/api";
 import { toast } from 'sonner';
 interface Props {
   isOpen: boolean;
@@ -39,10 +39,15 @@ const CreateProformaInvoiceModal = ({ isOpen, onClose,clientData,ProformaInvoice
   const [headerData, setHeaderData] = useState<headerData>();
 
   const [ProformaInvoice, setProformaInvoice] = useState<UpdatedProformaInvoiceResponse | undefined>();
-  
 
-  
+  const [clients, setClients] = useState<UpdatedClientResponse[]>([]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    ClientsService.getAllClients()
+      .then((data) => setClients(data as unknown as UpdatedClientResponse[]))
+      .catch(() => toast.error("Failed to load clients."));
+  }, [isOpen]);
 
 
 

@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { UpdatedProformaInvoiceResponse } from '@/src/api/models/UpdatedProformaInvoiceResponse';
+import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
 
 interface ProformaPrintPreviewProps {
   isOpen: boolean;
@@ -11,6 +12,19 @@ interface ProformaPrintPreviewProps {
 }
 
 const ProformaPrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: ProformaPrintPreviewProps) => {
+  const [seller, setSeller] = useState<UpdatedSellerResponse | null>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("seller");
+    if (stored) {
+      try {
+        setSeller(JSON.parse(stored));
+      } catch (e) {
+        console.error("Failed to parse seller data", e);
+      }
+    }
+  }, []);
+
   if (!isOpen) return null;
 
   // --- Internal Helpers ---
@@ -70,8 +84,12 @@ const ProformaPrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: Pr
               {/* Branding Header */}
               <div className="flex justify-between items-start border-b-2 border-slate-900 pb-8 mb-10">
                 <div>
-                  <div className="h-16 w-16 bg-blue-600 rounded-2xl mb-6 flex items-center justify-center text-white font-black text-3xl shadow-lg">
-                    {data.nomClient?.charAt(0) || 'P'}
+                  <div className="h-16 w-16 bg-blue-600 rounded-2xl mb-6 flex items-center justify-center text-white font-black text-3xl shadow-lg overflow-hidden">
+                    {seller?.organizationLogoUri ? (
+                      <img src={seller.organizationLogoUri} alt="Org Logo" className="h-full w-full object-contain" />
+                    ) : (
+                      seller?.organizationName?.charAt(0) || 'P'
+                    )}
                   </div>
                   <h1 className="text-3xl font-black text-slate-900 tracking-tighter italic leading-none">FACTURE<br/>PROFORMA</h1>
                   <div className="mt-4 space-y-1">
@@ -79,14 +97,14 @@ const ProformaPrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: Pr
                     <p className="text-sm font-black text-slate-700">{data.numeroProformaInvoice || '---'}</p>
                   </div>
                 </div>
-                
+
                 <div className="text-right">
-                  <p className="font-black text-sm text-slate-900 uppercase mb-2">Your Business Name</p>
+                  <p className="font-black text-sm text-slate-900 uppercase mb-2">{seller?.organizationName || 'Your Business Name'}</p>
                   <address className="text-[10px] text-gray-500 leading-relaxed not-italic">
-                    123 Business Avenue, Akwa<br />
-                    Douala, Cameroun<br />
-                    <span className="font-bold text-gray-400">RCCM:</span> RC/DLA/2026/B/001<br />
-                    <span className="font-bold text-gray-400">Email:</span> contact@business.cm
+                    {seller?.agencyAddress}<br />
+                    {seller?.agencyCity}, Cameroun<br />
+                    <span className="font-bold text-gray-400">TAX ID:</span> {seller?.taxNumber || 'N/A'}<br />
+                    <span className="font-bold text-gray-400">Email:</span> {seller?.organizationEmail}
                   </address>
                 </div>
               </div>

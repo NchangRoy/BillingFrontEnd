@@ -3,16 +3,18 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Search, Users, Mail, Phone, Building2, Tag,
-  CheckCircle2, XCircle, ChevronRight, MoreVertical, ShieldCheck
+  CheckCircle2, XCircle, ChevronRight, MoreVertical, ShieldCheck, Send, UserCheck
 } from "lucide-react";
-import { ClientsService, ClientResponse } from "@/src/src2/api";
+import { ClientsService, ClientResponse, CustomerAssignmentsService, CustomerAssignmentResponse } from "@/src/src2/api";
+import { getStoredSeller } from "@/src/api/session";
 import { toast } from "sonner";
 import TableSkeleton from "@/components/TableSkeleton";
 import EmptyState from "@/components/EmptyState";
 import ActionButton from "@/components/ActionButton";
 import SaleConfigModal from "./SaleConfigModal";
+import AssignSellerModal from "./AssignSellerModal";
 
-const COLUMNS = ["Customer", "Contact", "Type", "Sale Sizes", "Status", ""];
+const COLUMNS = ["Customer", "Contact", "Type", "Sale Sizes", "Assigned Seller", "Status", ""];
 
 const TYPE_LABELS: Record<string, string> = {
   PARTICULIER: "Individual",
@@ -26,6 +28,9 @@ const CustomersAdminPage = () => {
   const [search, setSearch] = useState("");
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [configCustomer, setConfigCustomer] = useState<ClientResponse | null>(null);
+  const [assignCustomer, setAssignCustomer] = useState<ClientResponse | null>(null);
+  const [invitingId, setInvitingId] = useState<string | null>(null);
+  const [assignments, setAssignments] = useState<Record<string, CustomerAssignmentResponse>>({});
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -51,9 +56,28 @@ const CustomersAdminPage = () => {
     }
   }, []);
 
+  const fetchAssignments = useCallback(async () => {
+    const org = getStoredSeller();
+    if (!org?.organizationId) return;
+    try {
+      const res = await CustomerAssignmentsService.listByOrganization(org.organizationId);
+      const byClientId: Record<string, CustomerAssignmentResponse> = {};
+      res.forEach((a) => { if (a.clientId) byClientId[a.clientId] = a; });
+      setAssignments(byClientId);
+    } catch (error) {
+      console.error("Error fetching assignments:", error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchCustomers();
-  }, [fetchCustomers]);
+    fetchAssignments();
+  }, [fetchCustomers, fetchAssignments]);
+
+  const handleAssignModalClose = (updated: boolean) => {
+    setAssignCustomer(null);
+    if (updated) fetchAssignments();
+  };
 
   const filteredCustomers = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -69,6 +93,28 @@ const CustomersAdminPage = () => {
   const handleConfigModalClose = (updated: boolean) => {
     setConfigCustomer(null);
     if (updated) fetchCustomers();
+  };
+
+  const handleInvite = async (customer: ClientResponse) => {
+    if (!customer.idClient) return;
+    const name = customer.raisonSociale || customer.username || "Client";
+    let email = customer.email || "";
+    if (!email) {
+      const entered = window.prompt(`No email on file for ${name}. Enter an email to send the invite to:`);
+      if (!entered) return;
+      email = entered.trim();
+    }
+    setActiveMenuId(null);
+    setInvitingId(customer.idClient);
+    try {
+      await ClientsService.inviteClient(customer.idClient, { email, name });
+      toast.success(`Invitation sent to ${email}.`);
+    } catch (error) {
+      console.error("Error inviting customer:", error);
+      toast.error("Failed to send invitation. Please try again.");
+    } finally {
+      setInvitingId(null);
+    }
   };
 
   return (
@@ -181,6 +227,15 @@ const CustomersAdminPage = () => {
                       </div>
                     </td>
                     <td className="px-8 py-5">
+                      {customer.idClient && assignments[customer.idClient] ? (
+                        <span className="flex items-center gap-1.5 px-3 py-1 w-fit bg-secondary-super-light text-secondary-mid rounded-lg text-[10px] font-black uppercase tracking-widest">
+                          <UserCheck size={11} /> {assignments[customer.idClient].sellerName || "Assigned"}
+                        </span>
+                      ) : (
+                        <span className="text-[11px] font-bold text-secondary-gray">Unassigned</span>
+                      )}
+                    </td>
+                    <td className="px-8 py-5">
                       {customer.actif ? (
                         <span className="flex items-center gap-1.5 px-3 py-1 w-fit bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-lg text-[10px] font-black uppercase tracking-widest">
                           <CheckCircle2 size={11} /> Active
@@ -211,6 +266,28 @@ const CustomersAdminPage = () => {
                           >
                             <ShieldCheck size={14} />
                           </ActionButton>
+                          <ActionButton
+                            label="Invite to Portal"
+                            onClick={() => handleInvite(customer)}
+                            disabled={invitingId === customer.idClient}
+                            className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 transition-all text-secondary-mid disabled:opacity-40"
+                          >
+                            {invitingId === customer.idClient ? (
+                              <span className="h-3.5 w-3.5 border-2 border-secondary-mid border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <Send size={14} />
+                            )}
+                          </ActionButton>
+                          <ActionButton
+                            label="Assign Seller"
+                            onClick={() => {
+                              setAssignCustomer(customer);
+                              setActiveMenuId(null);
+                            }}
+                            className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 transition-all text-secondary-mid"
+                          >
+                            <UserCheck size={14} />
+                          </ActionButton>
                         </div>
                       )}
                     </td>
@@ -223,6 +300,7 @@ const CustomersAdminPage = () => {
       </div>
 
       <SaleConfigModal isOpen={!!configCustomer} customer={configCustomer} onClose={handleConfigModalClose} />
+      <AssignSellerModal isOpen={!!assignCustomer} customer={assignCustomer} onClose={handleAssignModalClose} />
     </div>
   );
 };

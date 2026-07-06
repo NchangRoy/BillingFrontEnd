@@ -47,7 +47,7 @@ export const mapInternalToFactureFournisseurCreateRequest = (
 
         // Enums mapping (keys match in your case, so we cast to the target enum)
         statut: data.etat as unknown as FactureFournisseurCreateRequest.statut,
-        modeReglement: data.modeReglement as unknown as FactureFournisseurCreateRequest.modeReglement,
+        modeReglement: (data.modeReglement || FactureFournisseurCreateRequest.modeReglement.AUTRE) as unknown as FactureFournisseurCreateRequest.modeReglement,
 
         idFournisseur: data.idFournisseur,
         nomFournisseur: data.nomFournisseru,
@@ -69,7 +69,8 @@ export const mapInternalToFactureFournisseurCreateRequest = (
         notes: data.notes,
 
         // Custom field for the creator
-        createdBy: data.createdBy
+        createdBy: data.createdBy,
+        organizationId: data.organizationId,
     };
 };
 

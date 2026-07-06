@@ -43,7 +43,7 @@ export const mapUpdatedResponseToCreateRequest = (
         type: response.type,
         // On réinitialise à BROUILLON pour une nouvelle demande de création
         statut: DevisCreateRequest.statut.BROUILLON, 
-        modeReglement: response.modeReglement as unknown as DevisCreateRequest.modeReglement,
+        modeReglement: (response.modeReglement || DevisCreateRequest.modeReglement.AUTRE) as unknown as DevisCreateRequest.modeReglement,
         applyVat: response.applyVat,
         conditionsPaiement: response.conditionsPaiement,
         nbreEcheance: response.nbreEcheance,

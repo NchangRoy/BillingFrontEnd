@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import AddIcon from "@mui/icons-material/Add";
 import {
   Search, Users, MapPin, Mail, Building2,
-  CheckCircle2, KeyRound, ChevronRight, MoreVertical, ShieldCheck
+  CheckCircle2, KeyRound, ChevronRight, MoreVertical, ShieldCheck, Trash2
 } from "lucide-react";
 import { SellerAdminService, SellerListItemResponse } from "@/src/src2/api";
 import { getStoredSeller } from "@/src/api/session";
@@ -16,7 +16,21 @@ import CreateSellerModal from "./CreateSellerModal";
 import PermissionsModal from "./PermissionsModal";
 import AssignAgencyModal from "./AssignAgencyModal";
 
-const COLUMNS = ["Seller", "Agency / Sale Point", "Permissions", "Status", ""];
+const COLUMNS = ["Seller", "Role", "Agency / Sale Point", "Permissions", "POS PIN", "Status", ""];
+
+const ROLE_LABELS: Record<string, string> = {
+  POS_SELLER: "POS Seller",
+  SELLER: "Seller",
+  AGENCY_MANAGER: "Agency Manager",
+  OWNER: "Owner",
+};
+
+const ROLE_STYLES: Record<string, string> = {
+  POS_SELLER: "bg-blue-50 text-blue-600 border-blue-200",
+  SELLER: "bg-secondary-super-light text-secondary-mid border-secondary-light",
+  AGENCY_MANAGER: "bg-purple-50 text-purple-600 border-purple-200",
+  OWNER: "bg-amber-50 text-amber-700 border-amber-200",
+};
 
 const SellersAdminPage = () => {
   const [sellers, setSellers] = useState<SellerListItemResponse[]>([]);
@@ -26,6 +40,7 @@ const SellersAdminPage = () => {
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [permissionsSeller, setPermissionsSeller] = useState<SellerListItemResponse | null>(null);
   const [agencySeller, setAgencySeller] = useState<SellerListItemResponse | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const organizationName = getStoredSeller()?.organizationName;
 
@@ -175,6 +190,11 @@ const SellersAdminPage = () => {
                       </div>
                     </td>
                     <td className="px-8 py-5">
+                      <span className={`px-3 py-1 w-fit rounded-lg text-[10px] font-black uppercase tracking-widest border ${ROLE_STYLES[seller.role ?? ""] || "bg-gray-50 text-gray-500 border-gray-200"}`}>
+                        {ROLE_LABELS[seller.role ?? ""] || seller.role || "-"}
+                      </span>
+                    </td>
+                    <td className="px-8 py-5">
                       <div className="flex items-center gap-2 text-sm text-primary">
                         <Building2 size={14} className="text-secondary-mid shrink-0" />
                         <span>{seller.agency || "-"}</span>
@@ -197,6 +217,11 @@ const SellersAdminPage = () => {
                           <span className="text-[11px] font-bold text-secondary-gray">-</span>
                         )}
                       </div>
+                    </td>
+                    <td className="px-8 py-5">
+                      <span className="font-mono font-black text-sm text-secondary-mid tracking-widest">
+                        {seller.pin || "-"}
+                      </span>
                     </td>
                     <td className="px-8 py-5">
                       {seller.mustChangePassword ? (

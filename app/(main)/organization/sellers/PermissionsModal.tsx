@@ -12,49 +12,117 @@ interface Props {
   seller: SellerListItemResponse | null;
 }
 
-const UI_PERMISSION_FIELDS: { key: keyof UiPermissionsState; label: string; group: string }[] = [
-  { key: "salesQuotations", label: "Quotations", group: "Sales Management" },
-  { key: "salesProformaInvoices", label: "Proforma Invoices", group: "Sales Management" },
-  { key: "salesSalesOrders", label: "Sales Orders", group: "Sales Management" },
-  { key: "salesInvoices", label: "Invoices", group: "Sales Management" },
-  { key: "salesDeliveryNotes", label: "Delivery Notes", group: "Sales Management" },
-  { key: "salesCreditNotes", label: "Credit Notes", group: "Sales Management" },
-  { key: "salesStoreCredit", label: "Store Credit", group: "Sales Management" },
-  { key: "salesBackOrders", label: "Back Orders", group: "Sales Management" },
-  { key: "purchasingPurchaseOrders", label: "Purchase Orders", group: "Purchasing & Logistics" },
-  { key: "purchasingGoodsRns", label: "Goods Receipt Notes", group: "Purchasing & Logistics" },
-  { key: "purchasingSupplierInvoice", label: "Supplier Invoice", group: "Purchasing & Logistics" },
-  { key: "journalsQuotations", label: "Quotation Journal", group: "Journals" },
+type PageKey =
+  | "salesQuotations" | "salesProformaInvoice" | "salesSalesOrders" | "salesInvoices"
+  | "salesDeliveryNote" | "salesCreditNotes" | "salesBackOrders"
+  | "purchasingPurchaseOrder" | "purchasingGoodsReceiptNote" | "purchasingSupplierInvoice"
+  | "journalsQuotation" | "journalsSaleOrder" | "journalsPurchaseOrder" | "journalsClientInvoice" | "journalsSupplierInvoice"
+  | "organizationAgencies" | "organizationSellers" | "organizationCustomers" | "organizationSuppliers"
+  | "organizationSalePoints" | "organizationSessions" | "organizationProducts"
+  | "settingsPreferences";
+
+type SectionKey =
+  | "sectionSalesManagement" | "sectionPurchasingLogistics" | "sectionAccountingJournals"
+  | "sectionOrganization" | "sectionSettings";
+
+type UiPermissionsState = Record<PageKey, boolean> & Record<SectionKey, boolean>;
+
+const UI_PERMISSION_GROUPS: { sectionKey: SectionKey; label: string; items: { key: PageKey; label: string }[] }[] = [
+  {
+    sectionKey: "sectionSalesManagement",
+    label: "Sales Management",
+    items: [
+      { key: "salesQuotations", label: "Quotations" },
+      { key: "salesProformaInvoice", label: "Proforma Invoice" },
+      { key: "salesSalesOrders", label: "Sales Orders" },
+      { key: "salesInvoices", label: "Invoices" },
+      { key: "salesDeliveryNote", label: "Delivery Note" },
+      { key: "salesCreditNotes", label: "Credit Notes" },
+      { key: "salesBackOrders", label: "Back Orders" },
+    ],
+  },
+  {
+    sectionKey: "sectionPurchasingLogistics",
+    label: "Purchasing & Logistics",
+    items: [
+      { key: "purchasingPurchaseOrder", label: "Purchase Order" },
+      { key: "purchasingGoodsReceiptNote", label: "Goods Receipt Note" },
+      { key: "purchasingSupplierInvoice", label: "Supplier Invoice" },
+    ],
+  },
+  {
+    sectionKey: "sectionAccountingJournals",
+    label: "Accounting Journals",
+    items: [
+      { key: "journalsQuotation", label: "Quotation Journal" },
+      { key: "journalsSaleOrder", label: "Sale Order Journal" },
+      { key: "journalsPurchaseOrder", label: "Purchase Order Journal" },
+      { key: "journalsClientInvoice", label: "Client Invoice Journal" },
+      { key: "journalsSupplierInvoice", label: "Supplier Invoice Journal" },
+    ],
+  },
+  {
+    sectionKey: "sectionOrganization",
+    label: "Organization",
+    items: [
+      { key: "organizationAgencies", label: "Agencies" },
+      { key: "organizationSellers", label: "Sellers" },
+      { key: "organizationCustomers", label: "Customers" },
+      { key: "organizationSuppliers", label: "Suppliers" },
+      { key: "organizationSalePoints", label: "Sale Points" },
+      { key: "organizationSessions", label: "Sessions" },
+      { key: "organizationProducts", label: "Products" },
+    ],
+  },
+  {
+    sectionKey: "sectionSettings",
+    label: "Settings",
+    items: [
+      { key: "settingsPreferences", label: "Preferences" },
+    ],
+  },
 ];
 
-type UiPermissionsState = {
-  salesQuotations: boolean;
-  salesProformaInvoices: boolean;
-  salesSalesOrders: boolean;
-  salesInvoices: boolean;
-  salesDeliveryNotes: boolean;
-  salesCreditNotes: boolean;
-  salesStoreCredit: boolean;
-  salesBackOrders: boolean;
-  purchasingPurchaseOrders: boolean;
-  purchasingGoodsRns: boolean;
-  purchasingSupplierInvoice: boolean;
-  journalsQuotations: boolean;
-};
-
 const emptyUiPermissions: UiPermissionsState = {
+  sectionSalesManagement: false,
   salesQuotations: false,
-  salesProformaInvoices: false,
+  salesProformaInvoice: false,
   salesSalesOrders: false,
   salesInvoices: false,
-  salesDeliveryNotes: false,
+  salesDeliveryNote: false,
   salesCreditNotes: false,
-  salesStoreCredit: false,
   salesBackOrders: false,
-  purchasingPurchaseOrders: false,
-  purchasingGoodsRns: false,
+  sectionPurchasingLogistics: false,
+  purchasingPurchaseOrder: false,
+  purchasingGoodsReceiptNote: false,
   purchasingSupplierInvoice: false,
-  journalsQuotations: false,
+  sectionAccountingJournals: false,
+  journalsQuotation: false,
+  journalsSaleOrder: false,
+  journalsPurchaseOrder: false,
+  journalsClientInvoice: false,
+  journalsSupplierInvoice: false,
+  sectionOrganization: false,
+  organizationAgencies: false,
+  organizationSellers: false,
+  organizationCustomers: false,
+  organizationSuppliers: false,
+  organizationSalePoints: false,
+  organizationSessions: false,
+  organizationProducts: false,
+  sectionSettings: false,
+  settingsPreferences: false,
+};
+
+// Defensively fixes any stale/inconsistent data (a page flag true while its section flag is false).
+const normalizeUiPermissions = (state: UiPermissionsState): UiPermissionsState => {
+  const next = { ...state };
+  UI_PERMISSION_GROUPS.forEach((group) => {
+    if (!next[group.sectionKey] && group.items.some((item) => next[item.key])) {
+      next[group.sectionKey] = true;
+    }
+  });
+  return next;
 };
 
 const SALE_SIZES = ["DETAIL", "DEMIS_GROS", "GROS", "SUPER_GROS"] as const;
@@ -76,7 +144,7 @@ const PermissionsModal = ({ isOpen, onClose, seller }: Props) => {
 
     setIsLoading(true);
     SellerAdminService.getUiPermissions(seller.id!)
-      .then((res) => setUiPermissions({ ...emptyUiPermissions, ...res }))
+      .then((res) => setUiPermissions(normalizeUiPermissions({ ...emptyUiPermissions, ...res } as UiPermissionsState)))
       .catch(() => setUiPermissions(emptyUiPermissions))
       .finally(() => setIsLoading(false));
 
@@ -88,6 +156,27 @@ const PermissionsModal = ({ isOpen, onClose, seller }: Props) => {
     if (next.has(value)) next.delete(value);
     else next.add(value);
     setter(next);
+  };
+
+  const toggleSection = (sectionKey: SectionKey) => {
+    setUiPermissions((prev) => {
+      const enabling = !prev[sectionKey];
+      const group = UI_PERMISSION_GROUPS.find((g) => g.sectionKey === sectionKey)!;
+      const next = { ...prev, [sectionKey]: enabling };
+      // Turning a section off also revokes every page under it — access to a page
+      // without access to its section wouldn't be reachable in the sidebar anyway.
+      if (!enabling) {
+        group.items.forEach((item) => { next[item.key] = false; });
+      }
+      return next;
+    });
+  };
+
+  const togglePage = (sectionKey: SectionKey, key: PageKey) => {
+    setUiPermissions((prev) => {
+      if (!prev[sectionKey]) return prev; // page checkboxes are disabled until the section is on
+      return { ...prev, [key]: !prev[key] };
+    });
   };
 
   const handleSave = async () => {
@@ -113,7 +202,6 @@ const PermissionsModal = ({ isOpen, onClose, seller }: Props) => {
 
   if (!isOpen || !seller) return null;
 
-  const groups = Array.from(new Set(UI_PERMISSION_FIELDS.map((f) => f.group)));
   const checkboxRow = "flex items-center gap-2.5 py-1.5";
   const checkboxStyle = "w-4 h-4 rounded border-gray-300 text-secondary-mid focus:ring-secondary-mid cursor-pointer";
   const sectionTitle = "text-[11px] font-black uppercase tracking-widest text-gray-400 mb-3";
@@ -186,25 +274,41 @@ const PermissionsModal = ({ isOpen, onClose, seller }: Props) => {
               {/* UI Permissions */}
               <div>
                 <p className={sectionTitle}>UI Permissions</p>
-                <div className="bg-white p-4 rounded-xl border border-gray-100 space-y-4">
-                  {groups.map((group) => (
-                    <div key={group}>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1">{group}</p>
-                      <div className="grid grid-cols-2 gap-x-4">
-                        {UI_PERMISSION_FIELDS.filter((f) => f.group === group).map((field) => (
-                          <label key={field.key} className={`${checkboxRow} cursor-pointer`}>
-                            <input
-                              type="checkbox"
-                              className={checkboxStyle}
-                              checked={uiPermissions[field.key]}
-                              onChange={() => setUiPermissions((prev) => ({ ...prev, [field.key]: !prev[field.key] }))}
-                            />
-                            <span className="text-sm text-gray-600 font-medium">{field.label}</span>
-                          </label>
-                        ))}
+                <p className="text-xs text-gray-400 font-medium -mt-2 mb-3">Enable a section to unlock its pages — a page can&apos;t be granted on its own.</p>
+                <div className="bg-white p-4 rounded-xl border border-gray-100 space-y-5">
+                  {UI_PERMISSION_GROUPS.map((group) => {
+                    const sectionEnabled = uiPermissions[group.sectionKey];
+                    return (
+                      <div key={group.sectionKey}>
+                        <label className={`${checkboxRow} cursor-pointer mb-1`}>
+                          <input
+                            type="checkbox"
+                            className={checkboxStyle}
+                            checked={sectionEnabled}
+                            onChange={() => toggleSection(group.sectionKey)}
+                          />
+                          <span className="text-sm text-gray-800 font-bold">{group.label}</span>
+                        </label>
+                        <div className="grid grid-cols-2 gap-x-4 pl-6">
+                          {group.items.map((item) => (
+                            <label
+                              key={item.key}
+                              className={`${checkboxRow} ${sectionEnabled ? "cursor-pointer" : "cursor-not-allowed opacity-40"}`}
+                            >
+                              <input
+                                type="checkbox"
+                                className={checkboxStyle}
+                                checked={uiPermissions[item.key]}
+                                disabled={!sectionEnabled}
+                                onChange={() => togglePage(group.sectionKey, item.key)}
+                              />
+                              <span className="text-sm text-gray-600 font-medium">{item.label}</span>
+                            </label>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </>

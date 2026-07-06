@@ -108,6 +108,36 @@ export class SessionsService {
         });
     }
     /**
+     * Schedule a session for a seller to start themselves later
+     * @param requestBody
+     * @returns SessionResponse OK
+     * @throws ApiError
+     */
+    public static schedule(
+        requestBody: CreateSessionRequest,
+    ): CancelablePromise<SessionResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/sessions/schedule',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+    /**
+     * Start a pending session (seller-initiated)
+     * @param id
+     * @returns SessionResponse OK
+     * @throws ApiError
+     */
+    public static start(
+        id: string,
+    ): CancelablePromise<SessionResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: `/api/sessions/${id}/start`,
+        });
+    }
+    /**
      * Suspend an open session
      * @param id
      * @returns SessionResponse OK

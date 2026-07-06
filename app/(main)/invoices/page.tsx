@@ -8,10 +8,10 @@ import AddIcon from "@mui/icons-material/Add"
 import { Pencil, Trash2, MoreVertical, Printer, FileText, ReceiptText, Mail } from "lucide-react";
 import CreateInvoiceModal from './CreateInvoiceModal'
 import CreateInvoicePrintModal from './InvoicePrintPreviewModal'
-import { ClientService } from '@/src/src2/api/services/ClientService'
+import { ClientsService } from '@/src/src2/api'
 // Updated Imports
 
-import { UpdatedClientResponse, clients } from '@/src/api/models/UpdatedClientResponse'
+import { UpdatedClientResponse } from '@/src/api/models/UpdatedClientResponse'
 import { FactureResponse, UpdatedFactureResponse } from '@/src/api/models/UpdatedFactureResponse'
 import { MOCK_FACTURE } from '@/src/api/models/UpdatedFactureResponse'
 import { mapBackendFactureArrayToUpdatedArray } from '@/src/Mappers/FactureMapper'
@@ -47,9 +47,17 @@ const Factures = () => {
   const [clickedFacture, setClickedFacture] = useState<UpdatedFactureResponse | undefined>();
   const [factures, setFactures] = useState<UpdatedFactureResponse[]>(MOCK_FACTURE);
   const [client, setClient] = useState<UpdatedClientResponse | undefined>()
+  const [clients, setClients] = useState<UpdatedClientResponse[]>([]);
   const [onsuccess,setOnSuccess]=useState<boolean>(false)
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const { showLoader, hideLoader, showError } = useLoading()
+
+  useEffect(() => {
+    ClientsService.getAllClients()
+      .then((data) => setClients(data as unknown as UpdatedClientResponse[]))
+      .catch(() => toast.error("Failed to load clients."));
+  }, []);
+
   //logic to load the tranformed invoice from local storage
   useEffect(()=>{
     const findFactures = async () => {
@@ -57,8 +65,6 @@ const Factures = () => {
       showLoader('Loading invoices...')
       try {
         const data = await FactureService.getAllFactures();
-        const clientService=new ClientService();
-        await clientService.getClients()
         const transformed = mapBackendFactureArrayToUpdatedArray(data);
         setFactures(transformed);
       } catch (error) {
@@ -81,21 +87,21 @@ const Factures = () => {
         setIsModalOpen(true)
 
         localStorage.setItem("modalOpen","close")
-        //load the invoice 
+        //load the invoice
         const invoiceString=localStorage.getItem("invoice")
         if(invoiceString){
           const invoice:UpdatedFactureResponse=JSON.parse(invoiceString)
           setClickedFacture(invoice)
-
-          //find the client in invoice
-           const invoiceClient = clients.find(
-            client => client.idClient === invoice.idClient
-          );
-          setClient(invoiceClient)
-
         }
       }
     },[])
+
+    // Resolve the client once both the reopened invoice and the live client list are available.
+    useEffect(() => {
+      if (!clickedFacture || !clients.length) return;
+      const invoiceClient = clients.find(c => c.idClient === clickedFacture.idClient);
+      if (invoiceClient) setClient(invoiceClient);
+    }, [clients, clickedFacture])
   // 2. Filter Logic
   const filteredFactures = useMemo(() => {
     return factures.filter((item) => {

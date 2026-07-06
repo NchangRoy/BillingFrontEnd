@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 
 // API & Types
-import { UpdatedClientResponse, clients } from '@/src/api/models/UpdatedClientResponse'
+import { UpdatedClientResponse } from '@/src/api/models/UpdatedClientResponse'
 
 import { UpdatedFactureResponse } from '@/src/api/models/UpdatedFactureResponse'
 import { mapDevisToFacture } from '@/src/api/transformation/DevisTransformation'
@@ -29,7 +29,7 @@ import CreateProformaInvoiceModal from './CreateProformaInvoiceModal'
 import PrintPreviewModal from './PrintPreviewModal'
 import { mapProformaToFacture, mapProformaToSalesOrder } from '@/src/api/transformation/ProformaTransformation'
 import { UpdatedSalesOrderResponse } from '@/src/api/models/UpdatedSalesOrder'
-import { FacturesProformaService } from '@/src/src2/api'
+import { FacturesProformaService, ClientsService } from '@/src/src2/api'
 import { mapProformaArrayToUI } from '@/src/Mappers/ProformaMapper'
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
@@ -60,8 +60,15 @@ const ProformaInvoice = () => {
   const [clickedProformaInvoice, setClickedProformaInvoice] = useState<UpdatedProformaInvoiceResponse | undefined>();
   const [ProformaInvoices, setProformaInvoices] = useState<UpdatedProformaInvoiceResponse[]>(MOCK_PROFORMA_INVOICE);
   const [client, setClient] = useState<UpdatedClientResponse | undefined>()
+  const [clients, setClients] = useState<UpdatedClientResponse[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const { showLoader, hideLoader, showError } = useLoading()
+
+  useEffect(() => {
+    ClientsService.getAllClients()
+      .then((data) => setClients(data as unknown as UpdatedClientResponse[]))
+      .catch(() => toast.error("Failed to load clients."));
+  }, []);
 
    useEffect(() => {
     const findDevis = async () => {
@@ -103,16 +110,17 @@ const ProformaInvoice = () => {
 
             console.log(invoice)
             setClickedProformaInvoice(invoice)
-  
-            //find the client in invoice
-             const invoiceClient = clients.find(
-              client => client.idClient === invoice.idClient
-            );
-            setClient(invoiceClient)
-  
+
           }
         }
       },[])
+
+  // Resolve the client once both the reopened proforma invoice and the live client list are available.
+  useEffect(() => {
+    if (!clickedProformaInvoice || !clients.length) return;
+    const invoiceClient = clients.find(c => c.idClient === clickedProformaInvoice.idClient);
+    if (invoiceClient) setClient(invoiceClient);
+  }, [clients, clickedProformaInvoice]);
 
 
   

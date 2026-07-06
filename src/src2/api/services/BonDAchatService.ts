@@ -75,6 +75,22 @@ export class BonDAchatService {
         });
     }
     /**
+     * Envoyer le bon d'achat au fournisseur via le portail (login requis)
+     * @param id
+     * @throws ApiError
+     */
+    public static sendToPortal(
+        id: string,
+    ): CancelablePromise<void> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/bons-achat/{id}/send-to-portal',
+            path: {
+                'id': id,
+            },
+        });
+    }
+    /**
      * Créer un nouveau bon d'achat
      * @param requestBody
      * @returns BonAchatResponse OK

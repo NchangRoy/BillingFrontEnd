@@ -14,8 +14,9 @@ import {
   ChevronRight, 
   Clock, 
   CheckCircle2, 
-  XCircle, 
-  Package 
+  XCircle,
+  Package,
+  Globe
 } from "lucide-react";
 
 // Updated Imports for Purchase Orders
@@ -115,6 +116,18 @@ const PurchaseOrders = () => {
     localStorage.setItem("modalOpen", "open");
     // Redirect to the Goods Receipt Note page
     router.push('goods_rns'); 
+  };
+
+  const handleSendToPortal = async (order: PurchaseOrderResponse) => {
+    if (!order.idPO) return;
+    setActiveMenuId(null);
+    try {
+      await BonDAchatService.sendToPortal(order.idPO);
+      setOrders(prev => prev.map(o => o.idPO === order.idPO ? { ...o, statut: 'ENVOYE' as any } : o));
+      toast.success(`${order.poNumber} sent — supplier can now view it in their portal.`);
+    } catch (error: any) {
+      toast.error(error?.body?.message || "Failed to send purchase order to the supplier's portal.");
+    }
   };
 
   const statusOptions = Object.values(PurcaseOrderResponse.statut);
@@ -276,6 +289,13 @@ const PurchaseOrders = () => {
                           onClick={() => { setClickedOrder(order); setIsPrintModalOpen(true); setActiveMenuId(null); }}
                           className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-purple-800 transition-all"
                         ><Printer size={14} /></ActionButton>
+
+                        {/* Send to Portal */}
+                        <ActionButton
+                          label="Send to Portal"
+                          onClick={() => handleSendToPortal(order)}
+                          className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-blue-700 transition-all"
+                        ><Globe size={14} /></ActionButton>
 
                         {/* Delete */}
                         <ActionButton

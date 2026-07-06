@@ -8,15 +8,16 @@ import { Hash, Calendar, Package, FileSearch } from 'lucide-react';
 
 import { UpdatedBackOrderResponse, BackOrderStatus } from '@/src/api/models/UpdatedBackOrderResponse';
 import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
-import { PurchaseOrderResponse, MOCK_PURCHASE_ORDERS } from '@/src/api/models/PurchaseOrderLine';
-import { BonDAchatService } from '@/src/src2/api/services/BonDAchatService';
-import { mapBackendBAArrayToUIArray } from '@/src/Mappers/BonAchatMapper';
+import { DeliveryNoteResponse } from '@/src/api/models/DeliveryNoteResponse';
+import { BonDeLivraisonService } from '@/src/src2/api';
+import { mapBackendArrayToDeliveryNoteList } from '@/src/Mappers/DeliveryNoteMapper';
+import { mapDeliveryNoteToBackOrder } from '@/src/api/transformation/backOrderTransformation';
 import { toast } from 'sonner';
 
 interface Props {
-  suppliers: UpdatedClientResponse[];
-  setSelectedSupplier: (data: UpdatedClientResponse) => void;
-  selectedSupplier?: UpdatedClientResponse;
+  clients: UpdatedClientResponse[];
+  setSelectedClient: (data: UpdatedClientResponse) => void;
+  selectedClient?: UpdatedClientResponse;
   backOrder?: UpdatedBackOrderResponse;
   setBackOrder: (data: UpdatedBackOrderResponse | ((prev: any) => any)) => void;
 }
@@ -25,17 +26,17 @@ const inputStyles = "w-full border border-gray-200 rounded-lg outline-none py-2 
 const readOnlyStyles = "w-full border border-gray-100 bg-gray-50 rounded-lg py-2 px-3 text-sm text-gray-600 cursor-not-allowed font-medium";
 const labelStyles = "text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1 block ml-0.5";
 
-const SupplierHeader = ({ suppliers, setSelectedSupplier, selectedSupplier, backOrder, setBackOrder }: Props) => {
+const ClientHeader = ({ clients, setSelectedClient, selectedClient, backOrder, setBackOrder }: Props) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredResults, setFilteredResults] = useState<UpdatedClientResponse[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [generatedId, setGeneratedId] = useState<string>("");
   const [systemDate, setSystemDate] = useState<string>("");
   const [seller, setSeller] = useState<UpdatedSellerResponse | null>(null);
-  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrderResponse[]>(MOCK_PURCHASE_ORDERS);
-  const [poSearch, setPoSearch] = useState("");
-  const [filteredPOs, setFilteredPOs] = useState<PurchaseOrderResponse[]>([]);
-  const [showPODropdown, setShowPODropdown] = useState(false);
+  const [deliveryNotes, setDeliveryNotes] = useState<DeliveryNoteResponse[]>([]);
+  const [dnSearch, setDnSearch] = useState("");
+  const [filteredDNs, setFilteredDNs] = useState<DeliveryNoteResponse[]>([]);
+  const [showDNDropdown, setShowDNDropdown] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -43,7 +44,6 @@ const SupplierHeader = ({ suppliers, setSelectedSupplier, selectedSupplier, back
     createdAt: new Date().toISOString().split('T')[0],
     statut: BackOrderStatus.statut.EN_ATTENTE,
     remarques: "",
-    purchaseOrderNumber: "",
   });
 
   // Initial load
@@ -52,77 +52,92 @@ const SupplierHeader = ({ suppliers, setSelectedSupplier, selectedSupplier, back
     if (stored) setSeller(JSON.parse(stored));
     setSystemDate(new Date().toISOString().split('T')[0]);
 
-    const fetchPOs = async () => {
+    const fetchDeliveryNotes = async () => {
       try {
-        const data = await BonDAchatService.getAllBonsAchat();
-        const transformed = mapBackendBAArrayToUIArray(data);
-        setPurchaseOrders(transformed);
+        const data = await BonDeLivraisonService.getAllBonLivraisons();
+        setDeliveryNotes(mapBackendArrayToDeliveryNoteList(data));
       } catch {
-        toast.error("Failed to load purchase orders.");
+        toast.error("Failed to load delivery orders.");
       }
     };
-    fetchPOs();
+    fetchDeliveryNotes();
   }, []);
 
-  // ID generation
+  // Fallback display id, only used before the parent's own numeroBackOrder
+  // (the authoritative value, set once at creation) has made it into backOrder.
   useEffect(() => {
+    if (generatedId) return;
     const agency = seller?.agency || "HQ";
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
     const suffix = Math.floor(1000 + Math.random() * 9000).toString();
-    const newId = `${agency}-BO-${dateStr}-${suffix}`;
-    if (!generatedId) setGeneratedId(newId);
+    setGeneratedId(`${agency}-BO-${dateStr}-${suffix}`);
   }, [seller]);
 
-  // Supplier search
+  // Client search
   useEffect(() => {
     const term = searchTerm.toLowerCase().trim();
-    if (!term || (selectedSupplier && term === selectedSupplier.raisonSociale?.toLowerCase())) {
+    if (!term || (selectedClient && term === selectedClient.raisonSociale?.toLowerCase())) {
       setFilteredResults([]);
       return;
     }
-    const matches = suppliers.filter(s =>
-      s.idClient?.toLowerCase().includes(term) ||
-      s.raisonSociale?.toLowerCase().includes(term)
+    const matches = clients.filter(c =>
+      c.idClient?.toLowerCase().includes(term) ||
+      c.raisonSociale?.toLowerCase().includes(term)
     );
     setFilteredResults(matches);
-  }, [searchTerm, suppliers, selectedSupplier]);
+  }, [searchTerm, clients, selectedClient]);
 
-  // PO search filter
+  // Delivery order search filter
   useEffect(() => {
-    if (!poSearch.trim()) {
-      setFilteredPOs([]);
+    if (!dnSearch.trim()) {
+      setFilteredDNs([]);
       return;
     }
-    setFilteredPOs(purchaseOrders.filter(p =>
-      p.poNumber?.toLowerCase().includes(poSearch.toLowerCase())
+    const term = dnSearch.toLowerCase();
+    setFilteredDNs(deliveryNotes.filter(d =>
+      d.deliveryNoteNumber?.toLowerCase().includes(term) ||
+      d.nomClient?.toLowerCase().includes(term)
     ));
-  }, [poSearch, purchaseOrders]);
+  }, [dnSearch, deliveryNotes]);
 
   // Sync with parent
   useEffect(() => {
-    if (selectedSupplier && backOrder) {
+    if (selectedClient && backOrder) {
       setBackOrder((prev: any) => ({
         ...prev,
-        supplierName: selectedSupplier.raisonSociale,
+        idClient: selectedClient.idClient,
+        nomClient: selectedClient.raisonSociale,
+        adresseClient: selectedClient.adresse,
+        emailClient: selectedClient.email,
+        telephoneClient: selectedClient.telephone,
         statut: formData.statut,
         remarques: formData.remarques,
-        numeroBonAchat: formData.purchaseOrderNumber,
       }));
     }
-  }, [selectedSupplier, formData]);
+  }, [selectedClient, formData]);
 
-  const handleSelectSupplier = (s: UpdatedClientResponse) => {
-    setSelectedSupplier(s);
-    setSearchTerm(s.raisonSociale || "");
+  const handleSelectClient = (c: UpdatedClientResponse) => {
+    setSelectedClient(c);
+    setSearchTerm(c.raisonSociale || "");
     setShowResults(false);
   };
 
-  const handleSelectPO = (po: PurchaseOrderResponse) => {
-    setPoSearch(po.poNumber || "");
-    setFormData(prev => ({ ...prev, purchaseOrderNumber: po.poNumber || "" }));
-    setShowPODropdown(false);
-    const supplierMatch = suppliers.find(s => s.idClient === po.supplierId || s.raisonSociale === po.supplierName);
-    if (supplierMatch) handleSelectSupplier(supplierMatch);
+  // Transforms the selected delivery order into back order fields (client +
+  // lines + remarks) and renders the result by merging it into the shared backOrder state.
+  const handleSelectDN = (dn: DeliveryNoteResponse) => {
+    setDnSearch(dn.deliveryNoteNumber || "");
+    setShowDNDropdown(false);
+    const transformed = mapDeliveryNoteToBackOrder(dn);
+    setBackOrder((prev: any) => ({ ...(prev || {}), ...transformed }));
+    setFormData(prev => ({ ...prev, remarques: transformed.remarques || prev.remarques }));
+    const clientMatch = clients.find(c => c.idClient === dn.idClient);
+    if (clientMatch) {
+      handleSelectClient(clientMatch);
+    } else if (dn.nomClient) {
+      // Delivery note's client isn't in the loaded client list (e.g. inactive) —
+      // still show the name from the transform so the form isn't left blank.
+      setSearchTerm(dn.nomClient);
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -135,8 +150,8 @@ const SupplierHeader = ({ suppliers, setSelectedSupplier, selectedSupplier, back
       {/* TOP ROW */}
       <div className="p-6 border-b border-gray-50 bg-gray-50/10">
         <div className="grid grid-cols-12 gap-4">
-          <div className="col-span-12 md:col-span-5">
-            <label className={labelStyles}>Supplier Search</label>
+          <div className="col-span-12 md:col-span-5 relative">
+            <label className={labelStyles}>Client Search</label>
             <div className="relative">
               <SearchIcon className="absolute left-3 top-2.5 text-gray-300" sx={{ fontSize: 18 }} />
               <input
@@ -144,14 +159,14 @@ const SupplierHeader = ({ suppliers, setSelectedSupplier, selectedSupplier, back
                 className={`${inputStyles} pl-10`}
                 value={searchTerm}
                 onChange={(e) => { setSearchTerm(e.target.value); setShowResults(true); }}
-                placeholder="Search Supplier..."
+                placeholder="Search Client..."
               />
               {showResults && filteredResults.length > 0 && (
                 <div className="absolute z-[110] w-full mt-2 bg-white border rounded-xl shadow-xl max-h-48 overflow-auto">
-                  {filteredResults.map(s => (
-                    <div key={s.idClient} onClick={() => handleSelectSupplier(s)} className="px-4 py-2 hover:bg-secondary-super-light cursor-pointer border-b last:border-0">
-                      <p className="text-sm font-bold">{s.raisonSociale}</p>
-                      <p className="text-[10px] text-gray-400">{s.idClient}</p>
+                  {filteredResults.map(c => (
+                    <div key={c.idClient} onClick={() => handleSelectClient(c)} className="px-4 py-2 hover:bg-secondary-super-light cursor-pointer border-b last:border-0">
+                      <p className="text-sm font-bold">{c.raisonSociale}</p>
+                      <p className="text-[10px] text-gray-400">{c.idClient}</p>
                     </div>
                   ))}
                 </div>
@@ -159,22 +174,25 @@ const SupplierHeader = ({ suppliers, setSelectedSupplier, selectedSupplier, back
             </div>
           </div>
 
-          <div className="col-span-12 md:col-span-4">
-            <label className={labelStyles}>Link Purchase Order</label>
+          <div className="col-span-12 md:col-span-4 relative">
+            <label className={labelStyles}>Link Delivery Order</label>
             <div className="relative">
               <FileSearch className="absolute left-3 top-2.5 text-gray-300" size={16} />
               <input
                 className={`${inputStyles} pl-9`}
-                placeholder="Search PO #..."
-                value={poSearch}
-                onChange={(e) => { setPoSearch(e.target.value); setShowPODropdown(true); }}
-                onFocus={() => setShowPODropdown(true)}
+                placeholder="Search Delivery Order #..."
+                value={dnSearch}
+                onChange={(e) => { setDnSearch(e.target.value); setShowDNDropdown(true); }}
+                onFocus={() => setShowDNDropdown(true)}
               />
-              {showPODropdown && filteredPOs.length > 0 && (
+              {showDNDropdown && filteredDNs.length > 0 && (
                 <div className="absolute z-[110] w-full mt-2 bg-white border border-gray-100 shadow-2xl rounded-xl max-h-40 overflow-auto p-1">
-                  {filteredPOs.map(p => (
-                    <div key={p.idPO} onClick={() => handleSelectPO(p)} className="px-3 py-2 hover:bg-secondary-super-light cursor-pointer rounded-lg flex justify-between items-center group">
-                      <span className="text-xs font-black text-gray-700">{p.poNumber}</span>
+                  {filteredDNs.map(d => (
+                    <div key={d.idDN} onClick={() => handleSelectDN(d)} className="px-3 py-2 hover:bg-secondary-super-light cursor-pointer rounded-lg flex justify-between items-center group">
+                      <div>
+                        <span className="text-xs font-black text-gray-700 block">{d.deliveryNoteNumber}</span>
+                        <span className="text-[10px] text-gray-400">{d.nomClient}</span>
+                      </div>
                       <span className="text-[9px] bg-secondary-light text-secondary-mid px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">Select</span>
                     </div>
                   ))}
@@ -185,7 +203,7 @@ const SupplierHeader = ({ suppliers, setSelectedSupplier, selectedSupplier, back
 
           <div className="col-span-12 md:col-span-3">
             <label className={labelStyles}>Back Order ID</label>
-            <input readOnly value={backOrder?.id || generatedId} className={`${readOnlyStyles} font-mono text-secondary-mid`} />
+            <input readOnly value={backOrder?.numeroBackOrder || generatedId} className={`${readOnlyStyles} font-mono text-secondary-mid`} />
           </div>
         </div>
       </div>
@@ -193,18 +211,18 @@ const SupplierHeader = ({ suppliers, setSelectedSupplier, selectedSupplier, back
       {/* DETAILS GRID */}
       <div className="p-6 grid grid-cols-12 gap-x-5 gap-y-6">
         <div className="col-span-12 md:col-span-4">
-          <label className={labelStyles}>Supplier Name</label>
+          <label className={labelStyles}>Client Name</label>
           <div className="relative">
             <HomeIcon className="absolute left-3 top-2.5 text-gray-300" sx={{ fontSize: 16 }} />
-            <input readOnly value={selectedSupplier?.raisonSociale || ""} className={`${readOnlyStyles} pl-9`} placeholder="---" />
+            <input readOnly value={selectedClient?.raisonSociale || ""} className={`${readOnlyStyles} pl-9`} placeholder="---" />
           </div>
         </div>
 
         <div className="col-span-12 md:col-span-4">
-          <label className={labelStyles}>Supplier Address</label>
+          <label className={labelStyles}>Client Address</label>
           <div className="relative">
             <HomeIcon className="absolute left-3 top-2.5 text-gray-300" sx={{ fontSize: 16 }} />
-            <input readOnly value={selectedSupplier?.adresse || ""} className={`${readOnlyStyles} pl-9`} placeholder="---" />
+            <input readOnly value={selectedClient?.adresse || ""} className={`${readOnlyStyles} pl-9`} placeholder="---" />
           </div>
         </div>
 
@@ -237,10 +255,10 @@ const SupplierHeader = ({ suppliers, setSelectedSupplier, selectedSupplier, back
         </div>
 
         <div className="col-span-12 md:col-span-4">
-          <label className={labelStyles}>PO Reference</label>
+          <label className={labelStyles}>Delivery Order Reference</label>
           <div className="relative">
             <Hash className="absolute left-3 top-2.5 text-gray-300" size={16} />
-            <input readOnly value={formData.purchaseOrderNumber || backOrder?.idBonAchat || ""} className={`${readOnlyStyles} pl-9 text-secondary-mid font-bold`} placeholder="---" />
+            <input readOnly value={backOrder?.numeroBonLivraison || ""} className={`${readOnlyStyles} pl-9 text-secondary-mid font-bold`} placeholder="---" />
           </div>
         </div>
 
@@ -260,4 +278,4 @@ const SupplierHeader = ({ suppliers, setSelectedSupplier, selectedSupplier, back
   );
 };
 
-export default SupplierHeader;
+export default ClientHeader;

@@ -7,6 +7,7 @@ import type { SettingResponse } from './SettingResponse';
 export type SellerAuthResponse = {
     accessToken?: string;
     username?: string;
+    role?: 'POS_SELLER' | 'SELLER' | 'AGENCY_MANAGER' | 'OWNER';
     agency?: string;
     salePoint?: string;
     permittedSaleSizes?: Array<'DETAIL' | 'DEMIS_GROS' | 'GROS' | 'SUPER_GROS'>;
