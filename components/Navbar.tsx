@@ -118,8 +118,8 @@ const Navbar = ({ name, signedIn }: Props) => {
               >
                 <div className="relative">
                   <div className="w-8 h-8 overflow-hidden rounded-full ring-2 ring-white shadow-sm bg-gradient-to-tr from-[var(--color-primary)] to-[var(--color-secondary)]">
-                    {seller?.organizationLogoUri ? (
-                      <img src={seller.organizationLogoUri} alt="Profile" className="object-cover w-full h-full" />
+                    {seller?.profileImageUrl ? (
+                      <img src={seller.profileImageUrl} alt="Profile" className="object-cover w-full h-full" />
                     ) : (
                       <span className="flex items-center justify-center w-full h-full text-[10px] font-black text-white">
                         {seller?.username?.substring(0, 2).toUpperCase()}

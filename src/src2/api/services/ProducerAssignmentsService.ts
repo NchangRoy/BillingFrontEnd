@@ -2,6 +2,7 @@
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
+import type { FournisseurResponse } from '../models/FournisseurResponse';
 
 export interface AssignProducerRequest {
     fournisseurId: string;
@@ -53,6 +54,30 @@ export class ProducerAssignmentsService {
             method: 'GET',
             url: '/api/producer-assignments/organisation/{organizationId}',
             path: { organizationId },
+        });
+    }
+
+    /**
+     * List all producer assignments for a seller
+     */
+    public static listBySeller(sellerId: string, organizationId: string): CancelablePromise<ProducerAssignmentResponse[]> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/producer-assignments/seller/{sellerId}',
+            path: { sellerId },
+            query: { organizationId },
+        });
+    }
+
+    /**
+     * Get the producers/suppliers assigned to a seller
+     */
+    public static getProducersForSeller(sellerId: string, organizationId: string): CancelablePromise<FournisseurResponse[]> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/producer-assignments/seller/{sellerId}/producers',
+            path: { sellerId },
+            query: { organizationId },
         });
     }
 

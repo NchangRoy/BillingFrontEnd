@@ -9,11 +9,13 @@ import { UpdatedClientResponse } from "@/src/api/models/UpdatedClientResponse";
 import ClientHeader from "./ClientHeader";
 import DeliveryNoteDetails from "./DeliveryNoteDetails";
 import DeliveryNoteLogistics from "./DeliveryNoteLogistics";
-import { BonDeLivraisonService, ClientsService } from "@/src/src2/api";
+import { BonDeLivraisonService } from "@/src/src2/api";
 import { mapDeliveryNoteToRequest } from "@/src/Mappers/DeliveryNoteMapper";
 import { BackOrderService } from "@/src/src2/api/services/BackOrderService";
 import { BackOrderRequest } from "@/src/src2/api/models/BackOrderRequest";
 import { toast } from 'sonner';
+import { UpdatedSellerResponse } from "@/src/api/models/UpdatedSellerResponse";
+import { getVisibleClients } from "@/src/api/scopedTiers";
 
 interface Props {
   isOpen: boolean;
@@ -29,10 +31,18 @@ const CreateDeliveryNoteModal = ({ isOpen, onClose, clientData, deliveryNoteData
   const [showBackOrderPrompt, setShowBackOrderPrompt] = useState(false);
   const [pendingPayload, setPendingPayload] = useState<DeliveryNoteResponse | null>(null);
   const [clients, setClients] = useState<UpdatedClientResponse[]>([]);
+  const [seller, setSeller] = useState<UpdatedSellerResponse>();
+
+  useEffect(() => {
+    const stored = localStorage.getItem("seller");
+    if (stored) {
+      setSeller(JSON.parse(stored));
+    }
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
-    ClientsService.getAllClients()
+    getVisibleClients()
       .then((data) => setClients(data as unknown as UpdatedClientResponse[]))
       .catch(() => toast.error("Failed to load clients."));
   }, [isOpen]);
@@ -140,6 +150,9 @@ const CreateDeliveryNoteModal = ({ isOpen, onClose, clientData, deliveryNoteData
 
   const persistDN = async (payload: DeliveryNoteResponse, createBO: boolean) => {
     const apiPayload = mapDeliveryNoteToRequest(payload);
+    apiPayload.createdBy = seller?.Id;
+    apiPayload.organizationId = seller?.organizationId;
+    apiPayload.agencyId = seller?.agencyId;
     try {
       if (!deliveryNoteData?.idDN) {
         await BonDeLivraisonService.createBonLivraison(apiPayload);
@@ -176,8 +189,9 @@ const CreateDeliveryNoteModal = ({ isOpen, onClose, clientData, deliveryNoteData
         lignes: missingLines,
         statut: BackOrderRequest.statut.EN_ATTENTE,
         notes: `Generated from partial delivery ${payload.deliveryNoteNumber || ''} (SO: ${payload.SaleOrderNumber || ''})`,
-        organizationId: undefined,
-        agencyId: undefined,
+        organizationId: seller?.organizationId,
+        agencyId: seller?.agencyId,
+        createdBy: seller?.Id,
       });
       toast.success("Back order created for missing items.");
     } catch {

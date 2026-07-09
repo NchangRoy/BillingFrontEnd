@@ -306,6 +306,11 @@ const cancelReservation = (productId: string,qty:number) => {
       const sizeStr = line.description?.split(' - ')[1];
       const sizeConfig = product?.allowedSaleSizes?.find(s => s.size === sizeStr);
 
+      // Product catalog may still be loading (or the product/size may no longer
+      // exist) — without a sizeConfig we have no real price to recompute from,
+      // so leave the line's already-saved pricing untouched rather than zeroing it.
+      if (!sizeConfig) return line;
+
       const basePrice = useTaxedTier ? (sizeConfig?.unitPriceWithTax || 0) : (sizeConfig?.unitPrice || 0);
       let newPrice = basePrice;
       let remise = 0;

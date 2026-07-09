@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import AddIcon from "@mui/icons-material/Add";
 import {
   Search, PlayCircle, Building2, User, Store, Coins, Clock,
-  CheckCircle2, XCircle, ChevronRight, MoreVertical,
+  CheckCircle2, XCircle, ChevronRight, MoreVertical, Briefcase,
   PauseCircle, PlayCircle as ResumeIcon, Ban, RotateCcw, HelpCircle
 } from "lucide-react";
 import {
@@ -20,7 +20,12 @@ import EmptyState from "@/components/EmptyState";
 import ActionButton from "@/components/ActionButton";
 import CreateSessionModal from "./CreateSessionModal";
 
-const COLUMNS = ["Seller", "Agency", "Sale Point", "Opening / Closing", "Start / End Time", "Status", ""];
+const COLUMNS = ["Seller", "Agency", "Type", "Sale Point", "Opening / Closing", "Start / End Time", "Status", ""];
+
+const TYPE_BADGES: Record<string, { label: string; icon: React.ElementType; className: string }> = {
+  POS: { label: "POS", icon: Store, className: "bg-blue-50 text-blue-600 border-blue-200" },
+  SALES: { label: "Sales", icon: Briefcase, className: "bg-purple-50 text-purple-600 border-purple-200" },
+};
 
 const formatDateTime = (value?: string) => {
   if (!value) return null;
@@ -269,9 +274,20 @@ const SessionsAdminPage = () => {
                         </div>
                       </td>
                       <td className="px-8 py-5">
+                        {(() => {
+                          const badge = TYPE_BADGES[session.type ?? ""] ?? TYPE_BADGES.POS;
+                          const Icon = badge.icon;
+                          return (
+                            <span className={`flex items-center gap-1.5 px-2.5 py-1 w-fit border rounded-lg text-[10px] font-black uppercase tracking-widest ${badge.className}`}>
+                              <Icon size={11} /> {badge.label}
+                            </span>
+                          );
+                        })()}
+                      </td>
+                      <td className="px-8 py-5">
                         <div className="flex items-center gap-2 text-sm text-primary">
                           <Store size={14} className="text-secondary-mid shrink-0" />
-                          <span>{salesPoint?.salesPointName || "-"}</span>
+                          <span>{salesPoint?.salesPointName || (session.type === SessionResponse.type.SALES ? "N/A" : "-")}</span>
                         </div>
                       </td>
                       <td className="px-8 py-5">

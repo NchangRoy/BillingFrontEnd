@@ -1,4 +1,5 @@
 import type { LigneDevisResponse } from './LigneDevisResponse';
+import type { DocPermissionResponse } from '../../src2/api/models/DocPermissionResponse';
 export type UpdatedSalesOrderResponse = {
     idSalesOrder?: string;
     numeroSalesOrder?: string;
@@ -57,6 +58,7 @@ export type UpdatedSalesOrderResponse = {
      applyVat?: boolean;
           nosRef?: string;
         vosRef?: string;
+        docPermission?: DocPermissionResponse;
 };
 
 export namespace SalesOrderResponse {

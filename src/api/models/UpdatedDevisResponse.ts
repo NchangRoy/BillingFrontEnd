@@ -3,6 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { LigneDevisResponse } from './LigneDevisResponse';
+import type { DocPermissionResponse } from '../../src2/api/models/DocPermissionResponse';
 export type UpdatedDevisResponse = {
     idDevis?: string;
     numeroDevis?: string;
@@ -54,8 +55,10 @@ export type UpdatedDevisResponse = {
      finalAmount:number
 
      organizationId?:string;
+      agencyId?:string;
       createdBy?:string;
-    
+      docPermission?: DocPermissionResponse;
+
 };
 export namespace UpdatedDevisResponse {
     export enum statut {

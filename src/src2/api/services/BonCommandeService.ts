@@ -129,4 +129,21 @@ export class BonCommandeService {
             },
         });
     }
+    /**
+     * Récupérer les bons de commande accessibles par un vendeur (via ses permissions)
+     * @param sellerId
+     * @returns BonCommandeResponse OK
+     * @throws ApiError
+     */
+    public static getBySellerId6(
+        sellerId: string,
+    ): CancelablePromise<Array<BonCommandeResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/bon-commande/seller/{sellerId}',
+            path: {
+                'sellerId': sellerId,
+            },
+        });
+    }
 }

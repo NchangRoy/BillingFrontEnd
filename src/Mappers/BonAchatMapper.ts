@@ -170,6 +170,7 @@ export const mapBackendBAToPurchaseOrder = (
     remarks: backend.remarks,
     createdAt: backend.createdAt,
     updatedAt: backend.updatedAt,
+    docPermission: backend.docPermission,
   };
 };
 

@@ -1,4 +1,5 @@
 import type { LigneFactureResponse } from './LigneFactureResponse';
+import type { DocPermissionResponse } from '../../src2/api/models/DocPermissionResponse';
 
 export type UpdatedSupplierFactureResponse = {
     idFacture?: string;
@@ -38,8 +39,10 @@ export type UpdatedSupplierFactureResponse = {
     
    createdBy?:string;
     organizationId?: string;
+    agencyId?: string;
     createdAt?: string;
     updatedAt?: string;
+    docPermission?: DocPermissionResponse;
 
 };
 

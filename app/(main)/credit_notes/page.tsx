@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import DropDown from "@mui/icons-material/ArrowDropDown"
 import SearchIcon from "@mui/icons-material/Search"
 import AddIcon from "@mui/icons-material/Add"
-import { Pencil, Trash2, MoreVertical, Printer, Mail } from "lucide-react";
+import { Pencil, Trash2, MoreVertical, Printer, Eye, Share2 } from "lucide-react";
 
 // Updated API Imports
 import { UpdatedCreditNoteResponse, CreditNoteResponse, MOCK_CREDIT_NOTES } from '@/src/api/models/UpdatedCreditNoteResponse'
@@ -14,13 +14,17 @@ import { UpdatedClientResponse } from '@/src/api/models/UpdatedClientResponse'
 // Logic Components
 import CreateCreditNoteModal from './CreateCreditNoteModal'
 import PrintPreviewModal from './CreditNotePrintPreviewModal'
+import ShareDocModal from '@/components/ShareDocModal'
+import { useCanEditDocuments } from '@/src/hooks/useCanEditDocuments'
 import { NoteCreditControllerService, ClientsService } from '@/src/src2/api'
+import { getVisibleNoteCredits } from '@/src/api/scopedDocs'
 import { mapCreditNoteArrayToInternalArray } from '@/src/Mappers/CreditNoteMapper'
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
 import EmptyState from '@/components/EmptyState'
 import { useLoading } from '@/components/LoadingContext'
 import ActionButton from '@/components/ActionButton'
+import PermissionBadge from '@/components/PermissionBadge'
 
 const columns = {
   "Note Number": "numeroCreditNote",
@@ -29,12 +33,14 @@ const columns = {
   "Date": "dateEmission",
   "Status": "etat",
   "Total (TTC)": "montantTTC",
-  "Currency": "devise"
+  "Currency": "devise",
+  "Permission": "docPermission"
 }
 
 const CreditNote = () => {
   const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
+  const { canEdit } = useCanEditDocuments();
 
   // 1. State Management
   const [showStatusMenu, setShowStatusMenu] = useState<boolean>(false);
@@ -42,6 +48,7 @@ const CreditNote = () => {
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState<boolean>(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
   
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [clickedNote, setClickedNote] = useState<UpdatedCreditNoteResponse | undefined>();
@@ -64,7 +71,7 @@ const CreditNote = () => {
       setIsLoading(true)
       showLoader('Loading credit notes...')
       try {
-        const data = await NoteCreditControllerService.getAllNoteCredits()
+        const data = await getVisibleNoteCredits()
         const transformed = mapCreditNoteArrayToInternalArray(data)
         setCreditNotes(transformed);
       } catch (error) {
@@ -113,13 +120,16 @@ const CreditNote = () => {
         setClickedNote(n);
         setIsModalOpen(true);
       },
-      color: "text-blue-600" 
+      color: "text-blue-600"
     },
-    { 
-      label: "Send Email", 
-      icon: <Mail size={14} />, 
-      action: (n: UpdatedCreditNoteResponse) => console.log('Emailing Note:', n.numeroCreditNote),
-      color: "text-emerald-600" 
+    {
+      label: "Share",
+      icon: <Share2 size={14} />,
+      action: (n: UpdatedCreditNoteResponse) => {
+        setClickedNote(n);
+        setIsShareModalOpen(true);
+      },
+      color: "text-secondary-mid"
     },
     { 
       label: "Print PDF", 
@@ -138,9 +148,19 @@ const CreditNote = () => {
             setCreditNotes(prev => prev.filter(item => item.idCreditNote !== n.idCreditNote));
         }
       },
-      color: "text-red-600" 
+      color: "text-red-600"
     },
   ];
+
+  const viewOnlyOption = {
+    label: "View",
+    icon: <Eye size={14} />,
+    action: (n: UpdatedCreditNoteResponse) => {
+      setClickedNote(n);
+      setIsPrintModalOpen(true);
+    },
+    color: "text-purple-800"
+  };
 
   return (
     <div className='max-w-7xl mx-auto p-6 lg:p-10 flex flex-col gap-8 bg-secondary-super-light/20 min-h-screen'>
@@ -164,12 +184,14 @@ const CreditNote = () => {
             <SearchIcon className='text-secondary-mid' />
           </div>
 
-          <button 
-            onClick={() => { setClient(undefined); setClickedNote(undefined); setIsModalOpen(true); }}
-            className="flex items-center gap-2 bg-white border-2 border-secondary-mid text-secondary-mid px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-secondary-mid hover:text-white transition-all duration-300 shadow-sm"
-          >
-            <AddIcon sx={{ fontSize: 18 }} /> Create Credit Note
-          </button>
+          {canEdit && (
+            <button
+              onClick={() => { setClient(undefined); setClickedNote(undefined); setIsModalOpen(true); }}
+              className="flex items-center gap-2 bg-white border-2 border-secondary-mid text-secondary-mid px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-secondary-mid hover:text-white transition-all duration-300 shadow-sm"
+            >
+              <AddIcon sx={{ fontSize: 18 }} /> Create Credit Note
+            </button>
+          )}
         </div>
       </div>
 
@@ -227,6 +249,8 @@ const CreditNote = () => {
                         }`}>{note.etat}</span>
                       ) : value === 'montantTTC' ? (
                         <span className="font-bold text-secondary">{note.montantTTC?.toLocaleString()}</span>
+                      ) : value === 'docPermission' ? (
+                        <PermissionBadge permission={note.docPermission?.permission} />
                       ) : (
                         (note as any)[value] || "—"
                       )}
@@ -246,7 +270,9 @@ const CreditNote = () => {
 
                     {activeMenuId === note.idCreditNote  && showMenu && (
                       <div ref={menuRef} className="absolute right-16 top-1/2 -translate-y-1/2 z-40 bg-white border border-slate-100 rounded-2xl shadow-2xl p-1.5 flex gap-1 animate-in fade-in slide-in-from-right-2 duration-200">
-                        {actionOptions.map((opt, i) => (
+                        {(!canEdit || note.docPermission?.permission === 'VIEWER' ? [viewOnlyOption]
+                          : note.docPermission?.permission === 'EDITOR' ? [actionOptions[0], viewOnlyOption]
+                          : actionOptions).map((opt, i) => (
                           <ActionButton
                             key={i}
                             label={opt.label}
@@ -281,13 +307,20 @@ const CreditNote = () => {
       )}
 
       {isPrintModalOpen && clickedNote && (
-        <PrintPreviewModal 
-          isOpen={isPrintModalOpen} 
-          data={clickedNote} 
+        <PrintPreviewModal
+          isOpen={isPrintModalOpen}
+          data={clickedNote}
           onClose={() => setIsPrintModalOpen(false)}
           onConfirmPrint={()=>{}}
         />
       )}
+      <ShareDocModal
+        isOpen={isShareModalOpen}
+        docId={clickedNote?.idCreditNote}
+        docType="NOTE_CREDIT"
+        docLabel={clickedNote?.numeroCreditNote ? `Credit Note ${clickedNote.numeroCreditNote}` : undefined}
+        onClose={() => setIsShareModalOpen(false)}
+      />
     </div>
   )
 }

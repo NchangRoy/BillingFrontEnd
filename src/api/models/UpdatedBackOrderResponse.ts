@@ -1,3 +1,5 @@
+import type { DocPermissionResponse } from '../../src2/api/models/DocPermissionResponse';
+
 export type BackOrderLine = {
     id?: string;
     productId?: string;
@@ -25,6 +27,7 @@ export type UpdatedBackOrderResponse = {
     updatedAt?: string;
     organizationId?: string;
     agencyId?: string;
+    docPermission?: DocPermissionResponse;
 };
 
 export namespace BackOrderStatus {

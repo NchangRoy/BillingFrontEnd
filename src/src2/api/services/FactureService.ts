@@ -274,6 +274,62 @@ export class FactureService {
         });
     }
     /**
+     * Récupérer les factures d'une agence, chacune avec sa session (POS/SALES) intégrée
+     * @param agencyId
+     * @param organizationId
+     * @returns FactureResponse OK
+     * @throws ApiError
+     */
+    public static getFacturesByAgencyEnriched(
+        agencyId: string,
+        organizationId: string,
+    ): CancelablePromise<Array<FactureResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/factures/agence/{agencyId}/enriched',
+            path: {
+                'agencyId': agencyId,
+            },
+            query: {
+                'organizationId': organizationId,
+            },
+        });
+    }
+    /**
+     * Récupérer toutes les factures d'une organisation, chacune avec sa session (POS/SALES) intégrée
+     * @param organizationId
+     * @returns FactureResponse OK
+     * @throws ApiError
+     */
+    public static getFacturesByOrganizationEnriched(
+        organizationId: string,
+    ): CancelablePromise<Array<FactureResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/factures/organisation/{organizationId}/enriched',
+            path: {
+                'organizationId': organizationId,
+            },
+        });
+    }
+    /**
+     * Récupérer les factures accessibles par un vendeur (via ses permissions)
+     * @param sellerId
+     * @returns FactureResponse OK
+     * @throws ApiError
+     */
+    public static getFacturesBySellerId(
+        sellerId: string,
+    ): CancelablePromise<Array<FactureResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/factures/seller/{sellerId}',
+            path: {
+                'sellerId': sellerId,
+            },
+        });
+    }
+    /**
      * Comptabiliser une Facture
      * @param factureId
      * @returns any OK

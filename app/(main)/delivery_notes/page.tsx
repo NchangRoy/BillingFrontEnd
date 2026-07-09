@@ -5,18 +5,20 @@ import { useRouter } from 'next/navigation'
 import DropDown from "@mui/icons-material/ArrowDropDown"
 import SearchIcon from "@mui/icons-material/Search"
 import AddIcon from "@mui/icons-material/Add"
-import { 
-  Pencil, 
-  Trash2, 
-  MoreVertical, 
-  Printer, 
-  Truck, 
-  PackageCheck, 
-  Clock, 
-  XCircle, 
-  CheckCircle2, 
-  ReceiptText, 
-  ChevronRight 
+import {
+  Pencil,
+  Trash2,
+  MoreVertical,
+  Printer,
+  Truck,
+  PackageCheck,
+  Clock,
+  XCircle,
+  CheckCircle2,
+  ReceiptText,
+  ChevronRight,
+  Eye,
+  Share2
 } from "lucide-react";
 
 // Updated API Imports for Delivery Notes
@@ -27,12 +29,16 @@ import { UpdatedClientResponse } from '@/src/api/models/UpdatedClientResponse'
 import CreateDeliveryNoteModal from './CreateDeliveryNoteModal'
 import DeliveryNotePrintPreviewModal from './DeliveryNotePrintPreviewModal'
 import { BonDeLivraisonService, ClientsService } from '@/src/src2/api'
+import { getVisibleBonLivraisons } from '@/src/api/scopedDocs'
 import { mapBackendArrayToDeliveryNoteList } from '@/src/Mappers/DeliveryNoteMapper'
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
 import EmptyState from '@/components/EmptyState'
 import { useLoading } from '@/components/LoadingContext'
 import ActionButton from '@/components/ActionButton'
+import PermissionBadge from '@/components/PermissionBadge'
+import ShareDocModal from '@/components/ShareDocModal'
+import { useCanEditDocuments } from '@/src/hooks/useCanEditDocuments'
 
 const columns = {
   "DN Number": "deliveryNoteNumber",
@@ -41,12 +47,14 @@ const columns = {
   "Delivery Date": "deliveryDate",
   "Status": "etat",
   "Total Amount": "totalAmount",
-  "Ref SO": "SaleOrderNumber"
+  "Ref SO": "SaleOrderNumber",
+  "Permission": "docPermission"
 }
 
 const DeliveryNotes = () => {
   const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
+  const { canEdit } = useCanEditDocuments();
 
   // 1. State Management
   const [showStatusMenu, setShowStatusMenu] = useState<boolean>(false);
@@ -54,6 +62,7 @@ const DeliveryNotes = () => {
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState<boolean>(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
   const [showTransformSub, setShowTransformSub] = useState<boolean>(false);
   
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
@@ -75,7 +84,7 @@ const DeliveryNotes = () => {
       setIsLoading(true)
       showLoader('Loading delivery notes...')
       try {
-        const data = await BonDeLivraisonService.getAllBonLivraisons()
+        const data = await getVisibleBonLivraisons()
         const transformed = mapBackendArrayToDeliveryNoteList(data)
         setDeliveryNotes(transformed);
       } catch (error) {
@@ -172,12 +181,14 @@ const DeliveryNotes = () => {
             <SearchIcon className='text-secondary-mid' />
           </div>
 
-          <button 
-            onClick={() => { setClient(undefined); setClickedNote(undefined); setIsModalOpen(true); }}
-            className="flex items-center gap-2 bg-secondary-mid text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-secondary hover:shadow-lg transition-all"
-          >
-            <AddIcon sx={{ fontSize: 18 }} /> Create Delivery Note
-          </button>
+          {canEdit && (
+            <button
+              onClick={() => { setClient(undefined); setClickedNote(undefined); setIsModalOpen(true); }}
+              className="flex items-center gap-2 bg-secondary-mid text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-secondary hover:shadow-lg transition-all"
+            >
+              <AddIcon sx={{ fontSize: 18 }} /> Create Delivery Note
+            </button>
+          )}
         </div>
       </div>
 
@@ -246,6 +257,8 @@ const DeliveryNotes = () => {
                         <span className="font-black text-gray-900">
                           {note.totalAmount?.toLocaleString()} <span className="text-[10px] text-gray-400">XAF</span>
                         </span>
+                      ) : value === 'docPermission' ? (
+                        <PermissionBadge permission={note.docPermission?.permission} />
                       ) : (note as any)[value] || "—"}
                     </td>
                   ))}
@@ -263,20 +276,47 @@ const DeliveryNotes = () => {
 
                     {activeMenuId === note.idDN && (
                       <div ref={menuRef} className="absolute right-16 top-1/2 -translate-y-1/2 z-40 bg-white border border-slate-100 rounded-2xl shadow-2xl p-1.5 flex gap-1 animate-in fade-in slide-in-from-right-2 duration-200">
-                        
-                        {/* Edit */}
+                        {(() => {
+                          const permission = !canEdit ? 'VIEWER' : note.docPermission?.permission;
+                          const viewButton = (
+                            <ActionButton
+                              key="view"
+                              label="View"
+                              onClick={() => { setClickedNote(note); setIsPrintModalOpen(true); setActiveMenuId(null); }}
+                              className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-purple-800 transition-all"
+                            >
+                              <Eye size={14} />
+                            </ActionButton>
+                          );
+                          if (permission === 'VIEWER') return viewButton;
+                          const editButton = (
+                            <ActionButton
+                               key="edit"
+                               label="Edit"
+                               onClick={() => {
+                                 const foundClient = clients.find(c => c.idClient === note.idClient);
+                                 setClient(foundClient);
+                                 setClickedNote(note);
+                                 setIsModalOpen(true);
+                                 setActiveMenuId(null);
+                               }}
+                               className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 transition-all text-blue-600"
+                            >
+                              <Pencil size={14} />
+                            </ActionButton>
+                          );
+                          if (permission === 'EDITOR') return <>{editButton}{viewButton}</>;
+                          return (
+                          <>
+                        {editButton}
+
+                        {/* Share */}
                         <ActionButton
-                           label="Edit"
-                           onClick={() => {
-                             const foundClient = clients.find(c => c.idClient === note.idClient);
-                             setClient(foundClient);
-                             setClickedNote(note);
-                             setIsModalOpen(true);
-                             setActiveMenuId(null);
-                           }}
-                           className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 transition-all text-blue-600"
+                          label="Share"
+                          onClick={() => { setClickedNote(note); setIsShareModalOpen(true); setActiveMenuId(null); }}
+                          className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-secondary-mid transition-all"
                         >
-                          <Pencil size={14} />
+                          <Share2 size={14} />
                         </ActionButton>
 
                         {/* Transform */}
@@ -326,6 +366,9 @@ const DeliveryNotes = () => {
                         >
                           <Trash2 size={14} />
                         </ActionButton>
+                          </>
+                          );
+                        })()}
                       </div>
                     )}
                   </td>
@@ -338,6 +381,13 @@ const DeliveryNotes = () => {
 
       {isModalOpen && <CreateDeliveryNoteModal deliveryNoteData={clickedNote} clientData={client} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />}
       {isPrintModalOpen && clickedNote && <DeliveryNotePrintPreviewModal isOpen={isPrintModalOpen} data={clickedNote} onClose={() => setIsPrintModalOpen(false)} onConfirmPrint={()=>{}} />}
+      <ShareDocModal
+        isOpen={isShareModalOpen}
+        docId={clickedNote?.idDN}
+        docType="BON_LIVRAISON"
+        docLabel={clickedNote?.deliveryNoteNumber ? `Delivery Note ${clickedNote.deliveryNoteNumber}` : undefined}
+        onClose={() => setIsShareModalOpen(false)}
+      />
     </div>
   )
 }

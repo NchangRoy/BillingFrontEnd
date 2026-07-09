@@ -17,6 +17,9 @@ export const mapUpdatedFactureToCreateRequest = (
     emailClient: response.emailClient,
     telephoneClient: response.telephoneClient,
     organizationId: response.organizationId,
+    agencyId: response.agencyId,
+    originType: response.originType as unknown as FactureCreateRequest.originType,
+    sessionId: response.sessionId,
     createdBy:response.createdBy,
 
     // --- Dates (Garantit le format string ISO requis) ---
@@ -139,6 +142,9 @@ export const mapBackendFactureToUpdatedFacture = (
         tauxChange: backend.tauxChange || 1,
         createdBy:backend.createdBy,
         organizationId:backend.organizationId,
+        agencyId:backend.agencyId,
+        originType: backend.originType as unknown as UpdatedFactureResponse['originType'],
+        sessionId: backend.sessionId,
 
         // Détails & Lignes
         lignesFacture: backend.lignesFacture || [],
@@ -154,6 +160,7 @@ export const mapBackendFactureToUpdatedFacture = (
         // Email status
         envoyeParEmail: backend.envoyeParEmail ?? false,
         dateEnvoiEmail: backend.dateEnvoiEmail,
+        docPermission: backend.docPermission,
     };
 };
 

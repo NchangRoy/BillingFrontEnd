@@ -5,17 +5,19 @@ import { useRouter } from 'next/navigation'
 import DropDown from "@mui/icons-material/ArrowDropDown"
 import SearchIcon from "@mui/icons-material/Search"
 import AddIcon from "@mui/icons-material/Add"
-import { 
-  Pencil, 
-  Trash2, 
-  MoreVertical, 
-  Printer, 
-  ReceiptText, 
-  Clock, 
-  CheckCircle2, 
-  XCircle, 
-  FileText, 
-  ChevronRight 
+import {
+  Pencil,
+  Trash2,
+  MoreVertical,
+  Printer,
+  ReceiptText,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  FileText,
+  ChevronRight,
+  Eye,
+  Share2
 } from "lucide-react";
 
 // API & Types
@@ -30,12 +32,16 @@ import PrintPreviewModal from './PrintPreviewModal'
 import { mapProformaToFacture, mapProformaToSalesOrder } from '@/src/api/transformation/ProformaTransformation'
 import { UpdatedSalesOrderResponse } from '@/src/api/models/UpdatedSalesOrder'
 import { FacturesProformaService, ClientsService } from '@/src/src2/api'
+import { getVisibleProformas } from '@/src/api/scopedDocs'
 import { mapProformaArrayToUI } from '@/src/Mappers/ProformaMapper'
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
 import EmptyState from '@/components/EmptyState'
 import { useLoading } from '@/components/LoadingContext'
 import ActionButton from '@/components/ActionButton'
+import PermissionBadge from '@/components/PermissionBadge'
+import ShareDocModal from '@/components/ShareDocModal'
+import { useCanEditDocuments } from '@/src/hooks/useCanEditDocuments'
 
 const columns = {
   "Devis Number": "numeroProformaInvoice",
@@ -43,17 +49,20 @@ const columns = {
   "Creation Date": "dateCreation",
   "Status": "statut",
   "Total Amount": "montantTTC",
+  "Permission": "docPermission",
 }
 
 const ProformaInvoice = () => {
   const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
+  const { canEdit } = useCanEditDocuments();
 
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [showStatusMenu, setShowStatusMenu] = useState<boolean>(false);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState<boolean>(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
   
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [showTransformSub, setShowTransformSub] = useState<boolean>(false);
@@ -75,7 +84,7 @@ const ProformaInvoice = () => {
       setIsLoading(true)
       showLoader('Loading proforma invoices...')
       try {
-        const data = await FacturesProformaService.getAllProformas()
+        const data = await getVisibleProformas()
         const transformed = mapProformaArrayToUI(data);
         setProformaInvoices(transformed);
       } catch (error) {
@@ -191,12 +200,14 @@ const ProformaInvoice = () => {
             <SearchIcon className='text-secondary-mid' />
           </div>
 
-          <button 
-            onClick={() => { setClient(undefined); setClickedProformaInvoice(undefined); setIsModalOpen(true); }}
-            className="flex items-center gap-2 bg-white border-2 border-secondary-mid text-secondary-mid px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-secondary-mid hover:text-white transition-all duration-300 shadow-sm"
-          >
-            <AddIcon sx={{ fontSize: 18 }} /> Create Proforma Invoice
-          </button>
+          {canEdit && (
+            <button
+              onClick={() => { setClient(undefined); setClickedProformaInvoice(undefined); setIsModalOpen(true); }}
+              className="flex items-center gap-2 bg-white border-2 border-secondary-mid text-secondary-mid px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-secondary-mid hover:text-white transition-all duration-300 shadow-sm"
+            >
+              <AddIcon sx={{ fontSize: 18 }} /> Create Proforma Invoice
+            </button>
+          )}
         </div>
       </div>
 
@@ -265,6 +276,8 @@ const ProformaInvoice = () => {
                         <span className="text-xs font-bold text-gray-500">
                            {ProformaInvoice.dateCreation ? new Date(ProformaInvoice.dateCreation).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                         </span>
+                      ) : key === 'docPermission' ? (
+                        <PermissionBadge permission={ProformaInvoice.docPermission?.permission} />
                       ) : (
                         (ProformaInvoice as any)[key] || "—"
                       )}
@@ -281,20 +294,47 @@ const ProformaInvoice = () => {
 
                     {activeMenuId === ProformaInvoice.idProformaInvoice && (
                       <div ref={menuRef} className="absolute right-16 top-1/2 -translate-y-1/2 z-40 bg-white border border-slate-100 rounded-2xl shadow-2xl p-1.5 flex gap-1 animate-in fade-in slide-in-from-right-2 duration-200">
-                        
-                        {/* Edit */}
-                        <button 
-                           onClick={() => {
-                             const foundClient = clients.find(c => c.idClient === ProformaInvoice.idClient);
-                             setClient(foundClient);
-                             setClickedProformaInvoice(ProformaInvoice);
-                             setIsModalOpen(true);
-                             setActiveMenuId(null);
-                           }}
-                           className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 transition-all text-blue-600"
+                        {(() => {
+                          const permission = !canEdit ? 'VIEWER' : ProformaInvoice.docPermission?.permission;
+                          const viewButton = (
+                            <ActionButton
+                              key="view"
+                              label="View"
+                              onClick={() => { setClickedProformaInvoice(ProformaInvoice); setIsPrintModalOpen(true); setActiveMenuId(null); }}
+                              className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-purple-800 transition-all"
+                            >
+                              <Eye size={14} />
+                            </ActionButton>
+                          );
+                          if (permission === 'VIEWER') return viewButton;
+                          const editButton = (
+                            <button
+                               key="edit"
+                               onClick={() => {
+                                 const foundClient = clients.find(c => c.idClient === ProformaInvoice.idClient);
+                                 setClient(foundClient);
+                                 setClickedProformaInvoice(ProformaInvoice);
+                                 setIsModalOpen(true);
+                                 setActiveMenuId(null);
+                               }}
+                               className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 transition-all text-blue-600"
+                            >
+                              <Pencil size={14} />
+                            </button>
+                          );
+                          if (permission === 'EDITOR') return <>{editButton}{viewButton}</>;
+                          return (
+                          <>
+                        {editButton}
+
+                        {/* Share */}
+                        <ActionButton
+                          label="Share"
+                          onClick={() => { setClickedProformaInvoice(ProformaInvoice); setIsShareModalOpen(true); setActiveMenuId(null); }}
+                          className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-secondary-mid transition-all"
                         >
-                          <Pencil size={14} />
-                        </button>
+                          <Share2 size={14} />
+                        </ActionButton>
 
                         {/* Transform */}
                         <div
@@ -359,6 +399,9 @@ const ProformaInvoice = () => {
                         >
                           <Trash2 size={14} />
                         </ActionButton>
+                          </>
+                          );
+                        })()}
                       </div>
                     )}
                   </td>
@@ -371,6 +414,13 @@ const ProformaInvoice = () => {
 
       {isModalOpen && <CreateProformaInvoiceModal ProformaInvoiceData={clickedProformaInvoice} clientData={client} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}/>} 
       {isPrintModalOpen && clickedProformaInvoice && <PrintPreviewModal onConfirmPrint={()=>{}} isOpen={isPrintModalOpen} data={clickedProformaInvoice} onClose={() => setIsPrintModalOpen(false)} />}
+      <ShareDocModal
+        isOpen={isShareModalOpen}
+        docId={clickedProformaInvoice?.idProformaInvoice}
+        docType="FACTURE_PROFORMA"
+        docLabel={clickedProformaInvoice?.numeroProformaInvoice ? `Proforma Invoice ${clickedProformaInvoice.numeroProformaInvoice}` : undefined}
+        onClose={() => setIsShareModalOpen(false)}
+      />
     </div>
   )
 }

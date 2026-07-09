@@ -1,3 +1,5 @@
+import type { DocPermissionResponse } from '../../src2/api/models/DocPermissionResponse';
+
 export type GoodsReceiptNoteResponse = {
   idGRN?: string;
   grnNumber?: string;
@@ -18,6 +20,7 @@ export type GoodsReceiptNoteResponse = {
   remarks?: string;
   createdAt?: string;
   updatedAt?: string;
+  docPermission?: DocPermissionResponse;
 };
 
 export type GoodsReceiptLineResponse = {

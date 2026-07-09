@@ -85,4 +85,21 @@ export class FactureFournisseurControllerService {
             },
         });
     }
+    /**
+     * Récupérer les factures fournisseur accessibles par un vendeur (via ses permissions)
+     * @param sellerId
+     * @returns FactureFournisseurResponse OK
+     * @throws ApiError
+     */
+    public static getBySellerId3(
+        sellerId: string,
+    ): CancelablePromise<Array<FactureFournisseurResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/facture-fournisseurs/seller/{sellerId}',
+            path: {
+                'sellerId': sellerId,
+            },
+        });
+    }
 }

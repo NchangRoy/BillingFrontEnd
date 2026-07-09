@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import DropDown from "@mui/icons-material/ArrowDropDown"
 import SearchIcon from "@mui/icons-material/Search"
 import AddIcon from "@mui/icons-material/Add"
-import { Pencil, Trash2, MoreVertical, Printer, FileText, ReceiptText, Mail } from "lucide-react";
+import { Pencil, Trash2, MoreVertical, Printer, FileText, ReceiptText, Eye, Share2 } from "lucide-react";
 import CreateInvoiceModal from './CreateInvoiceModal'
 import CreateInvoicePrintModal from './InvoicePrintPreviewModal'
 import { ClientsService } from '@/src/src2/api'
@@ -16,11 +16,15 @@ import { FactureResponse, UpdatedFactureResponse } from '@/src/api/models/Update
 import { MOCK_FACTURE } from '@/src/api/models/UpdatedFactureResponse'
 import { mapBackendFactureArrayToUpdatedArray } from '@/src/Mappers/FactureMapper'
 import { FactureService } from '@/src/src2/api/services/FactureService'
+import { getVisibleFactures } from '@/src/api/scopedDocs'
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
 import EmptyState from '@/components/EmptyState'
 import { useLoading } from '@/components/LoadingContext'
 import ActionButton from '@/components/ActionButton'
+import PermissionBadge from '@/components/PermissionBadge'
+import ShareDocModal from '@/components/ShareDocModal'
+import { useCanEditDocuments } from '@/src/hooks/useCanEditDocuments'
 // Adjusting Table Columns for Invoices
 const columns = {
   "Invoice #": "numeroFacture",
@@ -29,12 +33,14 @@ const columns = {
   "Due Date": "dateEcheance",
   "Status": "etat",
   "Total (TTC)": "montantTTC",
-  "Resting": "montantRestant"
+  "Resting": "montantRestant",
+  "Permission": "docPermission"
 }
 
 const Factures = () => {
   const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
+  const { canEdit } = useCanEditDocuments();
 
   // 1. State Management
   const [showStatusMenu, setShowStatusMenu] = useState<boolean>(false);
@@ -42,7 +48,8 @@ const Factures = () => {
   const [selectedStatus, setSelectedStatus] = useState<FactureResponse.etat | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState<boolean>(false);
-  
+  const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
+
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [clickedFacture, setClickedFacture] = useState<UpdatedFactureResponse | undefined>();
   const [factures, setFactures] = useState<UpdatedFactureResponse[]>(MOCK_FACTURE);
@@ -64,7 +71,7 @@ const Factures = () => {
       setIsLoading(true)
       showLoader('Loading invoices...')
       try {
-        const data = await FactureService.getAllFactures();
+        const data = await getVisibleFactures();
         const transformed = mapBackendFactureArrayToUpdatedArray(data);
         setFactures(transformed);
       } catch (error) {
@@ -124,22 +131,25 @@ const Factures = () => {
   }, []);
 
   const actionOptions = [
-    { 
-      label: "Modify", 
-      icon: <Pencil size={14} />, 
+    {
+      label: "Modify",
+      icon: <Pencil size={14} />,
       action: (f: UpdatedFactureResponse) => {
         const foundClient = clients.find(c => c.idClient === f.idClient);
         setClient(foundClient);
         setClickedFacture(f);
         setIsModalOpen(true);
       },
-      color: "text-blue-600" 
+      color: "text-blue-600"
     },
-    { 
-      label: "Send Email", 
-      icon: <Mail size={14} />, 
-      action: (f: UpdatedFactureResponse) => console.log('Emailing:', f.numeroFacture),
-      color: "text-emerald-600" 
+    {
+      label: "Share",
+      icon: <Share2 size={14} />,
+      action: (f: UpdatedFactureResponse) => {
+        setClickedFacture(f);
+        setIsShareModalOpen(true);
+      },
+      color: "text-secondary-mid"
     },
     { 
       label: "Print PDF", 
@@ -190,6 +200,16 @@ handleAccountingSync(f)
   },
   ];
 
+  const viewOnlyOption = {
+    label: "View",
+    icon: <Eye size={14} />,
+    action: (f: UpdatedFactureResponse) => {
+      setClickedFacture(f);
+      setIsPrintModalOpen(true);
+    },
+    color: "text-purple-800"
+  };
+
   return (
     <div className='max-w-7xl mx-auto p-6 lg:p-10 flex flex-col gap-8 bg-secondary-super-light/20 min-h-screen'>
 
@@ -212,12 +232,14 @@ handleAccountingSync(f)
             <SearchIcon className='text-secondary-mid' />
           </div>
 
-          <button 
-            onClick={() => { setClient(undefined); setClickedFacture(undefined); setIsModalOpen(true); }}
-            className="flex items-center gap-2 bg-white border-2 border-secondary-mid text-secondary-mid px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-secondary-mid hover:text-white transition-all duration-300 shadow-sm"
-          >
-            <AddIcon sx={{ fontSize: 18 }} /> Create Invoice
-          </button>
+          {canEdit && (
+            <button
+              onClick={() => { setClient(undefined); setClickedFacture(undefined); setIsModalOpen(true); }}
+              className="flex items-center gap-2 bg-white border-2 border-secondary-mid text-secondary-mid px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-secondary-mid hover:text-white transition-all duration-300 shadow-sm"
+            >
+              <AddIcon sx={{ fontSize: 18 }} /> Create Invoice
+            </button>
+          )}
         </div>
       </div>
 
@@ -271,11 +293,13 @@ handleAccountingSync(f)
                     <td key={index} className="px-6 py-4 text-gray-600 font-medium whitespace-nowrap">
                       {key === 'etat' ? (
                         <span className={`px-2 py-1 rounded-md text-[10px] font-black tracking-tighter uppercase ${
-                          facture.etat === FactureResponse.etat.PAYE ? 'bg-emerald-50 text-emerald-600' : 
+                          facture.etat === FactureResponse.etat.PAYE ? 'bg-emerald-50 text-emerald-600' :
                           facture.etat === FactureResponse.etat.EN_RETARD ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600'
                         }`}>
                           {facture.etat}
                         </span>
+                      ) : key === 'docPermission' ? (
+                        <PermissionBadge permission={facture.docPermission?.permission} />
                       ) : (
                         (facture as any)[key] || "—"
                       )}
@@ -291,7 +315,9 @@ handleAccountingSync(f)
 
                     {activeMenuId === facture.idFacture && (
                       <div ref={menuRef} className="absolute right-16 top-1/2 -translate-y-1/2 z-40 bg-white border border-slate-100 rounded-2xl shadow-2xl p-1.5 flex gap-1">
-                        {actionOptions.map((opt, i) => (
+                        {(!canEdit || facture.docPermission?.permission === 'VIEWER' ? [viewOnlyOption]
+                          : facture.docPermission?.permission === 'EDITOR' ? [actionOptions[0], viewOnlyOption]
+                          : actionOptions).map((opt, i) => (
                           <ActionButton
                             key={i}
                             label={opt.label}
@@ -318,6 +344,13 @@ handleAccountingSync(f)
       {
         isPrintModalOpen && clickedFacture && <CreateInvoicePrintModal data={clickedFacture} isOpen={isPrintModalOpen} onClose={()=>setIsPrintModalOpen(false)}  onConfirmPrint={()=>{}}></CreateInvoicePrintModal>
       }
+      <ShareDocModal
+        isOpen={isShareModalOpen}
+        docId={clickedFacture?.idFacture}
+        docType="FACTURE"
+        docLabel={clickedFacture?.numeroFacture ? `Invoice ${clickedFacture.numeroFacture}` : undefined}
+        onClose={() => setIsShareModalOpen(false)}
+      />
       {/* {isModalOpen && <CreateInvoiceModal factureData={clickedFacture} clientData={client} ... />} */}
     </div>
   )

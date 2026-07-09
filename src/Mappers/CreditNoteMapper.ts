@@ -46,6 +46,7 @@ export const mapCreditNoteToRequest = (
         pdfPath: cn.pdfPath,
         motif: cn.reason,
         organizationId: cn.organizationId,
+        agencyId: cn.agencyId,
         createdBy: cn.createdBy,
     };
 };
@@ -88,6 +89,7 @@ export const mapCNResponseToInternalCreditNote = (
 
         notes: res.notes,
         pdfPath: res.pdfPath,
+        docPermission: res.docPermission,
     };
 };
 

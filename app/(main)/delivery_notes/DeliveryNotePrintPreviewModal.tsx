@@ -3,6 +3,12 @@
 import React, { useEffect, useState } from 'react';
 import { DeliveryNoteResponse } from '@/src/api/models/DeliveryNoteResponse';
 import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
+import { Download, Printer } from 'lucide-react';
+import { generateBonLivraisonHTML } from '@/src/api/printGenerators/bonLivraisonPrint';
+import { generateQRBase64 } from '@/src/api/Utils/qrCode';
+import { sendPrintRequest } from '@/src/api/Utils/printerModule';
+import { downloadHtmlAsPdf } from '@/src/api/Utils/pdfDownload';
+import { toast } from 'sonner';
 
 interface PrintPreviewProps {
   isOpen: boolean;
@@ -13,6 +19,8 @@ interface PrintPreviewProps {
 
 const DeliveryNotePrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: PrintPreviewProps) => {
   const [seller, setSeller] = useState<UpdatedSellerResponse | null>(null);
+  const [generatedHTML, setGeneratedHTML] = useState<string>("");
+  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("seller");
@@ -24,6 +32,59 @@ const DeliveryNotePrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }
       }
     }
   }, []);
+
+  // generateBonLivraisonHTML expects BonLivraisonResponse's field names
+  // (numeroBonLivraison, lignes with quantite/prixUnitaire/montant,
+  // dateLivraison, saleOrderNumber) — this admin page's DeliveryNoteResponse
+  // names them differently, so they're adapted here rather than duplicating
+  // the whole shared template.
+  useEffect(() => {
+    let isMounted = true;
+    if (seller && data) {
+      const adapted = {
+        ...data,
+        numeroBonLivraison: data.deliveryNoteNumber,
+        lignes: data.lines?.map((line) => ({
+          ...line,
+          description: line.description,
+          quantite: line.quantity,
+          prixUnitaire: line.unitPrice,
+          montant: line.amount,
+        })),
+        dateLivraison: data.deliveryDate,
+        saleOrderNumber: data.SaleOrderNumber,
+        partial: data.isPartial,
+      };
+      generateQRBase64(`https://yourcompany.com/verify?dn=${data.deliveryNoteNumber}`, 200)
+        .then((qrBase64) => generateBonLivraisonHTML(adapted, seller, qrBase64))
+        .then((html) => { if (isMounted) setGeneratedHTML(html); })
+        .catch((err) => {
+          console.error("Failed to generate printable HTML", err);
+          toast.error("Failed to prepare document for print/download.");
+        });
+    }
+    return () => { isMounted = false; };
+  }, [seller, data, isOpen]);
+
+  const handlePrint = async () => {
+    try {
+      await sendPrintRequest(generatedHTML);
+      onConfirmPrint();
+    } catch (err) {
+      toast.error("Failed to reach the printer module. Is it running?");
+    }
+  };
+
+  const handleDownload = async () => {
+    setIsDownloading(true);
+    try {
+      await downloadHtmlAsPdf(generatedHTML, `DeliveryNote-${data.deliveryNoteNumber || "draft"}`);
+    } catch (err) {
+      toast.error("Failed to generate PDF for download.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -51,11 +112,19 @@ const DeliveryNotePrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }
             >
               Back to Editor
             </button>
-            <button 
-              onClick={onConfirmPrint} 
-              className="px-8 py-2.5 bg-slate-900 hover:bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-slate-900/20 transition-transform active:scale-95"
+            <button
+              onClick={handleDownload}
+              disabled={isDownloading || !generatedHTML}
+              className="flex items-center gap-2 px-6 py-2.5 bg-white border-2 border-slate-900 text-slate-900 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
             >
-              Validate & Print Slip
+              <Download size={14} /> {isDownloading ? "Downloading…" : "Download"}
+            </button>
+            <button
+              onClick={handlePrint}
+              disabled={!generatedHTML}
+              className="flex items-center gap-2 px-8 py-2.5 bg-slate-900 hover:bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-slate-900/20 transition-transform active:scale-95 disabled:opacity-50"
+            >
+              <Printer size={14} /> Validate & Print Slip
             </button>
           </div>
         </div>

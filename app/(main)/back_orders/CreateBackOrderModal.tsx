@@ -70,10 +70,12 @@ const CreateBackOrderModal = ({ isOpen, onClose, clientData, backOrderData, clie
       emailClient: selectedClient?.email,
       telephoneClient: selectedClient?.telephone,
       organizationId: seller?.organizationId,
+      agencyId: seller?.agencyId,
       updatedAt: new Date().toISOString(),
     };
 
     const apiPayload = mapUIToBackOrderRequest(finalPayload);
+    apiPayload.createdBy = seller?.Id;
 
     try {
       if (!backOrderData) {

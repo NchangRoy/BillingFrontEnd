@@ -117,4 +117,21 @@ export class BondeReceptionControllerService {
             },
         });
     }
+    /**
+     * Récupérer les bons de réception accessibles par un vendeur (via ses permissions)
+     * @param sellerId
+     * @returns BondeReceptionResponse OK
+     * @throws ApiError
+     */
+    public static getBySellerId1(
+        sellerId: string,
+    ): CancelablePromise<Array<BondeReceptionResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/facturation/bon-receptions/seller/{sellerId}',
+            path: {
+                'sellerId': sellerId,
+            },
+        });
+    }
 }

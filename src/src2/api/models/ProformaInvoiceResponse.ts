@@ -2,6 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { DocPermissionResponse } from './DocPermissionResponse';
 import type { LigneProformaResponse } from './LigneProformaResponse';
 export type ProformaInvoiceResponse = {
     idFactureProforma?: string;
@@ -47,6 +48,7 @@ export type ProformaInvoiceResponse = {
     organizationId?: string;
     agencyId?: string;
     createdBy?: string;
+    docPermission?: DocPermissionResponse;
 };
 export namespace ProformaInvoiceResponse {
     export enum statut {

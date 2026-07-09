@@ -5,19 +5,20 @@ import { useRouter } from 'next/navigation'
 import DropDown from "@mui/icons-material/ArrowDropDown"
 import SearchIcon from "@mui/icons-material/Search"
 import AddIcon from "@mui/icons-material/Add"
-import { 
-  Pencil, 
-  Trash2, 
-  MoreVertical, 
-  Printer, 
-  ReceiptText, 
-  Clock, 
-  CheckCircle2, 
-  XCircle, 
+import {
+  Pencil,
+  Trash2,
+  MoreVertical,
+  Printer,
+  ReceiptText,
+  Clock,
+  CheckCircle2,
+  XCircle,
   FileText,
   ChevronRight ,
-  SendHorizonal,
-  Globe
+  Globe,
+  Eye,
+  Share2
 
 } from "lucide-react";
 import { toast } from 'sonner'
@@ -27,6 +28,7 @@ import { UpdatedDevisResponse, MOCK_QUOTATIONS } from '@/src/api/models/UpdatedD
 import { UpdatedFactureResponse } from '@/src/api/models/UpdatedFactureResponse'
 import { mapDevisToFacture, mapDevisToProforma, mapDevisToSalesOrder } from '@/src/api/transformation/DevisTransformation'
 import { DevisService } from '@/src/src2/api'
+import { getVisibleDevis } from '@/src/api/scopedDocs'
 // Components
 import CreateQuotationModal from './CreateQuotationModal'
 import PrintPreviewModal from './PrintPreviewModal'
@@ -34,11 +36,13 @@ import { UpdatedSalesOrderResponse } from '@/src/api/models/UpdatedSalesOrder'
 import { mapBackendArrayToUpdatedDevisArray } from '@/src/Mappers/DevisMapper'
 import { generateQuotationHTML } from '@/src/api/printGenerators/quotationPrint'
 import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse'
-import EmailPreviewModal from '../../../components/EmailPreviewModal'
 import TableSkeleton from '@/components/TableSkeleton'
 import EmptyState from '@/components/EmptyState'
 import { useLoading } from '@/components/LoadingContext'
 import ActionButton from '@/components/ActionButton'
+import PermissionBadge from '@/components/PermissionBadge'
+import ShareDocModal from '@/components/ShareDocModal'
+import { useCanEditDocuments } from '@/src/hooks/useCanEditDocuments'
 
 const columns = {
   "Devis Number": "numeroDevis",
@@ -46,24 +50,26 @@ const columns = {
   "Creation Date": "dateCreation",
   "Status": "statut",
   "Total Amount": "montantTTC",
+  "Permission": "docPermission",
 }
 
 const Quotation = () => {
   const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
+  const { canEdit } = useCanEditDocuments();
 
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [showStatusMenu, setShowStatusMenu] = useState<boolean>(false);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState<boolean>(false);
-  
+  const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
+
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [showTransformSub, setShowTransformSub] = useState<boolean>(false);
   const [clickedQuotation, setClickedQuotation] = useState<UpdatedDevisResponse | undefined>();
   const [quotations, setQuotations] = useState<UpdatedDevisResponse[]>(MOCK_QUOTATIONS);
   const [client, setClient] = useState<UpdatedClientResponse | undefined>()
-  const [emailModalOpen,setEmailModalOpen]=useState<boolean>(false)
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const { showLoader, hideLoader, showError } = useLoading()
     const [seller, setSeller] = useState<UpdatedSellerResponse | null>(null);
@@ -82,7 +88,7 @@ const Quotation = () => {
     setIsLoading(true)
     showLoader('Loading quotations...')
     try {
-      const data = await DevisService.getAllDevis();
+      const data = await getVisibleDevis();
       const transformed = mapBackendArrayToUpdatedDevisArray(data);
       setQuotations(transformed);
     } catch (error) {
@@ -203,12 +209,14 @@ const Quotation = () => {
             <SearchIcon className='text-secondary-mid' />
           </div>
 
-          <button 
-            onClick={() => { setClient(undefined); setClickedQuotation(undefined); setIsModalOpen(true); }}
-            className="flex items-center gap-2 bg-white border-2 border-secondary-mid text-secondary-mid px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-secondary-mid hover:text-white transition-all duration-300 shadow-sm"
-          >
-            <AddIcon sx={{ fontSize: 18 }} /> Create Quotation
-          </button>
+          {canEdit && (
+            <button
+              onClick={() => { setClient(undefined); setClickedQuotation(undefined); setIsModalOpen(true); }}
+              className="flex items-center gap-2 bg-white border-2 border-secondary-mid text-secondary-mid px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-secondary-mid hover:text-white transition-all duration-300 shadow-sm"
+            >
+              <AddIcon sx={{ fontSize: 18 }} /> Create Quotation
+            </button>
+          )}
         </div>
       </div>
 
@@ -277,6 +285,8 @@ const Quotation = () => {
                         <span className="text-xs font-bold text-gray-500">
                            {quotation.dateCreation ? new Date(quotation.dateCreation).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                         </span>
+                      ) : key === 'docPermission' ? (
+                        <PermissionBadge permission={quotation.docPermission?.permission} />
                       ) : (
                         (quotation as any)[key] || "—"
                       )}
@@ -293,20 +303,47 @@ const Quotation = () => {
 
                     {activeMenuId === quotation.idDevis && (
                       <div ref={menuRef} className="absolute right-16 top-1/2 -translate-y-1/2 z-40 bg-white border border-slate-100 rounded-2xl shadow-2xl p-1.5 flex gap-1 animate-in fade-in slide-in-from-right-2 duration-200">
-                        
-                        {/* Edit */}
+                        {(() => {
+                          const permission = !canEdit ? 'VIEWER' : quotation.docPermission?.permission;
+                          const viewButton = (
+                            <ActionButton
+                              key="view"
+                              label="View"
+                              onClick={() => { setClickedQuotation(quotation); setIsPrintModalOpen(true); setActiveMenuId(null); }}
+                              className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-purple-800 transition-all"
+                            >
+                              <Eye size={14} />
+                            </ActionButton>
+                          );
+                          if (permission === 'VIEWER') return viewButton;
+                          const editButton = (
+                            <ActionButton
+                              key="edit"
+                              label="Edit"
+                              onClick={() => {
+                                const foundClient = clients.find(c => c.idClient === quotation.idClient);
+                                setClient(foundClient);
+                                setClickedQuotation(quotation);
+                                setIsModalOpen(true);
+                                setActiveMenuId(null);
+                              }}
+                              className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 transition-all text-blue-600"
+                            >
+                              <Pencil size={14} />
+                            </ActionButton>
+                          );
+                          if (permission === 'EDITOR') return <>{editButton}{viewButton}</>;
+                          return (
+                          <>
+                        {editButton}
+
+                        {/* Share */}
                         <ActionButton
-                           label="Edit"
-                           onClick={() => {
-                             const foundClient = clients.find(c => c.idClient === quotation.idClient);
-                             setClient(foundClient);
-                             setClickedQuotation(quotation);
-                             setIsModalOpen(true);
-                             setActiveMenuId(null);
-                           }}
-                           className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 transition-all text-blue-600"
+                          label="Share"
+                          onClick={() => { setClickedQuotation(quotation); setIsShareModalOpen(true); setActiveMenuId(null); }}
+                          className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-secondary-mid transition-all"
                         >
-                          <Pencil size={14} />
+                          <Share2 size={14} />
                         </ActionButton>
 
                         {/* Transform */}
@@ -369,15 +406,6 @@ const Quotation = () => {
                           <Printer size={14} />
                         </ActionButton>
 
-                        {/* Email */}
-                        <ActionButton
-                          label="Send Email"
-                          onClick={() => { setClickedQuotation(quotation); setEmailModalOpen(!emailModalOpen); }}
-                          className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-purple-800 transition-all"
-                        >
-                          <SendHorizonal size={14} />
-                        </ActionButton>
-
                         {/* Send to Portal */}
                         <ActionButton
                           label="Send to Portal"
@@ -398,6 +426,9 @@ const Quotation = () => {
                         >
                           <Trash2 size={14} />
                         </ActionButton>
+                          </>
+                          );
+                        })()}
                       </div>
                     )}
                   </td>
@@ -409,18 +440,15 @@ const Quotation = () => {
       </div>
 
 
-      {isModalOpen && <CreateQuotationModal quotationData={clickedQuotation} clientData={client} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}/>} 
+      {isModalOpen && <CreateQuotationModal quotationData={clickedQuotation} clientData={client} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}/>}
       {isPrintModalOpen && clickedQuotation && <PrintPreviewModal onConfirmPrint={()=>{}} isOpen={isPrintModalOpen} data={clickedQuotation} onClose={() => setIsPrintModalOpen(false)} />}
-              <EmailPreviewModal 
-  isOpen={emailModalOpen} 
-  data={clickedQuotation}
-  onClose={() => setEmailModalOpen(false)}
-  onSend={()=>{
-    toast.success("Email sent")
-    setEmailModalOpen(false)
-  }}
-  clientEmail={clickedQuotation?.emailClient??""}
-/>
+      <ShareDocModal
+        isOpen={isShareModalOpen}
+        docId={clickedQuotation?.idDevis}
+        docType="DEVIS"
+        docLabel={clickedQuotation?.numeroDevis ? `Quotation ${clickedQuotation.numeroDevis}` : undefined}
+        onClose={() => setIsShareModalOpen(false)}
+      />
     </div>
   )
 }

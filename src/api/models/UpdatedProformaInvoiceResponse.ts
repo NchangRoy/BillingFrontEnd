@@ -3,6 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { LigneDevisResponse } from './LigneDevisResponse';
+import type { DocPermissionResponse } from '../../src2/api/models/DocPermissionResponse';
 export type UpdatedProformaInvoiceResponse = {
     idProformaInvoice?: string;
     numeroProformaInvoice?: string;
@@ -52,7 +53,8 @@ export type UpdatedProformaInvoiceResponse = {
      nbreEcheance?:number;
      referalClientId?:string
      finalAmount:number
-    
+     docPermission?: DocPermissionResponse;
+
 };
 export namespace UpdatedProformaInvoiceResponse {
     export enum statut {

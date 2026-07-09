@@ -2,6 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { DocPermissionResponse } from './DocPermissionResponse';
 import type { LigneNoteCredit } from './LigneNoteCredit';
 export type NoteCreditResponse = {
     idNoteCredit?: string;
@@ -33,6 +34,7 @@ export type NoteCreditResponse = {
     updatedAt?: string;
     organizationId?: string;
     agencyId?: string;
+    docPermission?: DocPermissionResponse;
 };
 export namespace NoteCreditResponse {
     export enum modeReglement {

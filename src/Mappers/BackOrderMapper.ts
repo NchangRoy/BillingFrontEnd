@@ -18,6 +18,7 @@ export const mapBackOrderResponseToUI = (res: BackOrderResponse): UpdatedBackOrd
     updatedAt: res.updatedAt,
     organizationId: res.organizationId,
     agencyId: res.agencyId,
+    docPermission: res.docPermission,
 });
 
 export const mapBackOrderArrayToUI = (list: BackOrderResponse[]): UpdatedBackOrderResponse[] =>

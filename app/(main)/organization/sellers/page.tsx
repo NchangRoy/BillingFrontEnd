@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import TableSkeleton from "@/components/TableSkeleton";
 import EmptyState from "@/components/EmptyState";
 import ActionButton from "@/components/ActionButton";
+import SellerAvatar from "@/components/SellerAvatar";
 import CreateSellerModal from "./CreateSellerModal";
 import PermissionsModal from "./PermissionsModal";
 import AssignAgencyModal from "./AssignAgencyModal";
@@ -180,13 +181,16 @@ const SellersAdminPage = () => {
                 filteredSellers.map((seller) => (
                   <tr key={seller.id} className="hover:bg-secondary-super-light/40 transition-all group border-l-4 border-l-transparent hover:border-l-secondary-mid">
                     <td className="px-8 py-5">
-                      <div className="flex flex-col">
-                        <span className="font-black text-primary group-hover:text-secondary-mid transition-colors">{seller.username}</span>
-                        {seller.email && (
-                          <span className="flex items-center gap-1.5 text-[11px] font-bold text-secondary-gray">
-                            <Mail size={11} className="text-secondary-mid" /> {seller.email}
-                          </span>
-                        )}
+                      <div className="flex items-center gap-3">
+                        <SellerAvatar name={seller.username} imageUrl={seller.profileImageUrl} size={36} />
+                        <div className="flex flex-col">
+                          <span className="font-black text-primary group-hover:text-secondary-mid transition-colors">{seller.username}</span>
+                          {seller.email && (
+                            <span className="flex items-center gap-1.5 text-[11px] font-bold text-secondary-gray">
+                              <Mail size={11} className="text-secondary-mid" /> {seller.email}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td className="px-8 py-5">

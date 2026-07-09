@@ -3,6 +3,12 @@
 import React, { useEffect, useState } from 'react';
 import { UpdatedBackOrderResponse } from '@/src/api/models/UpdatedBackOrderResponse';
 import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
+import { Download, Printer } from 'lucide-react';
+import { generateBackOrderHTML } from '@/src/api/printGenerators/backOrderPrint';
+import { generateQRBase64 } from '@/src/api/Utils/qrCode';
+import { sendPrintRequest } from '@/src/api/Utils/printerModule';
+import { downloadHtmlAsPdf } from '@/src/api/Utils/pdfDownload';
+import { toast } from 'sonner';
 
 interface Props {
   isOpen: boolean;
@@ -13,6 +19,8 @@ interface Props {
 
 const BackOrderPrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: Props) => {
   const [seller, setSeller] = useState<UpdatedSellerResponse | null>(null);
+  const [generatedHTML, setGeneratedHTML] = useState<string>("");
+  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("seller");
@@ -24,6 +32,54 @@ const BackOrderPrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: P
       }
     }
   }, []);
+
+  // generateBackOrderHTML expects BackOrderResponse's field names (lines
+  // with nomProduit/quantiteEnAttente, dateCreation, notes) — this admin
+  // page's UpdatedBackOrderResponse names them differently, so they're
+  // adapted here rather than duplicating the whole shared template.
+  useEffect(() => {
+    let isMounted = true;
+    if (seller && data) {
+      const adapted = {
+        ...data,
+        lignes: data.lignes?.map((line) => ({
+          ...line,
+          nomProduit: line.productName,
+          quantiteEnAttente: line.quantiteManquante,
+        })),
+        dateCreation: data.createdAt,
+        notes: data.remarques,
+      };
+      generateQRBase64(`https://yourcompany.com/verify?bo=${data.numeroBackOrder}`, 200)
+        .then((qrBase64) => generateBackOrderHTML(adapted, seller, qrBase64))
+        .then((html) => { if (isMounted) setGeneratedHTML(html); })
+        .catch((err) => {
+          console.error("Failed to generate printable HTML", err);
+          toast.error("Failed to prepare document for print/download.");
+        });
+    }
+    return () => { isMounted = false; };
+  }, [seller, data, isOpen]);
+
+  const handlePrint = async () => {
+    try {
+      await sendPrintRequest(generatedHTML);
+      onConfirmPrint();
+    } catch (err) {
+      toast.error("Failed to reach the printer module. Is it running?");
+    }
+  };
+
+  const handleDownload = async () => {
+    setIsDownloading(true);
+    try {
+      await downloadHtmlAsPdf(generatedHTML, `BackOrder-${data.numeroBackOrder || "draft"}`);
+    } catch (err) {
+      toast.error("Failed to generate PDF for download.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -61,10 +117,18 @@ const BackOrderPrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: P
               Back to Editor
             </button>
             <button
-              onClick={onConfirmPrint}
-              className="px-8 py-2.5 bg-primary hover:bg-secondary-mid text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 transition-transform active:scale-95"
+              onClick={handleDownload}
+              disabled={isDownloading || !generatedHTML}
+              className="flex items-center gap-2 px-6 py-2.5 bg-white border-2 border-primary text-primary rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
             >
-              Print Back Order
+              <Download size={14} /> {isDownloading ? "Downloading…" : "Download"}
+            </button>
+            <button
+              onClick={handlePrint}
+              disabled={!generatedHTML}
+              className="flex items-center gap-2 px-8 py-2.5 bg-primary hover:bg-secondary-mid text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 transition-transform active:scale-95 disabled:opacity-50"
+            >
+              <Printer size={14} /> Print Back Order
             </button>
           </div>
         </div>

@@ -3,7 +3,12 @@
 import React, { useEffect, useState } from 'react';
 import { UpdatedSupplierFactureResponse, FactureResponse } from '@/src/api/models/UpdatedSupplierFactureResponse';
 import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
-import { Truck, MapPin, Phone, Hash, Calendar, FileText, Receipt } from "lucide-react";
+import { Truck, MapPin, Phone, Hash, Calendar, FileText, Receipt, Download, Printer } from "lucide-react";
+import { generateSupplierInvoiceHTML } from '@/src/api/printGenerators/supplierInvoicePrint';
+import { generateQRBase64 } from '@/src/api/Utils/qrCode';
+import { sendPrintRequest } from '@/src/api/Utils/printerModule';
+import { downloadHtmlAsPdf } from '@/src/api/Utils/pdfDownload';
+import { toast } from 'sonner';
 
 interface PrintPreviewProps {
   isOpen: boolean;
@@ -14,6 +19,8 @@ interface PrintPreviewProps {
 
 const SupplierInvoicePrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: PrintPreviewProps) => {
   const [seller, setSeller] = useState<UpdatedSellerResponse | null>(null);
+  const [generatedHTML, setGeneratedHTML] = useState<string>("");
+  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("seller");
@@ -25,6 +32,53 @@ const SupplierInvoicePrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrin
       }
     }
   }, []);
+
+  // generateSupplierInvoiceHTML expects data.lines (this model's array is
+  // lignesFacture), data.nomFournisseur (this model has the typo'd
+  // nomFournisseru), and data.dateFacture (this model has dateFacturation)
+  // — adapted here rather than duplicating the whole shared template. Note
+  // the generator treats the supplier as the document issuer (header/brand)
+  // and org as the bill-to, matching this being an invoice from the
+  // supplier to us.
+  useEffect(() => {
+    let isMounted = true;
+    if (seller && data) {
+      const adapted = {
+        ...data,
+        lines: data.lignesFacture,
+        nomFournisseur: data.nomFournisseru,
+        dateFacture: data.dateFacturation,
+      };
+      generateQRBase64(`https://yourcompany.com/verify?inv=${data.numeroFacture}`, 200)
+        .then((qrBase64) => generateSupplierInvoiceHTML(adapted, seller, qrBase64))
+        .then((html) => { if (isMounted) setGeneratedHTML(html); })
+        .catch((err) => {
+          console.error("Failed to generate printable HTML", err);
+          toast.error("Failed to prepare document for print/download.");
+        });
+    }
+    return () => { isMounted = false; };
+  }, [seller, data, isOpen]);
+
+  const handlePrint = async () => {
+    try {
+      await sendPrintRequest(generatedHTML);
+      onConfirmPrint();
+    } catch (err) {
+      toast.error("Failed to reach the printer module. Is it running?");
+    }
+  };
+
+  const handleDownload = async () => {
+    setIsDownloading(true);
+    try {
+      await downloadHtmlAsPdf(generatedHTML, `SupplierInvoice-${data.numeroFacture || "draft"}`);
+    } catch (err) {
+      toast.error("Failed to generate PDF for download.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -56,8 +110,19 @@ const SupplierInvoicePrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrin
             <button onClick={onClose} className="px-5 py-2 text-[10px] font-black uppercase tracking-widest text-secondary-gray hover:text-primary transition-all">
               Discard
             </button>
-            <button onClick={onConfirmPrint} className="px-8 py-3 bg-secondary hover:bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-secondary/20 transition-transform active:scale-95">
-              Confirm & Print Bill
+            <button
+              onClick={handleDownload}
+              disabled={isDownloading || !generatedHTML}
+              className="flex items-center gap-2 px-6 py-3 bg-white border-2 border-secondary text-secondary rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
+            >
+              <Download size={14} /> {isDownloading ? "Downloading…" : "Download"}
+            </button>
+            <button
+              onClick={handlePrint}
+              disabled={!generatedHTML}
+              className="flex items-center gap-2 px-8 py-3 bg-secondary hover:bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-secondary/20 transition-transform active:scale-95 disabled:opacity-50"
+            >
+              <Printer size={14} /> Confirm & Print Bill
             </button>
           </div>
         </div>

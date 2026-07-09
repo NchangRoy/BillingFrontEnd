@@ -20,6 +20,12 @@ export const clearSession = () => {
   localStorage.removeItem(SELLER_STORAGE_KEY);
 };
 
+export const updateStoredSellerProfileImage = (profileImageUrl: string) => {
+  const seller = getStoredSeller();
+  if (!seller) return;
+  localStorage.setItem(SELLER_STORAGE_KEY, JSON.stringify({ ...seller, profileImageUrl }));
+};
+
 // Attaches the logged-in seller's access token to every request made
 // through the generated API client (FactureService, BackOrderService, etc.).
 OpenAPI.TOKEN = async () => getStoredSeller()?.accessToken ?? '';

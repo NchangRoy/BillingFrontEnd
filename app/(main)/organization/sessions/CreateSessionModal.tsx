@@ -2,14 +2,15 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import CloseIcon from "@mui/icons-material/Close";
-import { PlayCircle, Save, Clock } from "lucide-react";
+import { PlayCircle, Save, Clock, Store, Briefcase } from "lucide-react";
 import {
-  AgenciesService, ApiError, KernelAgencyResponse,
+  AgenciesService, ApiError, CreateSessionRequest, KernelAgencyResponse,
   SalesPointResponse, SalesPointsService,
   SellerAdminService, SellerListItemResponse,
   SessionsService
 } from "@/src/src2/api";
 import { getStoredSeller } from "@/src/api/session";
+import { SellerRole } from "@/src/api/models/UpdatedSellerResponse";
 import { toast } from "sonner";
 
 interface Props {
@@ -18,6 +19,7 @@ interface Props {
 }
 
 const emptyForm = {
+  type: CreateSessionRequest.type.POS,
   agencyId: "",
   sellerId: "",
   salesPointId: "",
@@ -35,17 +37,22 @@ const CreateSessionModal = ({ isOpen, onClose }: Props) => {
   const [isSaving, setIsSaving] = useState(false);
   const [scheduleForLater, setScheduleForLater] = useState(false);
 
+  const currentSeller = getStoredSeller();
+  // Owners can open a session for any agency; agency managers are locked to their own.
+  const isAgencyLocked = currentSeller?.role === SellerRole.AGENCY_MANAGER;
+
   useEffect(() => {
     if (!isOpen) {
       document.body.style.overflow = "unset";
       return;
     }
     document.body.style.overflow = "hidden";
-    setForm(emptyForm);
     setScheduleForLater(false);
 
     const orgId = getStoredSeller()?.organizationId;
     if (!orgId) return;
+
+    setForm({ ...emptyForm, agencyId: isAgencyLocked ? (currentSeller?.agencyId ?? "") : "" });
 
     setIsLoading(true);
     Promise.all([
@@ -54,7 +61,7 @@ const CreateSessionModal = ({ isOpen, onClose }: Props) => {
       SalesPointsService.getAll2(orgId),
     ])
       .then(([agenciesRes, sellersRes, salesPointsRes]) => {
-        setAgencies(agenciesRes);
+        setAgencies(isAgencyLocked ? agenciesRes.filter((a) => a.id === currentSeller?.agencyId) : agenciesRes);
         setSellers(sellersRes);
         setSalesPoints(salesPointsRes);
       })
@@ -78,12 +85,23 @@ const CreateSessionModal = ({ isOpen, onClose }: Props) => {
     setForm({ ...form, agencyId, sellerId: "", salesPointId: "" });
   };
 
+  const handleTypeChange = (type: CreateSessionRequest.type) => {
+    setForm({ ...form, type, salesPointId: "" });
+  };
+
+  const isPos = form.type === CreateSessionRequest.type.POS;
+
+  const canSave = !!form.sellerId && !!form.agencyId && !!form.openingAmount && (!isPos || !!form.salesPointId);
+
   const handleSave = async () => {
-    if (!form.sellerId || !form.salesPointId || !form.openingAmount) return;
+    if (!canSave) return;
     setIsSaving(true);
     try {
-      const payload = {
-        salesPointId: form.salesPointId,
+      const payload: CreateSessionRequest = {
+        type: form.type,
+        salesPointId: isPos ? form.salesPointId : undefined,
+        organizationId: isPos ? undefined : getStoredSeller()?.organizationId,
+        agencyId: isPos ? undefined : form.agencyId,
         sellerId: form.sellerId,
         openingAmount: Number(form.openingAmount),
         startTime: form.startTime || undefined,
@@ -131,7 +149,9 @@ const CreateSessionModal = ({ isOpen, onClose }: Props) => {
               <p className="text-xs text-gray-400 font-bold">
                 {scheduleForLater
                   ? "The seller starts this themselves from the POS terminal"
-                  : "Start a seller's session on a sale point"}
+                  : isPos
+                    ? "Start a seller's session on a sale point"
+                    : "Start a seller's regular back-office/web sales session"}
               </p>
             </div>
           </div>
@@ -164,11 +184,41 @@ const CreateSessionModal = ({ isOpen, onClose }: Props) => {
               </button>
 
               <div className="space-y-2">
+                <label className={label}>Session Type</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleTypeChange(CreateSessionRequest.type.POS)}
+                    className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all ${
+                      isPos ? "border-secondary-mid bg-secondary-super-light/50" : "border-gray-100 bg-white"
+                    }`}
+                  >
+                    <Store size={16} className={isPos ? "text-secondary-mid" : "text-gray-300"} />
+                    <span className="text-xs font-black uppercase tracking-widest text-gray-700">POS Session</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleTypeChange(CreateSessionRequest.type.SALES)}
+                    className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all ${
+                      !isPos ? "border-secondary-mid bg-secondary-super-light/50" : "border-gray-100 bg-white"
+                    }`}
+                  >
+                    <Briefcase size={16} className={!isPos ? "text-secondary-mid" : "text-gray-300"} />
+                    <span className="text-xs font-black uppercase tracking-widest text-gray-700">Sales Session</span>
+                  </button>
+                </div>
+                <p className="text-[11px] text-gray-400 font-medium ml-1">
+                  {isPos ? "Tied to a physical sale point/register." : "A regular back-office/web sales shift — no sale point needed."}
+                </p>
+              </div>
+
+              <div className="space-y-2">
                 <label className={label}>Agency</label>
                 <div className={inputWrapper}>
                   <select
-                    className={`${inputStyle} cursor-pointer`}
+                    className={`${inputStyle} ${isAgencyLocked ? "cursor-not-allowed" : "cursor-pointer"}`}
                     value={form.agencyId}
+                    disabled={isAgencyLocked}
                     onChange={(e) => handleAgencyChange(e.target.value)}
                   >
                     <option value="">Select an agency</option>
@@ -177,6 +227,9 @@ const CreateSessionModal = ({ isOpen, onClose }: Props) => {
                     ))}
                   </select>
                 </div>
+                {isAgencyLocked && (
+                  <p className="text-[11px] text-gray-400 font-medium ml-1">Locked to your agency.</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -199,25 +252,27 @@ const CreateSessionModal = ({ isOpen, onClose }: Props) => {
                 )}
               </div>
 
-              <div className="space-y-2">
-                <label className={label}>Sale Point</label>
-                <div className={inputWrapper}>
-                  <select
-                    className={`${inputStyle} cursor-pointer`}
-                    value={form.salesPointId}
-                    disabled={!form.agencyId}
-                    onChange={(e) => setForm({ ...form, salesPointId: e.target.value })}
-                  >
-                    <option value="">{form.agencyId ? "Select a sale point" : "Select an agency first"}</option>
-                    {salesPointsInAgency.map((sp) => (
-                      <option key={sp.id} value={sp.id}>{sp.salesPointName}</option>
-                    ))}
-                  </select>
+              {isPos && (
+                <div className="space-y-2">
+                  <label className={label}>Sale Point</label>
+                  <div className={inputWrapper}>
+                    <select
+                      className={`${inputStyle} cursor-pointer`}
+                      value={form.salesPointId}
+                      disabled={!form.agencyId}
+                      onChange={(e) => setForm({ ...form, salesPointId: e.target.value })}
+                    >
+                      <option value="">{form.agencyId ? "Select a sale point" : "Select an agency first"}</option>
+                      {salesPointsInAgency.map((sp) => (
+                        <option key={sp.id} value={sp.id}>{sp.salesPointName}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {form.agencyId && salesPointsInAgency.length === 0 && (
+                    <p className="text-xs text-amber-600 font-medium ml-1">No sale points assigned to this agency yet.</p>
+                  )}
                 </div>
-                {form.agencyId && salesPointsInAgency.length === 0 && (
-                  <p className="text-xs text-amber-600 font-medium ml-1">No sale points assigned to this agency yet.</p>
-                )}
-              </div>
+              )}
 
               <div className="space-y-2">
                 <label className={label}>Opening Amount</label>
@@ -272,7 +327,7 @@ const CreateSessionModal = ({ isOpen, onClose }: Props) => {
           </button>
           <button
             onClick={handleSave}
-            disabled={isSaving || isLoading || !form.sellerId || !form.salesPointId || !form.openingAmount}
+            disabled={isSaving || isLoading || !canSave}
             className="flex items-center gap-2 bg-secondary-mid hover:bg-secondary text-white px-8 py-3 rounded-xl font-black text-sm shadow-lg disabled:opacity-50 disabled:grayscale transition-all active:scale-95"
           >
             <Save size={18} />

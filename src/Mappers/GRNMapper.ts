@@ -76,6 +76,7 @@ export const mapGRNResponseToInternal = (apiData: BondeReceptionResponse): Goods
         remarks: apiData.notes,
         createdAt: apiData.dateSysteme,
         updatedAt: apiData.updatedAt,
+        docPermission: apiData.docPermission,
     };
 };
 

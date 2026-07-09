@@ -12,9 +12,10 @@ import { UpdatedClientResponse } from "@/src/api/models/UpdatedClientResponse";
 import SupplierHeader from "./SupplierHeader";
 import SupplierInvoiceDetails from "./SupplierInvoiceDetails";
 import { mapInternalToFactureFournisseurCreateRequest } from "@/src/Mappers/SupplierFactureMapper";
-import { FactureFournisseurControllerService, FournisseursService } from "@/src/src2/api";
+import { FactureFournisseurControllerService } from "@/src/src2/api";
 import { UpdatedSellerResponse } from "@/src/api/models/UpdatedSellerResponse";
 import { toast } from 'sonner';
+import { getVisibleFournisseurs } from "@/src/api/scopedTiers";
 
 interface Props {
   isOpen: boolean;
@@ -36,7 +37,7 @@ const CreateSupplierInvoiceModal = ({ isOpen, onClose, supplierData, factureData
 
   useEffect(() => {
     if (!isOpen) return;
-    FournisseursService.getAllFournisseurs()
+    getVisibleFournisseurs()
       .then((data) => setSuppliers(data.map((f) => ({
         ...f,
         idClient: f.idFournisseur,
@@ -101,9 +102,10 @@ const CreateSupplierInvoiceModal = ({ isOpen, onClose, supplierData, factureData
       montantRestant: facture.etat === FactureResponse.etat.PAYE ? 0 : facture.montantTTC,
       finalAmount: facture.montantTTC,
       organizationId: seller?.organizationId,
+      agencyId: seller?.agencyId,
       createdBy: seller?.Id,
       updatedAt: new Date().toISOString(),
-      
+
     };
 
     console.log("Saving Payload:", finalPayload);

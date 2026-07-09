@@ -2,7 +2,9 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { DocPermissionResponse } from './DocPermissionResponse';
 import type { LigneFactureResponse } from './LigneFactureResponse';
+import type { SessionResponse } from './SessionResponse';
 export type FactureResponse = {
     idFacture?: string;
     numeroFacture?: string;
@@ -44,14 +46,23 @@ export type FactureResponse = {
     remiseGlobaleMontant?: number;
     createdBy?: string;
     createdByUsername?: string;
+    originType?: FactureResponse.originType;
+    sessionId?: string;
+    /** Populated only by the agency+session enrichment endpoint; undefined otherwise. */
+    session?: SessionResponse;
     validatedBy?: string;
     validatedByUsername?: string;
     validatedAt?: string;
     version?: number;
     createdAt?: string;
     updatedAt?: string;
+    docPermission?: DocPermissionResponse;
 };
 export namespace FactureResponse {
+    export enum originType {
+        POS = 'POS',
+        SALES = 'SALES',
+    }
     export enum etat {
         BROUILLON = 'BROUILLON',
         ENVOYE = 'ENVOYE',

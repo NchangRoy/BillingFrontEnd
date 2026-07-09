@@ -5,17 +5,19 @@ import { useRouter } from 'next/navigation'
 import DropDown from "@mui/icons-material/ArrowDropDown"
 import SearchIcon from "@mui/icons-material/Search"
 import AddIcon from "@mui/icons-material/Add"
-import { 
-  Pencil, 
-  Trash2, 
-  MoreVertical, 
-  Printer, 
-  ClipboardCheck, 
+import {
+  Pencil,
+  Trash2,
+  MoreVertical,
+  Printer,
+  ClipboardCheck,
   Clock,
   XCircle,
   CheckCircle2,
   ReceiptText,
-  ChevronRight
+  ChevronRight,
+  Eye,
+  Share2
 } from "lucide-react";
 
 // API & Models
@@ -29,6 +31,7 @@ import CreateGRNModal from './CreateGRNModal'
 import GRNPrintPreviewModal from './GRNPrintPreviewModal'
 import { generateFactureFromPOandGRN } from '@/src/api/transformation/supplierInvoice'
 import { BonDAchatService, BondeReceptionControllerService, FournisseursService } from '@/src/src2/api'
+import { getVisibleBonReceptions } from '@/src/api/scopedDocs'
 import { mapGRNArrayToInternalArray } from '@/src/Mappers/GRNMapper'
 import { mapBackendBAArrayToUIArray } from '@/src/Mappers/BonAchatMapper'
 import { toast } from 'sonner'
@@ -36,6 +39,9 @@ import TableSkeleton from '@/components/TableSkeleton'
 import EmptyState from '@/components/EmptyState'
 import { useLoading } from '@/components/LoadingContext'
 import ActionButton from '@/components/ActionButton'
+import PermissionBadge from '@/components/PermissionBadge'
+import ShareDocModal from '@/components/ShareDocModal'
+import { useCanEditDocuments } from '@/src/hooks/useCanEditDocuments'
 
 // Mapping Table Columns for GRN
 const columns = {
@@ -44,12 +50,13 @@ const columns = {
   "PO Reference": "purchaseOrderNumber",
   "Receipt Date": "receiptDate",
   "Status": "status",
- 
+  "Permission": "docPermission",
 }
 
 const GoodsReceiptNotes = () => {
   const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
+  const { canEdit } = useCanEditDocuments();
 
   // 1. State Management
   const [showStatusMenu, setShowStatusMenu] = useState<boolean>(false);
@@ -57,6 +64,7 @@ const GoodsReceiptNotes = () => {
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState<boolean>(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
   const [showTransformSub, setShowTransformSub] = useState<boolean>(false);
   
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
@@ -85,7 +93,7 @@ const GoodsReceiptNotes = () => {
        setIsLoading(true)
        showLoader('Loading goods receipt notes...')
        try {
-         const data = await BondeReceptionControllerService.getBons()
+         const data = await getVisibleBonReceptions()
          const transformed = mapGRNArrayToInternalArray(data)
          const purchase_order=await BonDAchatService.getAllBonsAchat()
          const trans=mapBackendBAArrayToUIArray(purchase_order)
@@ -191,12 +199,14 @@ const GoodsReceiptNotes = () => {
             <SearchIcon className='text-secondary-mid' />
           </div>
 
-          <button 
-            onClick={() => { setClient(undefined); setClickedGRN(undefined); setIsModalOpen(true); }}
-            className="flex items-center gap-2 bg-secondary-mid text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-secondary hover:shadow-lg transition-all"
-          >
-            <AddIcon sx={{ fontSize: 18 }} /> Create Goods Receipt
-          </button>
+          {canEdit && (
+            <button
+              onClick={() => { setClient(undefined); setClickedGRN(undefined); setIsModalOpen(true); }}
+              className="flex items-center gap-2 bg-secondary-mid text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-secondary hover:shadow-lg transition-all"
+            >
+              <AddIcon sx={{ fontSize: 18 }} /> Create Goods Receipt
+            </button>
+          )}
         </div>
       </div>
 
@@ -276,6 +286,8 @@ const GoodsReceiptNotes = () => {
                         <span className="text-xs font-bold text-gray-500">
                            {grn.receiptDate ? new Date(grn.receiptDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '---'}
                         </span>
+                      ) : value === 'docPermission' ? (
+                        <PermissionBadge permission={grn.docPermission?.permission} />
                       ) : (grn as any)[value] || "—"}
                     </td>
                   ))}
@@ -293,19 +305,42 @@ const GoodsReceiptNotes = () => {
 
                     {activeMenuId === grn.idGRN && (
                       <div ref={menuRef} className="absolute right-16 top-1/2 -translate-y-1/2 z-40 bg-white border border-slate-100 rounded-2xl shadow-2xl p-1.5 flex gap-1 animate-in fade-in slide-in-from-right-2 duration-200">
-                        
-                        {/* Edit */}
+                        {(() => {
+                          const permission = !canEdit ? 'VIEWER' : grn.docPermission?.permission;
+                          const viewButton = (
+                            <ActionButton
+                              key="view"
+                              label="View"
+                              onClick={() => { setClickedGRN(grn); setIsPrintModalOpen(true); setActiveMenuId(null); }}
+                              className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-purple-800 transition-all"
+                            ><Eye size={14} /></ActionButton>
+                          );
+                          if (permission === 'VIEWER') return viewButton;
+                          const editButton = (
+                            <ActionButton
+                               key="edit"
+                               label="Edit"
+                               onClick={() => {
+                                 const foundClient = clients.find(c => c.idClient === grn.supplierId);
+                                 setClient(foundClient);
+                                 setClickedGRN(grn);
+                                 setIsModalOpen(true);
+                                 setActiveMenuId(null);
+                               }}
+                               className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 transition-all text-blue-600"
+                            ><Pencil size={14} /></ActionButton>
+                          );
+                          if (permission === 'EDITOR') return <>{editButton}{viewButton}</>;
+                          return (
+                          <>
+                        {editButton}
+
+                        {/* Share */}
                         <ActionButton
-                           label="Edit"
-                           onClick={() => {
-                             const foundClient = clients.find(c => c.idClient === grn.supplierId);
-                             setClient(foundClient);
-                             setClickedGRN(grn);
-                             setIsModalOpen(true);
-                             setActiveMenuId(null);
-                           }}
-                           className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 transition-all text-blue-600"
-                        ><Pencil size={14} /></ActionButton>
+                          label="Share"
+                          onClick={() => { setClickedGRN(grn); setIsShareModalOpen(true); setActiveMenuId(null); }}
+                          className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-secondary-mid transition-all"
+                        ><Share2 size={14} /></ActionButton>
 
                         {/* Transform */}
                         <div className="relative">
@@ -348,6 +383,9 @@ const GoodsReceiptNotes = () => {
                           }}
                           className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-red-50 text-red-600 transition-all"
                         ><Trash2 size={14} /></ActionButton>
+                          </>
+                          );
+                        })()}
                       </div>
                     )}
                   </td>
@@ -361,6 +399,13 @@ const GoodsReceiptNotes = () => {
       {/* Modals */}
       {isModalOpen && <CreateGRNModal grnData={clickedGRN} clientData={client} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />}
       {isPrintModalOpen && clickedGRN && <GRNPrintPreviewModal isOpen={isPrintModalOpen} data={clickedGRN} onClose={() => setIsPrintModalOpen(false)} onConfirmPrint={()=>{}} />}
+      <ShareDocModal
+        isOpen={isShareModalOpen}
+        docId={clickedGRN?.idGRN}
+        docType="BON_RECEPTION"
+        docLabel={clickedGRN?.grnNumber ? `Goods Receipt Note ${clickedGRN.grnNumber}` : undefined}
+        onClose={() => setIsShareModalOpen(false)}
+      />
     </div>
   )
 }

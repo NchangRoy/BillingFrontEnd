@@ -11,6 +11,7 @@ export type SellerListItemResponse = {
     role?: 'POS_SELLER' | 'SELLER' | 'AGENCY_MANAGER' | 'OWNER';
     agency?: string;
     salePoint?: string;
+    profileImageUrl?: string;
     permissions?: Array<'NEGOTIATE_PRICE' | 'APPLY_DISCOUNT' | 'OVERRIDE_PRICE' | 'APPROVE_DOCUMENT'>;
     permittedSaleSizes?: Array<'DETAIL' | 'DEMIS_GROS' | 'GROS' | 'SUPER_GROS'>;
     organizationId?: string;

@@ -3,7 +3,12 @@
 import React, { useEffect, useState } from 'react';
 import { UpdatedSalesOrderResponse } from '@/src/api/models/UpdatedSalesOrder';
 import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
-import { Truck, MapPin, Phone } from "lucide-react";
+import { Truck, MapPin, Phone, Download, Printer } from "lucide-react";
+import { generateBonCommandeHTML } from '@/src/api/printGenerators/bonCommandePrint';
+import { generateQRBase64 } from '@/src/api/Utils/qrCode';
+import { sendPrintRequest } from '@/src/api/Utils/printerModule';
+import { downloadHtmlAsPdf } from '@/src/api/Utils/pdfDownload';
+import { toast } from 'sonner';
 
 interface PrintPreviewProps {
   isOpen: boolean;
@@ -14,6 +19,8 @@ interface PrintPreviewProps {
 
 const SalesOrderPrintPreview = ({ isOpen, onClose, data, onConfirmPrint }: PrintPreviewProps) => {
   const [seller, setSeller] = useState<UpdatedSellerResponse | null>(null);
+  const [generatedHTML, setGeneratedHTML] = useState<string>("");
+  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("seller");
@@ -25,6 +32,50 @@ const SalesOrderPrintPreview = ({ isOpen, onClose, data, onConfirmPrint }: Print
       }
     }
   }, []);
+
+  // generateBonCommandeHTML expects BonCommandeResponse's field names
+  // (numeroCommande, lines, dateCommande) — this admin page's
+  // UpdatedSalesOrderResponse names them differently, so they're adapted
+  // here rather than duplicating the whole shared template.
+  useEffect(() => {
+    let isMounted = true;
+    if (seller && data) {
+      const adapted = {
+        ...data,
+        numeroCommande: data.numeroSalesOrder,
+        lines: data.lignesSalesOrder,
+        dateCommande: data.dateCreation,
+      };
+      generateQRBase64(`https://yourcompany.com/verify?so=${data.numeroSalesOrder}`, 200)
+        .then((qrBase64) => generateBonCommandeHTML(adapted, seller, qrBase64))
+        .then((html) => { if (isMounted) setGeneratedHTML(html); })
+        .catch((err) => {
+          console.error("Failed to generate printable HTML", err);
+          toast.error("Failed to prepare document for print/download.");
+        });
+    }
+    return () => { isMounted = false; };
+  }, [seller, data, isOpen]);
+
+  const handlePrint = async () => {
+    try {
+      await sendPrintRequest(generatedHTML);
+      onConfirmPrint();
+    } catch (err) {
+      toast.error("Failed to reach the printer module. Is it running?");
+    }
+  };
+
+  const handleDownload = async () => {
+    setIsDownloading(true);
+    try {
+      await downloadHtmlAsPdf(generatedHTML, `SalesOrder-${data.numeroSalesOrder || "draft"}`);
+    } catch (err) {
+      toast.error("Failed to generate PDF for download.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -56,8 +107,19 @@ const SalesOrderPrintPreview = ({ isOpen, onClose, data, onConfirmPrint }: Print
             <button onClick={onClose} className="px-5 py-2 text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-primary transition-all">
               Cancel
             </button>
-            <button onClick={onConfirmPrint} className="px-8 py-2.5 bg-secondary-mid hover:bg-secondary text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg transition-transform active:scale-95">
-              Confirm & Print Order
+            <button
+              onClick={handleDownload}
+              disabled={isDownloading || !generatedHTML}
+              className="flex items-center gap-2 px-6 py-2.5 bg-white border-2 border-secondary-mid text-secondary-mid rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
+            >
+              <Download size={14} /> {isDownloading ? "Downloading…" : "Download"}
+            </button>
+            <button
+              onClick={handlePrint}
+              disabled={!generatedHTML}
+              className="flex items-center gap-2 px-8 py-2.5 bg-secondary-mid hover:bg-secondary text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg transition-transform active:scale-95 disabled:opacity-50"
+            >
+              <Printer size={14} /> Confirm & Print Order
             </button>
           </div>
         </div>

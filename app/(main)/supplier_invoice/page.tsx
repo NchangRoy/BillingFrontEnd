@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import DropDown from "@mui/icons-material/ArrowDropDown"
 import SearchIcon from "@mui/icons-material/Search"
 import AddIcon from "@mui/icons-material/Add"
-import { Pencil, Trash2, MoreVertical, Printer, Truck } from "lucide-react";
+import { Pencil, Trash2, MoreVertical, Printer, Truck, Eye, Share2 } from "lucide-react";
 
 // API & Models
 import { FactureResponse, UpdatedSupplierFactureResponse } from '@/src/api/models/UpdatedSupplierFactureResponse'
@@ -16,12 +16,16 @@ import { UpdatedClientResponse } from '@/src/api/models/UpdatedClientResponse'
 import CreateSupplierInvoiceModal from './CreateSupplierInvoiceModal'
 import SupplierInvoicePrintPreviewModal from './SupplierInvoicePrintPreviewModal'
 import { FactureFournisseurControllerService, FournisseursService } from '@/src/src2/api'
+import { getVisibleFacturesFournisseur } from '@/src/api/scopedDocs'
 import { mapBackendFactureFournisseurArrayToInternal } from '@/src/Mappers/SupplierFactureMapper'
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
 import EmptyState from '@/components/EmptyState'
 import { useLoading } from '@/components/LoadingContext'
 import ActionButton from '@/components/ActionButton'
+import ShareDocModal from '@/components/ShareDocModal'
+import PermissionBadge from '@/components/PermissionBadge'
+import { useCanEditDocuments } from '@/src/hooks/useCanEditDocuments'
 
 // Helper for date formatting
 const formatDate = (dateString?: string) => {
@@ -41,12 +45,14 @@ const columns = {
   "Due Date": "dateEcheance",
   "Status": "etat",
   "Total (TTC)": "montantTTC",
-  "Resting": "montantRestant"
+  "Resting": "montantRestant",
+  "Permission": "docPermission"
 }
 
 const SupplierFactures = () => {
   const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
+  const { canEdit } = useCanEditDocuments();
 
   // 1. State Management
   const [showStatusMenu, setShowStatusMenu] = useState<boolean>(false);
@@ -54,6 +60,7 @@ const SupplierFactures = () => {
   const [selectedStatus, setSelectedStatus] = useState<FactureResponse.etat | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState<boolean>(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
   
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [clickedFacture, setClickedFacture] = useState<UpdatedSupplierFactureResponse | undefined>();
@@ -79,7 +86,7 @@ const SupplierFactures = () => {
       setIsLoading(true)
       showLoader('Loading supplier invoices...')
       try {
-        const data = await FactureFournisseurControllerService.getFactures()
+        const data = await getVisibleFacturesFournisseur()
         const transformed = mapBackendFactureFournisseurArrayToInternal(data)
         setFactures(transformed);
       } catch (error) {
@@ -169,12 +176,14 @@ const SupplierFactures = () => {
             <SearchIcon className='text-secondary-mid' />
           </div>
 
-          <button 
-            onClick={() => { setClickedFacture(undefined); setSelectedSupplier(undefined); setIsModalOpen(true); }}
-            className="flex items-center gap-2 bg-secondary-mid text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-secondary hover:shadow-lg transition-all"
-          >
-            <AddIcon sx={{ fontSize: 18 }} /> Create Supplier Invoice
-          </button>
+          {canEdit && (
+            <button
+              onClick={() => { setClickedFacture(undefined); setSelectedSupplier(undefined); setIsModalOpen(true); }}
+              className="flex items-center gap-2 bg-secondary-mid text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-secondary hover:shadow-lg transition-all"
+            >
+              <AddIcon sx={{ fontSize: 18 }} /> Create Supplier Invoice
+            </button>
+          )}
         </div>
       </div>
 
@@ -239,6 +248,8 @@ const SupplierFactures = () => {
                         </span>
                       ) : key === 'dateFacturation' || key === 'dateEcheance' ? (
                         <span className="text-xs font-bold text-gray-500">{formatDate(facture[key as keyof UpdatedSupplierFactureResponse] as string)}</span>
+                      ) : key === 'docPermission' ? (
+                        <PermissionBadge permission={facture.docPermission?.permission} />
                       ) : (
                         (facture as any)[key] || "—"
                       )}
@@ -254,11 +265,35 @@ const SupplierFactures = () => {
 
                     {activeMenuId === facture.idFacture && (
                       <div ref={menuRef} className="absolute right-16 top-1/2 -translate-y-1/2 z-40 bg-white border border-slate-100 rounded-2xl shadow-2xl p-1.5 flex gap-1 animate-in fade-in slide-in-from-right-2 duration-200">
+                        {(() => {
+                          const permission = !canEdit ? 'VIEWER' : facture.docPermission?.permission;
+                          const viewButton = (
+                            <ActionButton
+                              key="view"
+                              label="View"
+                              onClick={() => { setClickedFacture(facture); setIsPrintModalOpen(true); setActiveMenuId(null); }}
+                              className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-purple-800 transition-all"
+                            ><Eye size={14} /></ActionButton>
+                          );
+                          if (permission === 'VIEWER') return viewButton;
+                          const editButton = (
+                            <ActionButton
+                              key="edit"
+                              label="Modify"
+                              onClick={() => { setClickedFacture(facture); setIsModalOpen(true); setActiveMenuId(null); }}
+                              className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-blue-600 transition-all"
+                            ><Pencil size={14} /></ActionButton>
+                          );
+                          if (permission === 'EDITOR') return <>{editButton}{viewButton}</>;
+                          return (
+                          <>
+                          {editButton}
+
                         <ActionButton
-                          label="Modify"
-                          onClick={() => { setClickedFacture(facture); setIsModalOpen(true); setActiveMenuId(null); }}
-                          className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-blue-600 transition-all"
-                        ><Pencil size={14} /></ActionButton>
+                          label="Share"
+                          onClick={() => { setClickedFacture(facture); setIsShareModalOpen(true); setActiveMenuId(null); }}
+                          className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-secondary-mid transition-all"
+                        ><Share2 size={14} /></ActionButton>
 
                         <ActionButton
                           label="Print"
@@ -271,6 +306,9 @@ const SupplierFactures = () => {
                           onClick={() => { setFactures(prev => prev.filter(f => f.idFacture !== facture.idFacture)); setActiveMenuId(null); }}
                           className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-red-50 text-red-600 transition-all"
                         ><Trash2 size={14} /></ActionButton>
+                          </>
+                          );
+                        })()}
                       </div>
                     )}
                   </td>
@@ -291,13 +329,20 @@ const SupplierFactures = () => {
       )}
 
       {isPrintModalOpen && clickedFacture && (
-        <SupplierInvoicePrintPreviewModal 
-          data={clickedFacture} 
-          isOpen={isPrintModalOpen} 
-          onClose={() => setIsPrintModalOpen(false)} 
-          onConfirmPrint={() => {}} 
+        <SupplierInvoicePrintPreviewModal
+          data={clickedFacture}
+          isOpen={isPrintModalOpen}
+          onClose={() => setIsPrintModalOpen(false)}
+          onConfirmPrint={() => {}}
         />
       )}
+      <ShareDocModal
+        isOpen={isShareModalOpen}
+        docId={clickedFacture?.idFacture}
+        docType="FACTURE_FOURNISSEUR"
+        docLabel={clickedFacture?.numeroFacture ? `Supplier Invoice ${clickedFacture.numeroFacture}` : undefined}
+        onClose={() => setIsShareModalOpen(false)}
+      />
     </div>
   )
 }

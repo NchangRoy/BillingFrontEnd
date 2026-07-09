@@ -1,28 +1,36 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { 
-  User, 
-  MapPin, 
-  ShieldCheck, 
-  Package, 
-  LogOut, 
+import {
+  User,
+  MapPin,
+  ShieldCheck,
+  Package,
+  LogOut,
   BadgeCheck,
   Building2,
   ChevronRight,
   Lock,
-  Globe
+  Globe,
+  Camera
 } from "lucide-react";
 import { UpdatedSellerResponse, Permission, SaleSize } from "@/src/api/models/UpdatedSellerResponse";
+import { updateStoredSellerProfileImage } from "@/src/api/session";
+import SellerAvatar from "@/components/SellerAvatar";
+import UploadSellerAvatarModal from "@/components/UploadSellerAvatarModal";
 
 const ProfilePage = () => {
   const [seller, setSeller] = useState<UpdatedSellerResponse | null>(null);
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+  const [profileImageUrl, setProfileImageUrl] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     // Ensuring code runs only on client
     const stored = localStorage.getItem("seller");
     if (stored) {
-      setSeller(JSON.parse(stored));
+      const parsed = JSON.parse(stored);
+      setSeller(parsed);
+      setProfileImageUrl(parsed.profileImageUrl);
     }
   }, []);
 
@@ -43,9 +51,16 @@ const ProfilePage = () => {
         <div className="bg-white rounded-3xl border border-[var(--color-secondary-light)] overflow-hidden shadow-sm">
           <div className="h-40 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-secondary)] relative">
             <div className="absolute -bottom-14 left-10 p-1.5 bg-white rounded-3xl shadow-xl">
-              <div className="w-28 h-28 bg-[var(--color-secondary-super-light)] rounded-2xl flex items-center justify-center border border-[var(--color-secondary-light)]">
-                <User size={56} className="text-[var(--color-primary)]" />
-              </div>
+              <button
+                onClick={() => setIsAvatarModalOpen(true)}
+                className="relative group/avatar w-28 h-28 rounded-2xl overflow-hidden border border-[var(--color-secondary-light)] block"
+                title="Change profile photo"
+              >
+                <SellerAvatar name={seller.username} imageUrl={profileImageUrl} size={112} className="!rounded-2xl w-full h-full" />
+                <span className="absolute inset-0 bg-black/40 opacity-0 group-hover/avatar:opacity-100 flex items-center justify-center transition-opacity">
+                  <Camera size={28} className="text-white" />
+                </span>
+              </button>
             </div>
           </div>
           
@@ -196,6 +211,18 @@ const ProfilePage = () => {
           </div>
         </div>
       </div>
+
+      <UploadSellerAvatarModal
+        isOpen={isAvatarModalOpen}
+        onClose={() => setIsAvatarModalOpen(false)}
+        sellerId={seller.Id}
+        username={seller.username}
+        profileImageUrl={profileImageUrl}
+        onUploaded={(photoUrl) => {
+          setProfileImageUrl(photoUrl);
+          updateStoredSellerProfileImage(photoUrl);
+        }}
+      />
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import type { LigneFactureResponse } from './LigneFactureResponse';
+import type { DocPermissionResponse } from '../../src2/api/models/DocPermissionResponse';
 
 export type UpdatedFactureResponse = {
     idFacture?: string;
@@ -40,7 +41,11 @@ export type UpdatedFactureResponse = {
     updatedAt?: string;
     referalClientId?:string,
     createdBy?:string,
-    organizationId?:string
+    organizationId?:string,
+    agencyId?:string,
+    originType?: 'POS' | 'SALES',
+    sessionId?:string,
+    docPermission?: DocPermissionResponse;
 };
 
 export namespace FactureResponse {

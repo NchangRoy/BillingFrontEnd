@@ -2,6 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { DocPermissionResponse } from './DocPermissionResponse';
 import type { LigneBonAchatResponse } from './LigneBonAchatResponse';
 export type BonAchatResponse = {
     idBonAchat?: string;
@@ -33,6 +34,8 @@ export type BonAchatResponse = {
     updatedAt?: string;
     organizationId?: string;
     agencyId?: string;
+    createdBy?: string;
+    docPermission?: DocPermissionResponse;
 };
 export namespace BonAchatResponse {
     export enum status {

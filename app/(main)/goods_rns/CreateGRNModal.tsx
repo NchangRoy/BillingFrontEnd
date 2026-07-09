@@ -12,8 +12,10 @@ import { UpdatedClientResponse } from "@/src/api/models/UpdatedClientResponse";
 import ClientHeader from "./ClientHeader";
 import GRNDetails from "./GRNDetails";
 import { mapInternalToBondeReceptionCreateRequest } from "@/src/Mappers/GRNMapper";
-import { BondeReceptionControllerService, FournisseursService } from "@/src/src2/api";
+import { BondeReceptionControllerService } from "@/src/src2/api";
 import { toast } from 'sonner';
+import { UpdatedSellerResponse } from "@/src/api/models/UpdatedSellerResponse";
+import { getVisibleFournisseurs } from "@/src/api/scopedTiers";
 interface Props {
   isOpen: boolean;
   onClose: (param: boolean) => void;
@@ -25,10 +27,18 @@ const CreateGRNModal = ({ isOpen, onClose, clientData, grnData }: Props) => {
   const [selectedClient, setSelectedClient] = useState<UpdatedClientResponse | undefined>(clientData);
   const [grn, setGrn] = useState<GoodsReceiptNoteResponse | undefined>();
   const [producers, setProducers] = useState<UpdatedClientResponse[]>([]);
+  const [seller, setSeller] = useState<UpdatedSellerResponse>();
+
+  useEffect(() => {
+    const stored = localStorage.getItem("seller");
+    if (stored) {
+      setSeller(JSON.parse(stored));
+    }
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
-    FournisseursService.getAllFournisseurs()
+    getVisibleFournisseurs()
       .then((data) => setProducers(data.map((f) => ({
         ...f,
         idClient: f.idFournisseur,
@@ -83,7 +93,10 @@ const CreateGRNModal = ({ isOpen, onClose, clientData, grnData }: Props) => {
       createdAt: grn.createdAt || new Date().toISOString()
     };
 
-    const apiPayload=mapInternalToBondeReceptionCreateRequest(finalPayload)
+    const apiPayload = mapInternalToBondeReceptionCreateRequest(finalPayload);
+    apiPayload.createdBy = seller?.Id;
+    apiPayload.organizationId = seller?.organizationId;
+    apiPayload.agencyId = seller?.agencyId;
 
     console.log("Saving GRN Payload:", finalPayload);
 

@@ -116,6 +116,7 @@ export const mapBonCommandeToSalesOrderResponse = (
         notes: apiRes.notes,
         createdAt: apiRes.createdAt,
         updatedAt: apiRes.updatedAt,
+        docPermission: apiRes.docPermission,
     };
 };
 

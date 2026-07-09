@@ -3,7 +3,12 @@
 import React, { useEffect, useState } from 'react';
 import { PurchaseOrderResponse } from '@/src/api/models/PurchaseOrderLine';
 import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
-import { Truck, MapPin, Phone, Mail, Building2 } from 'lucide-react';
+import { Truck, MapPin, Phone, Mail, Building2, Download, Printer } from 'lucide-react';
+import { generatePurchaseOrderHTML } from '@/src/api/printGenerators/purchaseOrderPrint';
+import { generateQRBase64 } from '@/src/api/Utils/qrCode';
+import { sendPrintRequest } from '@/src/api/Utils/printerModule';
+import { downloadHtmlAsPdf } from '@/src/api/Utils/pdfDownload';
+import { toast } from 'sonner';
 
 interface PrintPreviewProps {
   isOpen: boolean;
@@ -14,6 +19,8 @@ interface PrintPreviewProps {
 
 const PurchaseOrderPrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: PrintPreviewProps) => {
   const [seller, setSeller] = useState<UpdatedSellerResponse | null>(null);
+  const [generatedHTML, setGeneratedHTML] = useState<string>("");
+  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("seller");
@@ -25,6 +32,51 @@ const PurchaseOrderPrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint 
       }
     }
   }, []);
+
+  // generatePurchaseOrderHTML expects the raw BonAchatResponse's field names
+  // for these three — this admin page's mapped PurchaseOrderResponse names
+  // them differently, so they're adapted here rather than duplicating the
+  // whole shared template.
+  useEffect(() => {
+    let isMounted = true;
+    if (seller && data) {
+      const adapted = {
+        ...data,
+        numeroBonAchat: data.poNumber,
+        dateBonAchat: data.poDate,
+        dateLivraisonPrevue: data.expectedDeliveryDate,
+        devise: 'XAF',
+      };
+      generateQRBase64(`https://yourcompany.com/verify?po=${data.poNumber}`, 200)
+        .then((qrBase64) => generatePurchaseOrderHTML(adapted, seller, qrBase64))
+        .then((html) => { if (isMounted) setGeneratedHTML(html); })
+        .catch((err) => {
+          console.error("Failed to generate printable HTML", err);
+          toast.error("Failed to prepare document for print/download.");
+        });
+    }
+    return () => { isMounted = false; };
+  }, [seller, data, isOpen]);
+
+  const handlePrint = async () => {
+    try {
+      await sendPrintRequest(generatedHTML);
+      onConfirmPrint();
+    } catch (err) {
+      toast.error("Failed to reach the printer module. Is it running?");
+    }
+  };
+
+  const handleDownload = async () => {
+    setIsDownloading(true);
+    try {
+      await downloadHtmlAsPdf(generatedHTML, `PurchaseOrder-${data.poNumber || "draft"}`);
+    } catch (err) {
+      toast.error("Failed to generate PDF for download.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -60,11 +112,19 @@ const PurchaseOrderPrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint 
             >
               Back to Editor
             </button>
-            <button 
-              onClick={onConfirmPrint} 
-              className="px-8 py-2.5 bg-secondary-mid hover:bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-secondary-mid/20 transition-transform active:scale-95"
+            <button
+              onClick={handleDownload}
+              disabled={isDownloading || !generatedHTML}
+              className="flex items-center gap-2 px-6 py-2.5 bg-white border-2 border-secondary-mid text-secondary-mid rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
             >
-              Confirm & Print PO
+              <Download size={14} /> {isDownloading ? "Downloading…" : "Download"}
+            </button>
+            <button
+              onClick={handlePrint}
+              disabled={!generatedHTML}
+              className="flex items-center gap-2 px-8 py-2.5 bg-secondary-mid hover:bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-secondary-mid/20 transition-transform active:scale-95 disabled:opacity-50"
+            >
+              <Printer size={14} /> Confirm & Print PO
             </button>
           </div>
         </div>

@@ -1,15 +1,16 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from 'react';
-import { 
-  Search, Filter, FileSpreadsheet, FileText, 
-  MoreHorizontal, Eye, Building2, User, X, Store, Calendar, 
-  ChevronRight, ArrowUpDown, Download
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import {
+  Search, Filter, FileSpreadsheet, FileText,
+  MoreHorizontal, Eye, Building2, User, X, Calendar,
+  ChevronRight, ArrowUpDown, Download, ChevronDown, GripVertical
 } from "lucide-react";
 import { EnrichedDevisResponse } from '@/src/src2/api/models/EnrichedDevisResponse';
 import { DevisService } from '@/src/src2/api';
 import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
 import { toast } from 'sonner';
+import { exportRowsToCsv } from '@/src/api/Utils/exportCsv';
 
 const SalesJournalPage = () => {
   const [data, setData] = useState<EnrichedDevisResponse[]>([]);
@@ -19,14 +20,26 @@ const SalesJournalPage = () => {
   const [filters, setFilters] = useState({
     search: "",
     status: "ALL",
-    agency: "ALL",
+    agencies: [] as string[],
     client: "",
-    salesPoint: "ALL",
-    startDate: "", 
+    startDate: "",
     endDate: "",
     minAmount: "",
     maxAmount: ""
   });
+
+  const [isAgencyPickerOpen, setIsAgencyPickerOpen] = useState(false);
+  const agencyPickerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (agencyPickerRef.current && !agencyPickerRef.current.contains(event.target as Node)) {
+        setIsAgencyPickerOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const stored = localStorage.getItem("seller");
@@ -51,16 +64,14 @@ const SalesJournalPage = () => {
     fetchData();
   }, [seller]);
 
-  const agencyOptions = useMemo(() => Array.from(new Set(data.map(i => i.agencyName).filter(Boolean))).sort(), [data]);
-  const salesPointOptions = useMemo(() => Array.from(new Set(data.map(i => i.salesPointName).filter(Boolean))).sort(), [data]);
+  const agencyOptions = useMemo(() => Array.from(new Set(data.map(i => i.agencyName).filter((a): a is string => !!a))).sort(), [data]);
 
   const filteredData = useMemo(() => {
     return data.filter(item => {
       const matchesSearch = !filters.search || (item.numeroDevis ?? '').toLowerCase().includes(filters.search.toLowerCase());
       const matchesStatus = filters.status === "ALL" || item.statut === filters.status;
-      const matchesAgency = filters.agency === "ALL" || item.agencyName === filters.agency;
+      const matchesAgency = filters.agencies.length === 0 || (item.agencyName != null && filters.agencies.includes(item.agencyName));
       const matchesClient = !filters.client || (item.nomClient && item.nomClient.toLowerCase().includes(filters.client.toLowerCase()));
-      const matchesSalesPoint = filters.salesPoint === "ALL" || item.salesPointName === filters.salesPoint;
       const itemDate = new Date(item.dateCreation ?? 0);
       const start = filters.startDate ? new Date(filters.startDate) : null;
       const end = filters.endDate ? new Date(filters.endDate) : null;
@@ -71,7 +82,7 @@ const SalesJournalPage = () => {
       const max = filters.maxAmount ? parseFloat(filters.maxAmount) : null;
       const matchesAmount = (min === null || amount >= min) && (max === null || amount <= max);
 
-      return matchesSearch && matchesStatus && matchesAgency && matchesClient && matchesSalesPoint && matchesDate && matchesAmount;
+      return matchesSearch && matchesStatus && matchesAgency && matchesClient && matchesDate && matchesAmount;
     });
   }, [filters, data]);
 
@@ -80,8 +91,58 @@ const SalesJournalPage = () => {
   }, [filteredData]);
 
   const removeFilter = (key: keyof typeof filters) => {
-    const resetValue = (key === "status" || key === "agency" || key === "salesPoint") ? "ALL" : "";
+    if (key === "agencies") {
+      setFilters(prev => ({ ...prev, agencies: [] }));
+      return;
+    }
+    const resetValue = key === "status" ? "ALL" : "";
     setFilters(prev => ({ ...prev, [key]: resetValue }));
+  };
+
+  const addAgencyToStack = (agency: string) => {
+    setFilters(prev => prev.agencies.includes(agency) ? prev : { ...prev, agencies: [...prev.agencies, agency] });
+  };
+
+  const removeAgencyFromStack = (agency: string) => {
+    setFilters(prev => ({ ...prev, agencies: prev.agencies.filter(a => a !== agency) }));
+  };
+
+  const handleAgencyDragStart = (e: React.DragEvent, agency: string) => {
+    e.dataTransfer.setData("text/plain", agency);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleAgencyDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const agency = e.dataTransfer.getData("text/plain");
+    if (agency) addAgencyToStack(agency);
+  };
+
+  const handleAgencyDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const clearAllFilters = () => setFilters({
+    search: "", status: "ALL", agencies: [], client: "",
+    startDate: "", endDate: "", minAmount: "", maxAmount: ""
+  });
+
+  const handleExportCsv = () => {
+    exportRowsToCsv(
+      `quotation-journal-${new Date().toISOString().slice(0, 10)}`,
+      [
+        { header: "Devis Number", accessor: (r: EnrichedDevisResponse) => r.numeroDevis },
+        { header: "Client", accessor: (r: EnrichedDevisResponse) => r.nomClient },
+        { header: "Agency", accessor: (r: EnrichedDevisResponse) => r.agencyName },
+        { header: "Sale Point", accessor: (r: EnrichedDevisResponse) => r.salesPointName },
+        { header: "Date", accessor: (r: EnrichedDevisResponse) => r.dateCreation },
+        { header: "Status", accessor: (r: EnrichedDevisResponse) => r.statut },
+        { header: "Total (TTC)", accessor: (r: EnrichedDevisResponse) => r.montantTTC },
+        { header: "Currency", accessor: (r: EnrichedDevisResponse) => r.devise },
+      ],
+      filteredData
+    );
   };
 
   const getStatusColor = (statut?: EnrichedDevisResponse.statut) => {
@@ -109,7 +170,7 @@ const SalesJournalPage = () => {
         </div>
         
         <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2 px-5 py-2.5 bg-white border border-secondary-light rounded-xl text-sm font-bold text-primary hover:bg-slate-50 shadow-sm transition-all active:scale-95">
+            <button onClick={handleExportCsv} className="flex items-center gap-2 px-5 py-2.5 bg-white border border-secondary-light rounded-xl text-sm font-bold text-primary hover:bg-slate-50 shadow-sm transition-all active:scale-95">
                 <Download size={18} className="text-secondary-mid" />
                 Export CSV
             </button>
@@ -135,20 +196,74 @@ const SalesJournalPage = () => {
             />
           </div>
           
-          <div className="relative">
-            <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary-gray" size={16} />
-            <select className="w-full pl-10 pr-4 py-2.5 bg-secondary-background border border-transparent rounded-xl text-sm font-bold text-primary focus:bg-white focus:ring-2 focus:ring-secondary-mid/20 cursor-pointer appearance-none outline-none" value={filters.agency} onChange={(e) => setFilters({...filters, agency: e.target.value})}>
-              <option value="ALL text-slate-400">All Agencies</option>
-              {agencyOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-            </select>
-          </div>
+          <div className="relative" ref={agencyPickerRef}>
+            <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary-gray z-10" size={16} />
+            <button
+              type="button"
+              onClick={() => setIsAgencyPickerOpen(!isAgencyPickerOpen)}
+              className="w-full flex items-center justify-between gap-2 pl-10 pr-3 py-2.5 bg-secondary-background border border-transparent rounded-xl text-sm font-bold text-primary hover:bg-slate-100 focus:bg-white focus:ring-2 focus:ring-secondary-mid/20 transition-all outline-none text-left"
+            >
+              <span className="truncate">
+                {filters.agencies.length === 0 ? "All Agencies" : `${filters.agencies.length} Agenc${filters.agencies.length > 1 ? "ies" : "y"} Stacked`}
+              </span>
+              <ChevronDown size={14} className={`shrink-0 text-secondary-gray transition-transform ${isAgencyPickerOpen ? "rotate-180" : ""}`} />
+            </button>
 
-          <div className="relative">
-            <Store className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary-gray" size={16} />
-            <select className="w-full pl-10 pr-4 py-2.5 bg-secondary-background border border-transparent rounded-xl text-sm font-bold text-primary focus:bg-white focus:ring-2 focus:ring-secondary-mid/20 cursor-pointer appearance-none outline-none" value={filters.salesPoint} onChange={(e) => setFilters({...filters, salesPoint: e.target.value})}>
-              <option value="ALL">All Points of Sale</option>
-              {salesPointOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-            </select>
+            {isAgencyPickerOpen && (
+              <div className="absolute z-30 top-full left-0 mt-2 w-96 bg-white border border-secondary-light rounded-2xl shadow-2xl p-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-150">
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-secondary-gray mb-2">Available Agencies</p>
+                  <div className="flex flex-wrap gap-2 min-h-9">
+                    {agencyOptions.filter(a => !filters.agencies.includes(a)).length === 0 ? (
+                      <span className="text-[11px] text-secondary-gray italic py-1.5">
+                        {agencyOptions.length === 0 ? "No agencies found." : "All agencies are already stacked."}
+                      </span>
+                    ) : agencyOptions.filter(a => !filters.agencies.includes(a)).map(opt => (
+                      <div
+                        key={opt}
+                        draggable
+                        onDragStart={(e) => handleAgencyDragStart(e, opt)}
+                        onClick={() => addAgencyToStack(opt)}
+                        title="Drag into the box below, or click to add"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary-super-light text-secondary-mid rounded-lg text-[11px] font-bold cursor-grab active:cursor-grabbing hover:bg-secondary-mid hover:text-white transition-colors select-none"
+                      >
+                        <GripVertical size={11} className="opacity-50" />
+                        {opt}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div
+                  onDragOver={handleAgencyDragOver}
+                  onDrop={handleAgencyDrop}
+                  className="border-2 border-dashed border-secondary-light rounded-xl p-3 min-h-[72px] bg-secondary-background/60 transition-colors"
+                >
+                  <p className="text-[9px] font-black uppercase tracking-widest text-secondary-gray mb-2">Stacked &mdash; Filtering By</p>
+                  {filters.agencies.length === 0 ? (
+                    <p className="text-[11px] text-secondary-gray italic">Drag agencies here to filter by more than one at once.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {filters.agencies.map(a => (
+                        <div key={a} className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary-mid text-white rounded-lg text-[11px] font-bold">
+                          {a}
+                          <button onClick={() => removeAgencyFromStack(a)} className="hover:text-red-200 transition-colors"><X size={12} /></button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {filters.agencies.length > 0 && (
+                  <button
+                    onClick={() => setFilters(prev => ({ ...prev, agencies: [] }))}
+                    className="text-[10px] font-black text-red-500 hover:text-red-600 uppercase tracking-widest"
+                  >
+                    Clear Stacked Agencies
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="relative">
@@ -198,19 +313,26 @@ const SalesJournalPage = () => {
 
         {/* ACTIVE FILTERS (CHIPS) */}
         <div className="flex flex-wrap items-center gap-2 mt-6 min-h-[28px]">
+          {filters.agencies.map(agency => (
+            <div key={`agency-${agency}`} className="flex items-center gap-2 px-3 py-1 bg-white border border-secondary-mid/30 rounded-full text-[10px] font-bold text-secondary-mid shadow-sm transition-all hover:border-secondary-mid">
+              <span className="opacity-50 uppercase text-[8px] tracking-widest">Ag</span>
+              <span>{agency}</span>
+              <button onClick={() => removeAgencyFromStack(agency)} className="p-0.5 hover:bg-secondary-super-light rounded-full transition-colors text-red-400 hover:text-red-600"><X size={10} /></button>
+            </div>
+          ))}
           {Object.entries(filters).map(([key, value]) => {
-            if (!value || value === "ALL") return null;
-            const labels: any = { search: "Doc", status: "Stat", agency: "Ag", client: "Cli", salesPoint: "POS", startDate: "From", endDate: "To", minAmount: ">", maxAmount: "<" };
+            if (key === "agencies" || !value || value === "ALL") return null;
+            const labels: any = { search: "Doc", status: "Stat", client: "Cli", startDate: "From", endDate: "To", minAmount: ">", maxAmount: "<" };
             return (
               <div key={key} className="flex items-center gap-2 px-3 py-1 bg-white border border-secondary-mid/30 rounded-full text-[10px] font-bold text-secondary-mid shadow-sm transition-all hover:border-secondary-mid">
                 <span className="opacity-50 uppercase text-[8px] tracking-widest">{labels[key] || key}</span>
-                <span>{value}</span>
+                <span>{value as string}</span>
                 <button onClick={() => removeFilter(key as any)} className="p-0.5 hover:bg-secondary-super-light rounded-full transition-colors text-red-400 hover:text-red-600"><X size={10} /></button>
               </div>
             );
           })}
-          {Object.values(filters).some(v => v !== "" && v !== "ALL") && (
-            <button onClick={() => setFilters({search: "", status: "ALL", agency: "ALL", client: "", salesPoint: "ALL", startDate: "", endDate: "", minAmount: "", maxAmount: ""})} className="text-[10px] font-black text-secondary-gray hover:text-red-500 ml-2 transition-colors flex items-center gap-1 uppercase tracking-tighter">
+          {(filters.agencies.length > 0 || Object.entries(filters).some(([k, v]) => k !== "agencies" && v !== "" && v !== "ALL")) && (
+            <button onClick={clearAllFilters} className="text-[10px] font-black text-secondary-gray hover:text-red-500 ml-2 transition-colors flex items-center gap-1 uppercase tracking-tighter">
                 <X size={12} /> Clear Filters
             </button>
           )}
@@ -253,7 +375,6 @@ const SalesJournalPage = () => {
                       <div className="flex items-center gap-2 text-sm font-bold text-primary uppercase tracking-tight"><User size={14} className="text-secondary-mid" /> {item.nomClient}</div>
                       <div className="flex items-center gap-3">
                         <span className="flex items-center gap-1 text-[10px] font-bold text-secondary-gray bg-slate-100 px-2 py-0.5 rounded-md"><Building2 size={10} /> {item.agencyName}</span>
-                        <span className="flex items-center gap-1 text-[10px] font-bold text-secondary-gray bg-slate-100 px-2 py-0.5 rounded-md"><Store size={10} /> {item.salesPointName}</span>
                       </div>
                     </div>
                   </td>
@@ -324,8 +445,8 @@ const SalesJournalPage = () => {
             </div>
             <h3 className="text-primary text-xl font-black uppercase tracking-tight">No Journals Found</h3>
             <p className="text-secondary-gray text-sm max-w-xs mx-auto mt-2">We couldn't find any records matching your current filter criteria. Try adjusting the dates or status.</p>
-            <button 
-                onClick={() => setFilters({search: "", status: "ALL", agency: "ALL", client: "", salesPoint: "ALL", startDate: "", endDate: "", minAmount: "", maxAmount: ""})}
+            <button
+                onClick={clearAllFilters}
                 className="mt-6 px-6 py-2 bg-primary text-white text-xs font-black rounded-xl hover:bg-secondary transition-all uppercase tracking-widest"
             >
                 Reset Search

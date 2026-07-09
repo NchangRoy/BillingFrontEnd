@@ -1,3 +1,5 @@
+import type { DocPermissionResponse } from '../../src2/api/models/DocPermissionResponse';
+
 export type DeliveryNoteLineResponse = {
   productId?: string;
   description?: string;
@@ -56,6 +58,7 @@ export type DeliveryNoteResponse = {
 
   createdAt?: string;
   updatedAt?: string;
+  docPermission?: DocPermissionResponse;
 };
 
 export namespace DeliveryNoteResponse {

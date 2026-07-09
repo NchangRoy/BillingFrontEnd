@@ -8,6 +8,7 @@ export type SessionResponse = {
     organizationId?: string;
     agencyId?: string;
     sellerId?: string;
+    type?: SessionResponse.type;
     status?: SessionResponse.status;
     openingAmount?: number;
     closingAmount?: number;
@@ -20,6 +21,10 @@ export type SessionResponse = {
     updatedAt?: string;
 };
 export namespace SessionResponse {
+    export enum type {
+        POS = 'POS',
+        SALES = 'SALES',
+    }
     export enum status {
         PENDING = 'PENDING',
         OPEN = 'OPEN',

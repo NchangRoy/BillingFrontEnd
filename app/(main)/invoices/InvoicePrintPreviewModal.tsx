@@ -2,10 +2,14 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { UpdatedFactureResponse, FactureResponse } from '@/src/api/models/UpdatedFactureResponse';
-import { Printer, Mail, X, FileText, Receipt, Building2, Phone, MapPin } from 'lucide-react';
+import { Printer, X, FileText, Receipt, Building2, Phone, MapPin, Download } from 'lucide-react';
 import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
 import { QRCode } from 'react-qrcode-logo';
 import { toast } from 'sonner';
+import { generateFactureHTML } from '@/src/api/printGenerators/facturePrint';
+import { generateQRBase64 } from '@/src/api/Utils/qrCode';
+import { sendPrintRequest } from '@/src/api/Utils/printerModule';
+import { downloadHtmlAsPdf } from '@/src/api/Utils/pdfDownload';
 
 type PrintFormat = 'A4' | 'Thermal';
 
@@ -18,9 +22,10 @@ interface PrintPreviewProps {
 
 const InvoicePrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: PrintPreviewProps) => {
   const [format, setFormat] = useState<PrintFormat>('A4');
-  const [isSending, setIsSending] = useState(false);
   const printAreaRef = useRef<HTMLDivElement>(null);
   const [seller, setSeller] = useState<UpdatedSellerResponse | null>(null);
+  const [generatedHTML, setGeneratedHTML] = useState<string>("");
+  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("seller");
@@ -32,7 +37,43 @@ const InvoicePrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: Pri
         toast.error("Failed to load seller data for preview.")
       }
     }
-  }, [isOpen]); 
+  }, [isOpen]);
+
+  // Builds the same HTML sent to the printer module / PDF download — kept
+  // separate from the on-screen JSX preview above, which stays hand-styled.
+  useEffect(() => {
+    let isMounted = true;
+    if (seller && data) {
+      generateQRBase64(`https://yourcompany.com/pay?invoice=${data.numeroFacture}`, 200)
+        .then((qrBase64) => generateFactureHTML(data, seller, qrBase64))
+        .then((html) => { if (isMounted) setGeneratedHTML(html); })
+        .catch((err) => {
+          console.error("Failed to generate printable HTML", err);
+          toast.error("Failed to prepare document for print/download.");
+        });
+    }
+    return () => { isMounted = false; };
+  }, [seller, data, isOpen]);
+
+  const handlePrint = async () => {
+    try {
+      await sendPrintRequest(generatedHTML);
+      onConfirmPrint();
+    } catch (err) {
+      toast.error("Failed to reach the printer module. Is it running?");
+    }
+  };
+
+  const handleDownload = async () => {
+    setIsDownloading(true);
+    try {
+      await downloadHtmlAsPdf(generatedHTML, `Invoice-${data.numeroFacture || "draft"}`);
+    } catch (err) {
+      toast.error("Failed to generate PDF for download.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -49,34 +90,6 @@ const InvoicePrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: Pri
     taxAmount: data.montantTVA,
     paymentUrl: `https://yourcompany.com/pay?invoice=${data.numeroFacture}`
   });
-
-  const handleSendToBackend = async () => {
-    if (!printAreaRef.current) return;
-    setIsSending(true);
-    try {
-      const htmlContent = printAreaRef.current.innerHTML;
-      const payload = {
-        documentReference: data.numeroFacture,
-        documentType: 'INVOICE',
-        format: format,
-        htmlContent: htmlContent,
-        clientId: data.idClient,
-      };
-
-      const response = await fetch('/api/documents/generate-pdf', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (response.ok) toast.success("Invoice PDF successfully generated!")
-    } catch (error) {
-      console.error("Error sending to backend:", error);
-      toast.error("Failed to send invoice to server.")
-    } finally {
-      setIsSending(false);
-    }
-  };
 
   const formatCurrency = (amount?: number) =>
     new Intl.NumberFormat('en-GB', {
@@ -114,10 +127,14 @@ const InvoicePrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: Pri
 
           <div className="flex gap-3">
             <button onClick={onClose} className="p-2.5 text-slate-400 hover:bg-slate-100 rounded-full transition-colors"><X size={20} /></button>
-            <button onClick={handleSendToBackend} disabled={isSending} className="flex items-center gap-2 px-6 py-3 border-2 border-slate-200 text-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all disabled:opacity-50">
-              <Mail size={16} /> {isSending ? 'Sending...' : 'Send to Client'}
+            <button
+              onClick={handleDownload}
+              disabled={isDownloading || !generatedHTML}
+              className="flex items-center gap-2 px-8 py-3 bg-white border-2 border-slate-900 hover:bg-slate-100 text-slate-900 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
+            >
+              <Download size={16} /> {isDownloading ? "Downloading…" : "Download"}
             </button>
-            <button onClick={onConfirmPrint} className="flex items-center gap-2 px-8 py-3 bg-slate-900 hover:bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-slate-900/20 transition-all">
+            <button onClick={handlePrint} disabled={!generatedHTML} className="flex items-center gap-2 px-8 py-3 bg-slate-900 hover:bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-slate-900/20 transition-all disabled:opacity-50">
               <Printer size={16} /> Print Document
             </button>
           </div>

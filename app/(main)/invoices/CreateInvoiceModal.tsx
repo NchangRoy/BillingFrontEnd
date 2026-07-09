@@ -16,8 +16,8 @@ import { mapUpdatedFactureToCreateRequest } from "@/src/Mappers/FactureMapper";
 import { FactureService } from "@/src/src2/api/services/FactureService";
 import { useRouter } from "next/navigation";
 import { UpdatedSellerResponse } from "@/src/api/models/UpdatedSellerResponse";
-import { ClientsService } from "@/src/src2/api";
 import { toast } from 'sonner';
+import { getVisibleClients } from "@/src/api/scopedTiers";
 
 interface Props {
   isOpen: boolean;
@@ -42,7 +42,7 @@ const CreateInvoiceModal = ({ isOpen, onClose, clientData, factureData }: Props)
 
   useEffect(() => {
     if (!isOpen) return;
-    ClientsService.getAllClients()
+    getVisibleClients()
       .then((data) => setClients(data as unknown as UpdatedClientResponse[]))
       .catch(() => toast.error("Failed to load clients."));
   }, [isOpen]);
@@ -108,6 +108,10 @@ const CreateInvoiceModal = ({ isOpen, onClose, clientData, factureData }: Props)
       // Metadata
       updatedAt: new Date().toISOString(),
        organizationId:seller?.organizationId,
+      agencyId:seller?.agencyId,
+      // Preserve origin on edit; brand-new invoices created here are always
+      // through the regular web sales flow, not a POS terminal register.
+      originType: facture.originType ?? 'SALES',
       createdBy:seller?.Id
     };
 

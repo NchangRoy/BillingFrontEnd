@@ -3,6 +3,12 @@
 import React, { useEffect, useState } from 'react';
 import { UpdatedProformaInvoiceResponse } from '@/src/api/models/UpdatedProformaInvoiceResponse';
 import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
+import { Download, Printer } from 'lucide-react';
+import { generateFactureProformaHTML } from '@/src/api/printGenerators/factureProformaPrint';
+import { generateQRBase64 } from '@/src/api/Utils/qrCode';
+import { sendPrintRequest } from '@/src/api/Utils/printerModule';
+import { downloadHtmlAsPdf } from '@/src/api/Utils/pdfDownload';
+import { toast } from 'sonner';
 
 interface ProformaPrintPreviewProps {
   isOpen: boolean;
@@ -13,6 +19,8 @@ interface ProformaPrintPreviewProps {
 
 const ProformaPrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: ProformaPrintPreviewProps) => {
   const [seller, setSeller] = useState<UpdatedSellerResponse | null>(null);
+  const [generatedHTML, setGeneratedHTML] = useState<string>("");
+  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("seller");
@@ -24,6 +32,48 @@ const ProformaPrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: Pr
       }
     }
   }, []);
+
+  // generateFactureProformaHTML expects ProformaInvoiceResponse's line
+  // array as data.lignesFactureProforma — this admin page's
+  // UpdatedProformaInvoiceResponse calls it lignesDevis, so it's adapted
+  // here rather than duplicating the whole shared template.
+  useEffect(() => {
+    let isMounted = true;
+    if (seller && data) {
+      const adapted = {
+        ...data,
+        lignesFactureProforma: data.lignesDevis,
+      };
+      generateQRBase64(`https://yourcompany.com/verify?pf=${data.numeroProformaInvoice}`, 200)
+        .then((qrBase64) => generateFactureProformaHTML(adapted, seller, qrBase64))
+        .then((html) => { if (isMounted) setGeneratedHTML(html); })
+        .catch((err) => {
+          console.error("Failed to generate printable HTML", err);
+          toast.error("Failed to prepare document for print/download.");
+        });
+    }
+    return () => { isMounted = false; };
+  }, [seller, data, isOpen]);
+
+  const handlePrint = async () => {
+    try {
+      await sendPrintRequest(generatedHTML);
+      onConfirmPrint();
+    } catch (err) {
+      toast.error("Failed to reach the printer module. Is it running?");
+    }
+  };
+
+  const handleDownload = async () => {
+    setIsDownloading(true);
+    try {
+      await downloadHtmlAsPdf(generatedHTML, `Proforma-${data.numeroProformaInvoice || "draft"}`);
+    } catch (err) {
+      toast.error("Failed to generate PDF for download.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -59,11 +109,19 @@ const ProformaPrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: Pr
             >
               Back to Editor
             </button>
-            <button 
-              onClick={onConfirmPrint} 
-              className="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-600/20 transition-transform active:scale-95"
+            <button
+              onClick={handleDownload}
+              disabled={isDownloading || !generatedHTML}
+              className="flex items-center gap-2 px-6 py-2.5 bg-white border-2 border-blue-600 text-blue-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
             >
-              Confirm & Print
+              <Download size={14} /> {isDownloading ? "Downloading…" : "Download"}
+            </button>
+            <button
+              onClick={handlePrint}
+              disabled={!generatedHTML}
+              className="flex items-center gap-2 px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-600/20 transition-transform active:scale-95 disabled:opacity-50"
+            >
+              <Printer size={14} /> Confirm & Print
             </button>
           </div>
         </div>

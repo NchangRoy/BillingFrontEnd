@@ -12,9 +12,10 @@ import { UpdatedClientResponse } from "@/src/api/models/UpdatedClientResponse";
 import { UpdatedDevisResponse } from "@/src/api/models/UpdatedDevisResponse";
 import { MOCK_QUOTATIONS } from "@/src/api/models/UpdatedDevisResponse";
 import { mapUpdatedResponseToCreateRequest } from "@/src/Mappers/DevisMapper";
-import { DevisService, ClientsService } from "@/src/src2/api";
+import { DevisService } from "@/src/src2/api";
 import { toast } from 'sonner';
 import { UpdatedSellerResponse } from "@/src/api/models/UpdatedSellerResponse";
+import { getVisibleClients } from "@/src/api/scopedTiers";
 interface Props {
   isOpen: boolean;
   onClose: (param: boolean) => void;
@@ -58,7 +59,7 @@ const QuotationFormModal = ({ isOpen, onClose,clientData,quotationData}: Props) 
 
       useEffect(() => {
         if (!isOpen) return;
-        ClientsService.getAllClients()
+        getVisibleClients()
           .then((data) => setClients(data as unknown as UpdatedClientResponse[]))
           .catch(() => toast.error("Failed to load clients."));
       }, [isOpen]);
@@ -153,8 +154,9 @@ const finalPayload: UpdatedDevisResponse = {
   lignesDevis: quotation.lignesDevis || [],
 
   organizationId:seller?.organizationId,
+  agencyId:seller?.agencyId,
   createdBy:seller?.Id
-  
+
 };
 
     const request = mapUpdatedResponseToCreateRequest(finalPayload);

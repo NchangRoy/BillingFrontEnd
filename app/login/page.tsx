@@ -42,7 +42,17 @@ const LoginForm = () => {
       });
       const sellerData = mapAuthToUpdatedSeller(data);
       localStorage.setItem("seller", JSON.stringify(sellerData));
-      router.push(sellerData.mustChangePassword ? "/change-password" : "/dashboard");
+      if (sellerData.mustChangePassword) {
+        // Carried over so the forced password-change screen doesn't have to
+        // ask for the email/temporary password the user just typed in here.
+        sessionStorage.setItem("pendingPasswordChange", JSON.stringify({
+          email: formData.username,
+          currentPassword: formData.password,
+        }));
+        router.push("/change-password");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (err) {
       const message = err instanceof ApiError ? (err.body?.message ?? err.message) : 'Authentication failed';
       setError(message);

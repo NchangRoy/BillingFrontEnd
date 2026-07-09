@@ -225,4 +225,21 @@ export class DevisService {
             },
         });
     }
+    /**
+     * Récupérer les devis accessibles par un vendeur (via ses permissions)
+     * @param sellerId
+     * @returns DevisResponse OK
+     * @throws ApiError
+     */
+    public static getDevisBySellerId(
+        sellerId: string,
+    ): CancelablePromise<Array<DevisResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/devis/seller/{sellerId}',
+            path: {
+                'sellerId': sellerId,
+            },
+        });
+    }
 }

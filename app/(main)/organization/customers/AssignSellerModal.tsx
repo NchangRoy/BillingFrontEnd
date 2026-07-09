@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import CloseIcon from "@mui/icons-material/Close";
-import { UserCheck, Save } from "lucide-react";
+import SearchIcon from "@mui/icons-material/Search";
+import { UserCheck, CheckCircle2, Save } from "lucide-react";
 import { ClientResponse, CustomerAssignmentsService, SellerAdminService, SellerListItemResponse } from "@/src/src2/api";
 import { getStoredSeller } from "@/src/api/session";
 import { toast } from "sonner";
@@ -13,35 +14,54 @@ interface Props {
   onClose: (updated: boolean) => void;
 }
 
+const ROLE_LABELS: Record<string, string> = {
+  POS_SELLER: "POS Seller",
+  SELLER: "Seller",
+  AGENCY_MANAGER: "Agency Manager",
+  OWNER: "Owner",
+};
+
 const AssignSellerModal = ({ isOpen, customer, onClose }: Props) => {
   const [sellers, setSellers] = useState<SellerListItemResponse[]>([]);
-  const [selectedSellerId, setSelectedSellerId] = useState<string>("");
-  const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState("");
+  const [selectedSellerId, setSelectedSellerId] = useState<string | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    if (!isOpen) return;
-    const org = getStoredSeller();
-    if (!org?.organizationId || !customer?.idClient) return;
+    if (!isOpen || !customer) return;
+    document.body.style.overflow = "hidden";
+    setSearch("");
 
-    setLoading(true);
+    const org = getStoredSeller();
+    if (!org?.organizationId || !customer.idClient) return;
+
+    setIsLoading(true);
     Promise.all([
       SellerAdminService.getAll1(org.organizationId),
       CustomerAssignmentsService.getForClient(customer.idClient, org.organizationId).catch(() => null),
     ])
       .then(([sellersRes, currentAssignment]) => {
         setSellers(sellersRes);
-        setSelectedSellerId(currentAssignment?.sellerId || "");
+        setSelectedSellerId(currentAssignment?.sellerId || undefined);
       })
       .catch(() => toast.error("Failed to load sellers."))
-      .finally(() => setLoading(false));
+      .finally(() => setIsLoading(false));
+
+    return () => { document.body.style.overflow = "unset"; };
   }, [isOpen, customer]);
 
-  if (!isOpen || !customer) return null;
+  const filteredSellers = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return sellers;
+    return sellers.filter((s) =>
+      [s.username, s.role].some((v) => v?.toLowerCase().includes(term))
+    );
+  }, [sellers, search]);
 
   const handleSave = async () => {
     const org = getStoredSeller();
-    if (!org?.organizationId || !customer.idClient || !selectedSellerId) return;
+    if (!org?.organizationId || !customer?.idClient || !selectedSellerId) return;
     const seller = sellers.find((s) => s.id === selectedSellerId);
 
     setIsSaving(true);
@@ -61,16 +81,23 @@ const AssignSellerModal = ({ isOpen, customer, onClose }: Props) => {
     }
   };
 
+  if (!isOpen || !customer) return null;
+
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-      <div className="bg-white w-full max-w-md rounded-[2rem] overflow-hidden shadow-2xl">
+    <div className="fixed inset-0 z-[100] flex justify-end items-stretch">
+      {/* Background Overlay */}
+      <div className="absolute inset-0" onClick={() => onClose(false)} />
+
+      <div className="relative w-full max-w-lg bg-white shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-300">
+
+        {/* HEADER */}
         <div className="px-8 py-4 border-b border-gray-100 flex justify-between items-center bg-white shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-secondary-super-light rounded-lg text-secondary-mid">
-              <UserCheck size={22} />
+              <UserCheck size={24} />
             </div>
             <div>
-              <h2 className="text-lg font-black text-secondary uppercase tracking-tight">Assign Seller</h2>
+              <h2 className="text-xl font-black text-secondary uppercase tracking-tight">Assign Seller</h2>
               <p className="text-xs text-gray-400 font-bold">{customer.raisonSociale || customer.username}</p>
             </div>
           </div>
@@ -79,27 +106,55 @@ const AssignSellerModal = ({ isOpen, customer, onClose }: Props) => {
           </button>
         </div>
 
-        <div className="p-8 space-y-4">
-          <label className="text-[11px] font-black uppercase tracking-widest text-gray-400 ml-1">Account Manager (Seller)</label>
-          {loading ? (
-            <div className="p-6 text-center text-sm text-gray-400 font-bold">Loading sellers...</div>
-          ) : (
-            <select
-              value={selectedSellerId}
-              onChange={(e) => setSelectedSellerId(e.target.value)}
-              className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-gray-700 outline-none focus:border-secondary-mid focus:bg-white transition-all"
-            >
-              <option value="">Select a seller...</option>
-              {sellers.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.username} {s.role ? `(${s.role.replace(/_/g, " ")})` : ""}
-                </option>
-              ))}
-            </select>
-          )}
+        {/* BODY */}
+        <div className="flex-1 overflow-y-auto p-8 space-y-4 bg-gray-50/50">
+          <div className="relative">
+            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" sx={{ fontSize: 18 }} />
+            <input
+              type="text"
+              className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-100 rounded-xl text-sm focus:ring-2 focus:ring-secondary-mid/20 focus:border-secondary-mid transition-all outline-none"
+              placeholder="Search by name or role..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+
+          <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
+            {isLoading ? (
+              <p className="text-sm text-gray-400 font-medium p-6 text-center">Loading sellers…</p>
+            ) : filteredSellers.length === 0 ? (
+              <p className="text-sm text-gray-400 font-medium p-6 text-center">No sellers found.</p>
+            ) : (
+              <div className="divide-y divide-gray-50 max-h-96 overflow-y-auto">
+                {filteredSellers.map((seller) => {
+                  const isSelected = selectedSellerId === seller.id;
+                  return (
+                    <div
+                      key={seller.id}
+                      onClick={() => setSelectedSellerId(seller.id)}
+                      className={`px-4 py-3 cursor-pointer transition-colors flex items-center justify-between gap-3 ${
+                        isSelected ? "bg-secondary-super-light" : "hover:bg-gray-50"
+                      }`}
+                    >
+                      <div className="min-w-0">
+                        <span className="text-sm font-bold text-gray-700 truncate block">{seller.username}</span>
+                        {seller.role && (
+                          <span className="text-[11px] text-gray-400 font-medium">
+                            {ROLE_LABELS[seller.role] || seller.role.replace(/_/g, " ")}
+                          </span>
+                        )}
+                      </div>
+                      {isSelected && <CheckCircle2 size={18} className="text-secondary-mid shrink-0" />}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="p-6 border-t border-gray-100 bg-white flex justify-end items-center gap-4">
+        {/* FOOTER */}
+        <div className="p-6 border-t border-gray-100 bg-white flex justify-end items-center gap-4 shrink-0 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
           <button
             onClick={() => onClose(false)}
             className="px-6 py-2 text-sm font-bold text-gray-400 hover:text-gray-600 uppercase transition-colors"
@@ -109,10 +164,10 @@ const AssignSellerModal = ({ isOpen, customer, onClose }: Props) => {
           <button
             onClick={handleSave}
             disabled={isSaving || !selectedSellerId}
-            className="flex items-center gap-2 bg-secondary-mid hover:bg-secondary text-white px-8 py-3 rounded-xl font-black text-sm shadow-lg disabled:opacity-50 transition-all active:scale-95"
+            className="flex items-center gap-2 bg-secondary-mid hover:bg-secondary text-white px-8 py-3 rounded-xl font-black text-sm shadow-lg disabled:opacity-50 disabled:grayscale transition-all active:scale-95"
           >
             <Save size={18} />
-            {isSaving ? "SAVING…" : "ASSIGN"}
+            {isSaving ? "ASSIGNING…" : "ASSIGN SELLER"}
           </button>
         </div>
       </div>

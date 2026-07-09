@@ -2,6 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { DocPermissionResponse } from './DocPermissionResponse';
 import type { LigneBackOrder } from './LigneBackOrder';
 export type BackOrderResponse = {
     idBackOrder?: string;
@@ -24,6 +25,7 @@ export type BackOrderResponse = {
     createdBy?: string;
     createdAt?: string;
     updatedAt?: string;
+    docPermission?: DocPermissionResponse;
 };
 export namespace BackOrderResponse {
     export enum statut {

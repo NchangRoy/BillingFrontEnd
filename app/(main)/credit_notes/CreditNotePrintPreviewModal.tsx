@@ -3,6 +3,12 @@
 import React, { useEffect, useState } from 'react';
 import { UpdatedCreditNoteResponse } from '@/src/api/models/UpdatedCreditNoteResponse';
 import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
+import { Download, Printer } from 'lucide-react';
+import { generateNoteCreditHTML } from '@/src/api/printGenerators/noteCreditPrint';
+import { generateQRBase64 } from '@/src/api/Utils/qrCode';
+import { sendPrintRequest } from '@/src/api/Utils/printerModule';
+import { downloadHtmlAsPdf } from '@/src/api/Utils/pdfDownload';
+import { toast } from 'sonner';
 
 interface PrintPreviewProps {
   isOpen: boolean;
@@ -13,6 +19,8 @@ interface PrintPreviewProps {
 
 const CreditNotePrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: PrintPreviewProps) => {
   const [seller, setSeller] = useState<UpdatedSellerResponse | null>(null);
+  const [generatedHTML, setGeneratedHTML] = useState<string>("");
+  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("seller");
@@ -24,6 +32,51 @@ const CreditNotePrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: 
       }
     }
   }, []);
+
+  // generateNoteCreditHTML expects NoteCreditResponse's field names
+  // (numeroNoteCredit, lignesNoteCredit, motif, statut) — this admin page's
+  // UpdatedCreditNoteResponse names them differently, so they're adapted
+  // here rather than duplicating the whole shared template.
+  useEffect(() => {
+    let isMounted = true;
+    if (seller && data) {
+      const adapted = {
+        ...data,
+        numeroNoteCredit: data.numeroCreditNote,
+        lignesNoteCredit: data.lignesCreditNote,
+        motif: data.reason,
+        statut: data.etat,
+      };
+      generateQRBase64(`https://yourcompany.com/verify?cn=${data.numeroCreditNote}`, 200)
+        .then((qrBase64) => generateNoteCreditHTML(adapted, seller, qrBase64))
+        .then((html) => { if (isMounted) setGeneratedHTML(html); })
+        .catch((err) => {
+          console.error("Failed to generate printable HTML", err);
+          toast.error("Failed to prepare document for print/download.");
+        });
+    }
+    return () => { isMounted = false; };
+  }, [seller, data, isOpen]);
+
+  const handlePrint = async () => {
+    try {
+      await sendPrintRequest(generatedHTML);
+      onConfirmPrint();
+    } catch (err) {
+      toast.error("Failed to reach the printer module. Is it running?");
+    }
+  };
+
+  const handleDownload = async () => {
+    setIsDownloading(true);
+    try {
+      await downloadHtmlAsPdf(generatedHTML, `CreditNote-${data.numeroCreditNote || "draft"}`);
+    } catch (err) {
+      toast.error("Failed to generate PDF for download.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -59,11 +112,19 @@ const CreditNotePrintPreviewModal = ({ isOpen, onClose, data, onConfirmPrint }: 
             >
               Back to Editor
             </button>
-            <button 
-              onClick={onConfirmPrint} 
-              className="px-8 py-2.5 bg-primary hover:bg-secondary-mid text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 transition-transform active:scale-95"
+            <button
+              onClick={handleDownload}
+              disabled={isDownloading || !generatedHTML}
+              className="flex items-center gap-2 px-6 py-2.5 bg-white border-2 border-primary text-primary rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
             >
-              Issue & Print Credit Note
+              <Download size={14} /> {isDownloading ? "Downloading…" : "Download"}
+            </button>
+            <button
+              onClick={handlePrint}
+              disabled={!generatedHTML}
+              className="flex items-center gap-2 px-8 py-2.5 bg-primary hover:bg-secondary-mid text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 transition-transform active:scale-95 disabled:opacity-50"
+            >
+              <Printer size={14} /> Issue & Print Credit Note
             </button>
           </div>
         </div>

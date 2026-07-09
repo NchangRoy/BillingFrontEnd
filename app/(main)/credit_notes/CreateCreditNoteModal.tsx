@@ -13,8 +13,9 @@ import { UpdatedSellerResponse } from "@/src/api/models/UpdatedSellerResponse";
 import ClientHeader from "./ClientHeader";
 import CreditNoteDetails from "./CreditNoteDetails"; // Similar to InvoiceDetails but handles reasons
 import { mapCreditNoteToRequest } from "@/src/Mappers/CreditNoteMapper";
-import { NoteCreditControllerService, ClientsService } from "@/src/src2/api";
+import { NoteCreditControllerService } from "@/src/src2/api";
 import { toast } from 'sonner';
+import { getVisibleClients } from "@/src/api/scopedTiers";
 
 interface Props {
   isOpen: boolean;
@@ -36,7 +37,7 @@ const CreateCreditNoteModal = ({ isOpen, onClose, clientData, creditNoteData }: 
 
   useEffect(() => {
     if (!isOpen) return;
-    ClientsService.getAllClients()
+    getVisibleClients()
       .then((data) => setClients(data as unknown as UpdatedClientResponse[]))
       .catch(() => toast.error("Failed to load clients."));
   }, [isOpen]);
@@ -94,6 +95,7 @@ const CreateCreditNoteModal = ({ isOpen, onClose, clientData, creditNoteData }: 
 
       // Metadata
       organizationId: seller?.organizationId,
+      agencyId: seller?.agencyId,
       createdBy: seller?.Id,
       updatedAt: new Date().toISOString()
     };

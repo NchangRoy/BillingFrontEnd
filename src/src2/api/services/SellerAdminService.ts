@@ -10,6 +10,7 @@ import type { SellerListItemResponse } from '../models/SellerListItemResponse';
 import type { SellerUIPermissionsRequest } from '../models/SellerUIPermissionsRequest';
 import type { SellerUIPermissionsResponse } from '../models/SellerUIPermissionsResponse';
 import type { UpdateSellerPermissionsRequest } from '../models/UpdateSellerPermissionsRequest';
+import type { UpdateSellerPhotoRequest } from '../models/UpdateSellerPhotoRequest';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -28,6 +29,27 @@ export class SellerAdminService {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/api/sellers/{sellerId}/permissions',
+            path: {
+                'sellerId': sellerId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+    /**
+     * Update a seller's profile image
+     * @param sellerId
+     * @param requestBody
+     * @returns SellerListItemResponse OK
+     * @throws ApiError
+     */
+    public static updatePhoto(
+        sellerId: string,
+        requestBody: UpdateSellerPhotoRequest,
+    ): CancelablePromise<SellerListItemResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/sellers/{sellerId}/photo',
             path: {
                 'sellerId': sellerId,
             },

@@ -117,4 +117,21 @@ export class NoteCreditControllerService {
             },
         });
     }
+    /**
+     * Récupérer les notes de crédit accessibles par un vendeur (via ses permissions)
+     * @param sellerId
+     * @returns NoteCreditResponse OK
+     * @throws ApiError
+     */
+    public static getNotesCreditBySellerId(
+        sellerId: string,
+    ): CancelablePromise<Array<NoteCreditResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/facturation/note-credits/seller/{sellerId}',
+            path: {
+                'sellerId': sellerId,
+            },
+        });
+    }
 }

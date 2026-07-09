@@ -180,4 +180,21 @@ export class BonDeLivraisonService {
             },
         });
     }
+    /**
+     * Récupérer les bons de livraison accessibles par un vendeur (via ses permissions)
+     * @param sellerId
+     * @returns BonLivraisonResponse OK
+     * @throws ApiError
+     */
+    public static getBySellerId4(
+        sellerId: string,
+    ): CancelablePromise<Array<BonLivraisonResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/bons-livraison/seller/{sellerId}',
+            path: {
+                'sellerId': sellerId,
+            },
+        });
+    }
 }

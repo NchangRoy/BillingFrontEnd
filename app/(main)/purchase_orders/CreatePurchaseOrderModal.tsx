@@ -6,7 +6,7 @@ import { Save, FileText, ShoppingCart } from "lucide-react";
 
 // API & Types
 import { PurcaseOrderResponse, PurchaseOrderResponse } from "@/src/api/models/PurchaseOrderLine";
-import { UpdatedClientResponse, clients } from "@/src/api/models/UpdatedClientResponse";
+import { UpdatedClientResponse } from "@/src/api/models/UpdatedClientResponse";
 
 // Procurement Sub-components (Assuming these follow the same pattern as your Invoice versions)
 import ProducerHeader from "./ClientHeader";
@@ -16,6 +16,8 @@ import PurchaseOrderLogistics from "./PurchaseOrderLogistics";
 import { mapPurchaseOrderToBonAchatRequest } from "@/src/Mappers/BonAchatMapper";
 import { BonDAchatService } from "@/src/src2/api";
 import { toast } from 'sonner';
+import { UpdatedSellerResponse } from "@/src/api/models/UpdatedSellerResponse";
+import { getVisibleFournisseurs } from "@/src/api/scopedTiers";
 interface Props {
   isOpen: boolean;
   onClose: (param: boolean) => void;
@@ -26,6 +28,27 @@ interface Props {
 const CreatePurchaseOrderModal = ({ isOpen, onClose, producerData, orderData }: Props) => {
   const [selectedProducer, setSelectedProducer] = useState<UpdatedClientResponse | undefined>(producerData);
   const [purchaseOrder, setPurchaseOrder] = useState<PurchaseOrderResponse | undefined>();
+  const [seller, setSeller] = useState<UpdatedSellerResponse>();
+  const [producers, setProducers] = useState<UpdatedClientResponse[]>([]);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("seller");
+    if (stored) {
+      setSeller(JSON.parse(stored));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    getVisibleFournisseurs()
+      .then((data) => setProducers(data.map((f) => ({
+        ...f,
+        idClient: f.idFournisseur,
+        typeClient: f.typeFournisseur as unknown as UpdatedClientResponse["typeClient"],
+        codeClient: f.codeFournisseur,
+      })) as unknown as UpdatedClientResponse[]))
+      .catch(() => toast.error("Failed to load suppliers."));
+  }, [isOpen]);
 
   // 1. INITIALIZATION LOGIC
   useEffect(() => {
@@ -81,7 +104,10 @@ const CreatePurchaseOrderModal = ({ isOpen, onClose, producerData, orderData }: 
 
     console.log("Saving PO Payload:", finalPayload);
 
-    const apiPayload=mapPurchaseOrderToBonAchatRequest(finalPayload)
+    const apiPayload = mapPurchaseOrderToBonAchatRequest(finalPayload);
+    apiPayload.createdBy = seller?.Id;
+    apiPayload.organizationId = seller?.organizationId;
+    apiPayload.agencyId = seller?.agencyId;
 
 
     try {
@@ -143,7 +169,7 @@ const CreatePurchaseOrderModal = ({ isOpen, onClose, producerData, orderData }: 
         <div className="flex-1 overflow-y-auto p-8 space-y-8 bg-gray-50/50">
           {/* Producer Selection Header */}
           <ProducerHeader
-            producers={clients} 
+            producers={producers}
             setMainSelectedProducer={setSelectedProducer}
             selectedProducer={selectedProducer}
             purchaseOrder={purchaseOrder} 

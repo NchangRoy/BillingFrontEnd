@@ -2,6 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { DocPermissionResponse } from './DocPermissionResponse';
 import type { LineFactureFournisseur } from './LineFactureFournisseur';
 export type FactureFournisseurResponse = {
     idFactureFournisseur?: string;
@@ -34,6 +35,7 @@ export type FactureFournisseurResponse = {
     dateSysteme?: string;
     organizationId?: string;
     agencyId?: string;
+    docPermission?: DocPermissionResponse;
 };
 export namespace FactureFournisseurResponse {
     export enum modeReglement {

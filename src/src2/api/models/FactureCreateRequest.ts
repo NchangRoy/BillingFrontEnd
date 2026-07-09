@@ -42,8 +42,14 @@ export type FactureCreateRequest = {
     organizationId?: string;
     agencyId?: string;
     createdBy?: string;
+    originType?: FactureCreateRequest.originType;
+    sessionId?: string;
 };
 export namespace FactureCreateRequest {
+    export enum originType {
+        POS = 'POS',
+        SALES = 'SALES',
+    }
     export enum etat {
         BROUILLON = 'BROUILLON',
         ENVOYE = 'ENVOYE',

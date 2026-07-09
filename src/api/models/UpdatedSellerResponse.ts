@@ -44,6 +44,7 @@ export type UpdatedSellerResponse = {
   role: SellerRole;
   agency: string;
   salePoint: string;
+  profileImageUrl?: string;
 
  
  Permissions: Permission[];

@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { X, Printer } from 'lucide-react';
+import { X, Printer, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { PortalApi } from '@/src/api/portalApi';
 import { getPortalSession } from '@/src/api/portalSession';
 import { generateFactureHTML } from '@/src/api/printGenerators/facturePrint';
 import { generateQRBase64 } from '@/src/api/Utils/qrCode';
+import { downloadHtmlAsPdf } from '@/src/api/Utils/pdfDownload';
 
 async function sendPrintRequest(html: string) {
   const response = await fetch('http://localhost:3002/print', {
@@ -26,6 +27,7 @@ interface InvoicePreviewModalProps {
 const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClose, invoice }) => {
   const [html, setHtml] = useState<string>('');
   const [isPrinting, setIsPrinting] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
     if (!isOpen || !invoice) return;
@@ -73,6 +75,17 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
     }
   };
 
+  const handleDownload = async () => {
+    setIsDownloading(true);
+    try {
+      await downloadHtmlAsPdf(html, `Invoice-${invoice.numeroFacture || 'draft'}`);
+    } catch (err) {
+      toast.error('Failed to generate PDF for download.');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
       <div className="bg-slate-50 w-full max-w-4xl max-h-[95vh] rounded-[2rem] overflow-hidden flex flex-col shadow-2xl border border-white/20">
@@ -81,6 +94,13 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClo
             Invoice {invoice.numeroFacture}
           </p>
           <div className="flex gap-3 items-center">
+            <button
+              onClick={handleDownload}
+              disabled={isDownloading || !html}
+              className="flex items-center gap-2 px-6 py-3 bg-white border-2 border-slate-900 hover:bg-slate-100 text-slate-900 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
+            >
+              <Download size={16} /> {isDownloading ? 'Downloading…' : 'Download'}
+            </button>
             <button
               onClick={handlePrint}
               disabled={isPrinting || !html}

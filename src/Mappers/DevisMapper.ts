@@ -82,7 +82,8 @@ export const mapUpdatedResponseToCreateRequest = (
         notes: response.notes,
         pdfPath: response.pdfPath,
         createdBy:response.createdBy,
-        organizationId:response.organizationId
+        organizationId:response.organizationId,
+        agencyId:response.agencyId
     };
 };
 
@@ -114,6 +115,7 @@ export const mapBackendToUpdatedDevis = (backend: DevisResponse): UpdatedDevisRe
         nbreEcheance: backend.nbreEcheance,
         referalClientId: backend.referalClientId,
         createdBy:backend.createdBy,
+        docPermission: backend.docPermission,
     };
 };
 

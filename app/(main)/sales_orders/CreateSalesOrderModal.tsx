@@ -14,8 +14,10 @@ import { UpdatedSalesOrderResponse } from "@/src/api/models/UpdatedSalesOrder";
 import ClientHeader from "./ClientHeader";
 import SalesOrderDetails from "./SalesOrderDetails";
 import { mapSalesOrderToBonCommandeRequest } from "@/src/Mappers/BonCommandeMapper";
-import { BonCommandeService, ClientsService } from "@/src/src2/api";
+import { BonCommandeService } from "@/src/src2/api";
 import { toast } from 'sonner';
+import { UpdatedSellerResponse } from "@/src/api/models/UpdatedSellerResponse";
+import { getVisibleClients } from "@/src/api/scopedTiers";
 
 interface Props {
   isOpen: boolean;
@@ -28,10 +30,18 @@ const CreateSalesOrderModal = ({ isOpen, onClose, clientData, orderData }: Props
   const [selectedClient, setSelectedClient] = useState<UpdatedClientResponse | undefined>(clientData);
   const [salesOrder, setSalesOrder] = useState<UpdatedSalesOrderResponse | undefined>();
   const [clients, setClients] = useState<UpdatedClientResponse[]>([]);
+  const [seller, setSeller] = useState<UpdatedSellerResponse>();
+
+  useEffect(() => {
+    const stored = localStorage.getItem("seller");
+    if (stored) {
+      setSeller(JSON.parse(stored));
+    }
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
-    ClientsService.getAllClients()
+    getVisibleClients()
       .then((data) => setClients(data as unknown as UpdatedClientResponse[]))
       .catch(() => toast.error("Failed to load clients."));
   }, [isOpen]);
@@ -92,7 +102,10 @@ const CreateSalesOrderModal = ({ isOpen, onClose, clientData, orderData }: Props
       updatedAt: new Date().toISOString()
     };
 
-    const apiPayload=mapSalesOrderToBonCommandeRequest(finalPayload)
+    const apiPayload = mapSalesOrderToBonCommandeRequest(finalPayload);
+    apiPayload.createdBy = seller?.Id;
+    apiPayload.organizationId = seller?.organizationId;
+    apiPayload.agencyId = seller?.agencyId;
 
     console.log("Saving Sales Order Payload:", finalPayload);
     console.log(salesOrder)

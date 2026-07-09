@@ -2,6 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { KernelOrganizationResponse } from './KernelOrganizationResponse';
 import type { SellerUIPermissionsResponse } from './SellerUIPermissionsResponse';
 import type { SettingResponse } from './SettingResponse';
 export type SellerAuthResponse = {
@@ -30,5 +31,7 @@ export type SellerAuthResponse = {
     documentNumberingSettings?: Array<SettingResponse>;
     Id?: string;
     Permissions?: Array<'NEGOTIATE_PRICE' | 'APPLY_DISCOUNT' | 'OVERRIDE_PRICE' | 'APPROVE_DOCUMENT'>;
+    requiresOrganizationSelection?: boolean;
+    availableOrganizations?: Array<KernelOrganizationResponse>;
 };
 

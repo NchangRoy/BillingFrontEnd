@@ -11,8 +11,10 @@ import { DevisResponse } from "@/src/api";
 import { UpdatedClientResponse } from "@/src/api/models/UpdatedClientResponse";
 import { UpdatedProformaInvoiceResponse,MOCK_PROFORMA_INVOICE } from "@/src/api/models/UpdatedProformaInvoiceResponse";
 import { mapUIToProformaRequest } from "@/src/Mappers/ProformaMapper";
-import { FacturesProformaService, ClientsService } from "@/src/src2/api";
+import { FacturesProformaService } from "@/src/src2/api";
 import { toast } from 'sonner';
+import { UpdatedSellerResponse } from "@/src/api/models/UpdatedSellerResponse";
+import { getVisibleClients } from "@/src/api/scopedTiers";
 interface Props {
   isOpen: boolean;
   onClose: (param: boolean) => void;
@@ -41,10 +43,18 @@ const CreateProformaInvoiceModal = ({ isOpen, onClose,clientData,ProformaInvoice
   const [ProformaInvoice, setProformaInvoice] = useState<UpdatedProformaInvoiceResponse | undefined>();
 
   const [clients, setClients] = useState<UpdatedClientResponse[]>([]);
+  const [seller, setSeller] = useState<UpdatedSellerResponse>();
+
+  useEffect(() => {
+    const stored = localStorage.getItem("seller");
+    if (stored) {
+      setSeller(JSON.parse(stored));
+    }
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
-    ClientsService.getAllClients()
+    getVisibleClients()
       .then((data) => setClients(data as unknown as UpdatedClientResponse[]))
       .catch(() => toast.error("Failed to load clients."));
   }, [isOpen]);
@@ -125,7 +135,10 @@ const CreateProformaInvoiceModal = ({ isOpen, onClose,clientData,ProformaInvoice
       : 0,
 };
 
-  const apiPayload=mapUIToProformaRequest(finalPayload)
+  const apiPayload = mapUIToProformaRequest(finalPayload);
+  apiPayload.createdBy = seller?.Id;
+  apiPayload.organizationId = seller?.organizationId;
+  apiPayload.agencyId = seller?.agencyId;
     console.log("Saving ProformaInvoice Payload:", finalPayload);
     // Add your API call here (e.g., mutate(finalPayload))
 

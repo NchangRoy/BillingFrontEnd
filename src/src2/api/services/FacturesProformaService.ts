@@ -163,4 +163,21 @@ export class FacturesProformaService {
             },
         });
     }
+    /**
+     * Récupérer les factures proforma accessibles par un vendeur (via ses permissions)
+     * @param sellerId
+     * @returns ProformaInvoiceResponse OK
+     * @throws ApiError
+     */
+    public static getProformasBySellerId(
+        sellerId: string,
+    ): CancelablePromise<Array<ProformaInvoiceResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/factures-proforma/seller/{sellerId}',
+            path: {
+                'sellerId': sellerId,
+            },
+        });
+    }
 }

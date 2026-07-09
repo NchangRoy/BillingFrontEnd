@@ -5,20 +5,25 @@ import { useRouter } from 'next/navigation'
 import DropDown from "@mui/icons-material/ArrowDropDown"
 import SearchIcon from "@mui/icons-material/Search"
 import AddIcon from "@mui/icons-material/Add"
-import { Pencil, RefreshCw, XCircle, MoreVertical } from "lucide-react"
+import { Pencil, RefreshCw, XCircle, MoreVertical, Eye, Share2 } from "lucide-react"
 
 import { UpdatedBackOrderResponse, BackOrderStatus, MOCK_BACK_ORDERS } from '@/src/api/models/UpdatedBackOrderResponse'
 import { UpdatedClientResponse } from '@/src/api/models/UpdatedClientResponse'
 import CreateBackOrderModal from './CreateBackOrderModal'
+import BackOrderPrintPreviewModal from './BackOrderPrintPreviewModal'
+import ShareDocModal from '@/components/ShareDocModal'
+import { useCanEditDocuments } from '@/src/hooks/useCanEditDocuments'
 import { BackOrderService } from '@/src/src2/api/services/BackOrderService'
-import { ClientsService } from '@/src/src2/api'
 import { mapBackOrderArrayToUI } from '@/src/Mappers/BackOrderMapper'
+import { getVisibleClients } from '@/src/api/scopedTiers'
+import { getVisibleBackOrders } from '@/src/api/scopedDocs'
 import { mapBackOrderToDeliveryNote } from '@/src/api/transformation/backOrderTransformation'
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
 import EmptyState from '@/components/EmptyState'
 import { useLoading } from '@/components/LoadingContext'
 import ActionButton from '@/components/ActionButton'
+import PermissionBadge from '@/components/PermissionBadge'
 
 const columns = {
   "BO Reference": "numeroBackOrder",
@@ -27,6 +32,7 @@ const columns = {
   "Status": "statut",
   "Lines": "lignes",
   "Created At": "createdAt",
+  "Permission": "docPermission",
 }
 
 const statusColors: Record<string, string> = {
@@ -39,11 +45,14 @@ const statusColors: Record<string, string> = {
 const BackOrdersPage = () => {
   const router = useRouter()
   const menuRef = useRef<HTMLDivElement>(null)
+  const { canEdit } = useCanEditDocuments();
 
   const [showStatusMenu, setShowStatusMenu] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false)
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false)
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null)
   const [menuPosition, setMenuPosition] = useState<{ top: number; right: number } | null>(null)
   const [clickedOrder, setClickedOrder] = useState<UpdatedBackOrderResponse | undefined>()
@@ -57,7 +66,7 @@ const BackOrdersPage = () => {
       setIsLoading(true)
       showLoader('Loading back orders...')
       try {
-        const data = await BackOrderService.getAllBackOrders()
+        const data = await getVisibleBackOrders()
         const transformed = mapBackOrderArrayToUI(data)
         setBackOrders(transformed)
       } catch {
@@ -72,7 +81,7 @@ const BackOrdersPage = () => {
   }, [isModalOpen])
 
   useEffect(() => {
-    ClientsService.getAllClients()
+    getVisibleClients()
       .then((data) => setClients(data as unknown as UpdatedClientResponse[]))
       .catch(() => toast.error("Failed to load clients."))
   }, [])
@@ -114,6 +123,15 @@ const BackOrdersPage = () => {
       color: "text-blue-600"
     },
     {
+      label: "Share",
+      icon: <Share2 size={14} />,
+      action: (o: UpdatedBackOrderResponse) => {
+        setClickedOrder(o)
+        setIsShareModalOpen(true)
+      },
+      color: "text-secondary-mid"
+    },
+    {
       label: "Transform",
       icon: <RefreshCw size={14} />,
       action: (o: UpdatedBackOrderResponse) => {
@@ -141,6 +159,16 @@ const BackOrdersPage = () => {
     },
   ]
 
+  const viewOnlyOption = {
+    label: "View",
+    icon: <Eye size={14} />,
+    action: (o: UpdatedBackOrderResponse) => {
+      setClickedOrder(o)
+      setIsPrintModalOpen(true)
+    },
+    color: "text-purple-800"
+  }
+
   const renderCell = (key: string, order: UpdatedBackOrderResponse) => {
     if (key === 'statut') {
       return (
@@ -160,6 +188,9 @@ const BackOrdersPage = () => {
     }
     if (key === 'numeroBonLivraison') {
       return order.numeroBonLivraison || order.idBonLivraison || '—'
+    }
+    if (key === 'docPermission') {
+      return <PermissionBadge permission={order.docPermission?.permission} />
     }
     return (order as any)[key] || "—"
   }
@@ -186,12 +217,14 @@ const BackOrdersPage = () => {
             <SearchIcon className='text-secondary-mid' />
           </div>
 
-          <button
-            onClick={() => { setClickedOrder(undefined); setIsModalOpen(true); }}
-            className="flex items-center gap-2 bg-white border-2 border-secondary-mid text-secondary-mid px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-secondary-mid hover:text-white transition-all duration-300 shadow-sm"
-          >
-            <AddIcon sx={{ fontSize: 18 }} /> Create Back Order
-          </button>
+          {canEdit && (
+            <button
+              onClick={() => { setClickedOrder(undefined); setIsModalOpen(true); }}
+              className="flex items-center gap-2 bg-white border-2 border-secondary-mid text-secondary-mid px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-secondary-mid hover:text-white transition-all duration-300 shadow-sm"
+            >
+              <AddIcon sx={{ fontSize: 18 }} /> Create Back Order
+            </button>
+          )}
         </div>
       </div>
 
@@ -279,10 +312,14 @@ const BackOrdersPage = () => {
           style={{ position: 'fixed', top: menuPosition.top, right: menuPosition.right, zIndex: 9999 }}
           className="bg-white border border-slate-100 rounded-2xl shadow-2xl p-1.5 flex gap-1 animate-in fade-in slide-in-from-top-2 duration-200"
         >
-          {actionOptions.map((opt, i) => {
+          {(() => {
             const activeOrder = filteredOrders.find(o => o.id === activeMenuId)
             if (!activeOrder) return null
-            return (
+            const permission = !canEdit ? 'VIEWER' : activeOrder.docPermission?.permission
+            const options = permission === 'VIEWER' ? [viewOnlyOption]
+              : permission === 'EDITOR' ? [actionOptions[0], viewOnlyOption]
+              : actionOptions
+            return options.map((opt, i) => (
               <ActionButton
                 key={i}
                 label={opt.label}
@@ -296,12 +333,27 @@ const BackOrdersPage = () => {
               >
                 {opt.icon}
               </ActionButton>
-            )
-          })}
+            ))
+          })()}
         </div>
       )}
 
       {/* Modals */}
+      {isPrintModalOpen && clickedOrder && (
+        <BackOrderPrintPreviewModal
+          isOpen={isPrintModalOpen}
+          data={clickedOrder}
+          onClose={() => setIsPrintModalOpen(false)}
+          onConfirmPrint={() => {}}
+        />
+      )}
+      <ShareDocModal
+        isOpen={isShareModalOpen}
+        docId={clickedOrder?.id}
+        docType="BACK_ORDER"
+        docLabel={clickedOrder?.numeroBackOrder ? `Back Order ${clickedOrder.numeroBackOrder}` : undefined}
+        onClose={() => setIsShareModalOpen(false)}
+      />
       {isModalOpen && (
         <CreateBackOrderModal
           isOpen={isModalOpen}

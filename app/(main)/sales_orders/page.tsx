@@ -5,18 +5,20 @@ import { useRouter } from 'next/navigation'
 import DropDown from "@mui/icons-material/ArrowDropDown"
 import SearchIcon from "@mui/icons-material/Search"
 import AddIcon from "@mui/icons-material/Add"
-import { 
-  Pencil, 
-  Trash2, 
-  MoreVertical, 
-  Printer, 
-  Truck, 
-  Clock, 
-  CheckCircle2, 
-  XCircle, 
-  ReceiptText, 
+import {
+  Pencil,
+  Trash2,
+  MoreVertical,
+  Printer,
+  Truck,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  ReceiptText,
   ChevronRight,
-  FileText 
+  FileText,
+  Eye,
+  Share2
 } from "lucide-react";
 
 // Updated Imports for Sales Orders
@@ -27,12 +29,16 @@ import CreateSalesOrderModal from './CreateSalesOrderModal'
 import SalesOrderPrintPreviewModal from './SalesOrderPrintPreviewModal'
 import { mapSalesOrderToDeliveryNote, mapSalesOrderToFacture } from '@/src/api/transformation/saleorderTranformation'
 import { BonCommandeService, ClientsService } from '@/src/src2/api'
+import { getVisibleBonCommandes } from '@/src/api/scopedDocs'
 import { mapBonCommandeListToSalesOrderList } from '@/src/Mappers/BonCommandeMapper'
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
 import EmptyState from '@/components/EmptyState'
 import { useLoading } from '@/components/LoadingContext'
 import ActionButton from '@/components/ActionButton'
+import PermissionBadge from '@/components/PermissionBadge'
+import ShareDocModal from '@/components/ShareDocModal'
+import { useCanEditDocuments } from '@/src/hooks/useCanEditDocuments'
 
 const columns = {
   "Order #": "numeroSalesOrder",
@@ -41,12 +47,14 @@ const columns = {
   "Order Date": "dateCreation",
   "Transport": "transportMethod",
   "Status": "statut",
-  "Total (TTC)": "montantTTC"
+  "Total (TTC)": "montantTTC",
+  "Permission": "docPermission"
 }
 
 const SalesOrders = () => {
   const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
+  const { canEdit } = useCanEditDocuments();
 
   // 1. State Management
   const [showStatusMenu, setShowStatusMenu] = useState<boolean>(false);
@@ -54,6 +62,7 @@ const SalesOrders = () => {
   const [selectedStatus, setSelectedStatus] = useState<SalesOrderResponse.statut | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState<boolean>(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
   
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [showTransformSub, setShowTransformSub] = useState<boolean>(false); // Added missing state
@@ -76,7 +85,7 @@ const SalesOrders = () => {
       setIsLoading(true)
       showLoader('Loading sales orders...')
       try {
-        const data = await BonCommandeService.getAllBonCommandes()
+        const data = await getVisibleBonCommandes()
         const transformed = mapBonCommandeListToSalesOrderList(data)
         setOrders(transformed)
       } catch (error) {
@@ -176,12 +185,14 @@ const SalesOrders = () => {
             <SearchIcon className='text-secondary-mid' />
           </div>
 
-          <button 
-            onClick={() => { setClient(undefined); setClickedOrder(undefined); setIsModalOpen(true); }}
-            className="flex items-center gap-2 bg-secondary-mid text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-secondary transition-all shadow-lg shadow-secondary-mid/20"
-          >
-            <AddIcon sx={{ fontSize: 18 }} /> Create Sales Order
-          </button>
+          {canEdit && (
+            <button
+              onClick={() => { setClient(undefined); setClickedOrder(undefined); setIsModalOpen(true); }}
+              className="flex items-center gap-2 bg-secondary-mid text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-secondary transition-all shadow-lg shadow-secondary-mid/20"
+            >
+              <AddIcon sx={{ fontSize: 18 }} /> Create Sales Order
+            </button>
+          )}
         </div>
       </div>
 
@@ -246,10 +257,12 @@ const SalesOrders = () => {
                             ? new Date(order.dateCreation).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) 
                             : '—'}
                         </span>
+                      ) : key === 'docPermission' ? (
+                        <PermissionBadge permission={order.docPermission?.permission} />
                       ) : (order as any)[key] || "—"}
                     </td>
                   ))}
-                  
+
                   {/* Actions Column */}
                   <td className="px-6 py-4 text-right relative">
                     <button 
@@ -264,20 +277,47 @@ const SalesOrders = () => {
 
                     {activeMenuId === order.idSalesOrder && (
                       <div ref={menuRef} className="absolute right-16 top-1/2 -translate-y-1/2 z-40 bg-white border border-slate-100 rounded-2xl shadow-2xl p-1.5 flex gap-1 animate-in fade-in slide-in-from-right-2 duration-200">
-                        
-                        {/* Edit */}
+                        {(() => {
+                          const permission = !canEdit ? 'VIEWER' : order.docPermission?.permission;
+                          const viewButton = (
+                            <ActionButton
+                              key="view"
+                              label="View"
+                              onClick={() => { setClickedOrder(order); setIsPrintModalOpen(true); setActiveMenuId(null); }}
+                              className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-purple-800 transition-all"
+                            >
+                              <Eye size={14} />
+                            </ActionButton>
+                          );
+                          if (permission === 'VIEWER') return viewButton;
+                          const editButton = (
+                            <ActionButton
+                               key="edit"
+                               label="Edit"
+                               onClick={() => {
+                                 const foundClient = clients.find(c => c.idClient === order.idClient);
+                                 setClient(foundClient);
+                                 setClickedOrder(order);
+                                 setIsModalOpen(true);
+                                 setActiveMenuId(null);
+                               }}
+                               className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 transition-all text-blue-600"
+                            >
+                              <Pencil size={14} />
+                            </ActionButton>
+                          );
+                          if (permission === 'EDITOR') return <>{editButton}{viewButton}</>;
+                          return (
+                          <>
+                        {editButton}
+
+                        {/* Share */}
                         <ActionButton
-                           label="Edit"
-                           onClick={() => {
-                             const foundClient = clients.find(c => c.idClient === order.idClient);
-                             setClient(foundClient);
-                             setClickedOrder(order);
-                             setIsModalOpen(true);
-                             setActiveMenuId(null);
-                           }}
-                           className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 transition-all text-blue-600"
+                          label="Share"
+                          onClick={() => { setClickedOrder(order); setIsShareModalOpen(true); setActiveMenuId(null); }}
+                          className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-secondary-mid transition-all"
                         >
-                          <Pencil size={14} />
+                          <Share2 size={14} />
                         </ActionButton>
 
                         {/* Transform Sub-menu Logic */}
@@ -339,6 +379,9 @@ const SalesOrders = () => {
                         >
                           <Trash2 size={14} />
                         </ActionButton>
+                          </>
+                          );
+                        })()}
                       </div>
                     )}
                   </td>
@@ -351,6 +394,13 @@ const SalesOrders = () => {
 
       {isModalOpen && <CreateSalesOrderModal orderData={clickedOrder} clientData={client} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}/>} 
       {isPrintModalOpen && clickedOrder && <SalesOrderPrintPreviewModal isOpen={isPrintModalOpen} data={clickedOrder} onClose={() => setIsPrintModalOpen(false)} onConfirmPrint={()=>{}}/>}
+      <ShareDocModal
+        isOpen={isShareModalOpen}
+        docId={clickedOrder?.idSalesOrder}
+        docType="BON_COMMANDE"
+        docLabel={clickedOrder?.numeroSalesOrder ? `Sales Order ${clickedOrder.numeroSalesOrder}` : undefined}
+        onClose={() => setIsShareModalOpen(false)}
+      />
     </div>
   )
 }

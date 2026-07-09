@@ -140,4 +140,21 @@ export class BonDAchatService {
             },
         });
     }
+    /**
+     * Récupérer les bons d'achat accessibles par un vendeur (via ses permissions)
+     * @param sellerId
+     * @returns BonAchatResponse OK
+     * @throws ApiError
+     */
+    public static getBySellerId5(
+        sellerId: string,
+    ): CancelablePromise<Array<BonAchatResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/bons-achat/seller/{sellerId}',
+            path: {
+                'sellerId': sellerId,
+            },
+        });
+    }
 }

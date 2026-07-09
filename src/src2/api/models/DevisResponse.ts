@@ -2,6 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { DocPermissionResponse } from './DocPermissionResponse';
 import type { LigneDevisResponse } from './LigneDevisResponse';
 export type DevisResponse = {
     idDevis?: string;
@@ -48,6 +49,7 @@ export type DevisResponse = {
     organizationId?: string;
     agencyId?: string;
     createdBy?: string;
+    docPermission?: DocPermissionResponse;
 };
 export namespace DevisResponse {
     export enum statut {

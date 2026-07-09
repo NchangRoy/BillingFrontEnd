@@ -71,6 +71,7 @@ export const mapInternalToFactureFournisseurCreateRequest = (
         // Custom field for the creator
         createdBy: data.createdBy,
         organizationId: data.organizationId,
+        agencyId: data.agencyId,
     };
 };
 
@@ -140,6 +141,7 @@ export const mapBackendFactureFournisseurToInternal = (
 
         createdAt: api.createdAt,
         updatedAt: api.updatedAt,
+        docPermission: api.docPermission,
     };
 };
 

@@ -2,6 +2,7 @@
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
+import type { ClientResponse } from '../models/ClientResponse';
 
 export interface AssignCustomerRequest {
     clientId: string;
@@ -53,6 +54,30 @@ export class CustomerAssignmentsService {
             method: 'GET',
             url: '/api/customer-assignments/organisation/{organizationId}',
             path: { organizationId },
+        });
+    }
+
+    /**
+     * List all customer assignments for a seller
+     */
+    public static listBySeller(sellerId: string, organizationId: string): CancelablePromise<CustomerAssignmentResponse[]> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/customer-assignments/seller/{sellerId}',
+            path: { sellerId },
+            query: { organizationId },
+        });
+    }
+
+    /**
+     * Get the customers assigned to a seller
+     */
+    public static getCustomersForSeller(sellerId: string, organizationId: string): CancelablePromise<ClientResponse[]> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/customer-assignments/seller/{sellerId}/customers',
+            path: { sellerId },
+            query: { organizationId },
         });
     }
 

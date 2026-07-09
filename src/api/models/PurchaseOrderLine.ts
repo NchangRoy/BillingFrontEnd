@@ -1,3 +1,5 @@
+import type { DocPermissionResponse } from '../../src2/api/models/DocPermissionResponse';
+
 export type PurchaseOrderResponse = {
   idPO?: string;
   poNumber?: string;
@@ -44,6 +46,7 @@ export type PurchaseOrderResponse = {
 
   createdAt?: string;
   updatedAt?: string;
+  docPermission?: DocPermissionResponse;
 };
 
 export type PurchaseOrderLineResponse = {

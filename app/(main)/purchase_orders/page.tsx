@@ -5,18 +5,20 @@ import { useRouter } from 'next/navigation'
 import DropDown from "@mui/icons-material/ArrowDropDown"
 import SearchIcon from "@mui/icons-material/Search"
 import AddIcon from "@mui/icons-material/Add"
-import { 
-  Pencil, 
-  Trash2, 
-  MoreVertical, 
-  Printer, 
-  ReceiptText, 
-  ChevronRight, 
-  Clock, 
-  CheckCircle2, 
+import {
+  Pencil,
+  Trash2,
+  MoreVertical,
+  Printer,
+  ReceiptText,
+  ChevronRight,
+  Clock,
+  CheckCircle2,
   XCircle,
   Package,
-  Globe
+  Globe,
+  Eye,
+  Share2
 } from "lucide-react";
 
 // Updated Imports for Purchase Orders
@@ -29,12 +31,16 @@ import CreatePurchaseOrderModal from './CreatePurchaseOrderModal'
 import PurchaseOrderPrintPreviewModal from './PurchaseOrderPrintPreviewModal'
 import { convertPurchaseOrderToGRN } from '@/src/api/transformation/purchaseOrderTranformation'
 import { BonDAchatService } from '@/src/src2/api'
+import { getVisibleBonAchats } from '@/src/api/scopedDocs'
 import { mapBackendBAArrayToUIArray } from '@/src/Mappers/BonAchatMapper'
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
 import EmptyState from '@/components/EmptyState'
 import { useLoading } from '@/components/LoadingContext'
 import ActionButton from '@/components/ActionButton'
+import PermissionBadge from '@/components/PermissionBadge'
+import ShareDocModal from '@/components/ShareDocModal'
+import { useCanEditDocuments } from '@/src/hooks/useCanEditDocuments'
 
 const columns = {
   "PO #": "poNumber",
@@ -43,12 +49,14 @@ const columns = {
   "Expected Delivery": "expectedDeliveryDate",
   "Method": "transportMethod",
   "Status": "status",
-  "Total Amount": "grandTotal"
+  "Total Amount": "grandTotal",
+  "Permission": "docPermission"
 }
 
 const PurchaseOrders = () => {
   const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
+  const { canEdit } = useCanEditDocuments();
 
   // State Management
   const [showStatusMenu, setShowStatusMenu] = useState<boolean>(false);
@@ -56,6 +64,7 @@ const PurchaseOrders = () => {
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState<boolean>(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
   const [showTransformSub, setShowTransformSub] = useState<boolean>(false);
   
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
@@ -70,7 +79,7 @@ const PurchaseOrders = () => {
       setIsLoading(true)
       showLoader('Loading purchase orders...')
       try {
-        const data = await BonDAchatService.getAllBonsAchat()
+        const data = await getVisibleBonAchats()
         const transformed = mapBackendBAArrayToUIArray(data);
         setOrders(transformed);
       } catch (error) {
@@ -154,12 +163,14 @@ const PurchaseOrders = () => {
             <SearchIcon className='text-secondary-mid' />
           </div>
 
-         <button 
-            onClick={() => { setProducer(undefined); setClickedOrder(undefined); setIsModalOpen(true); }}
-            className="flex items-center gap-2 bg-secondary-mid text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-secondary transition-all shadow-lg"
-          >
-            <AddIcon sx={{ fontSize: 18 }} /> Create Purchase Order
-          </button>
+         {canEdit && (
+           <button
+              onClick={() => { setProducer(undefined); setClickedOrder(undefined); setIsModalOpen(true); }}
+              className="flex items-center gap-2 bg-secondary-mid text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-secondary transition-all shadow-lg"
+            >
+              <AddIcon sx={{ fontSize: 18 }} /> Create Purchase Order
+            </button>
+         )}
         </div>
       </div>
 
@@ -227,6 +238,8 @@ const PurchaseOrders = () => {
                         <span className="font-black text-gray-900">
                           {order.grandTotal?.toLocaleString()} <span className="text-[10px] text-gray-400">XAF</span>
                         </span>
+                      ) : key === 'docPermission' ? (
+                        <PermissionBadge permission={order.docPermission?.permission} />
                       ) : (order as any)[key] || "—"}
                     </td>
                   ))}
@@ -244,19 +257,42 @@ const PurchaseOrders = () => {
 
                     {activeMenuId === order.idPO && (
                       <div ref={menuRef} className="absolute right-16 top-1/2 -translate-y-1/2 z-40 bg-white border border-slate-100 rounded-2xl shadow-2xl p-1.5 flex gap-1 animate-in fade-in slide-in-from-right-2 duration-200">
-                        
-                        {/* Edit */}
+                        {(() => {
+                          const permission = !canEdit ? 'VIEWER' : order.docPermission?.permission;
+                          const viewButton = (
+                            <ActionButton
+                              key="view"
+                              label="View"
+                              onClick={() => { setClickedOrder(order); setIsPrintModalOpen(true); setActiveMenuId(null); }}
+                              className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-purple-800 transition-all"
+                            ><Eye size={14} /></ActionButton>
+                          );
+                          if (permission === 'VIEWER') return viewButton;
+                          const editButton = (
+                            <ActionButton
+                               key="edit"
+                               label="Edit"
+                               onClick={() => {
+                                 const foundProducer = clients.find(c => c.idClient === order.supplierId);
+                                 setProducer(foundProducer);
+                                 setClickedOrder(order);
+                                 setIsModalOpen(true);
+                                 setActiveMenuId(null);
+                               }}
+                               className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-blue-600 transition-all"
+                            ><Pencil size={14} /></ActionButton>
+                          );
+                          if (permission === 'EDITOR') return <>{editButton}{viewButton}</>;
+                          return (
+                          <>
+                        {editButton}
+
+                        {/* Share */}
                         <ActionButton
-                           label="Edit"
-                           onClick={() => {
-                             const foundProducer = clients.find(c => c.idClient === order.supplierId);
-                             setProducer(foundProducer);
-                             setClickedOrder(order);
-                             setIsModalOpen(true);
-                             setActiveMenuId(null);
-                           }}
-                           className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-blue-600 transition-all"
-                        ><Pencil size={14} /></ActionButton>
+                          label="Share"
+                          onClick={() => { setClickedOrder(order); setIsShareModalOpen(true); setActiveMenuId(null); }}
+                          className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-secondary-mid transition-all"
+                        ><Share2 size={14} /></ActionButton>
 
                         {/* Transform to GRN */}
                         <div className="relative">
@@ -306,6 +342,9 @@ const PurchaseOrders = () => {
                           }}
                           className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-red-50 text-red-600 transition-all"
                         ><Trash2 size={14} /></ActionButton>
+                          </>
+                          );
+                        })()}
                       </div>
                     )}
                   </td>
@@ -318,6 +357,13 @@ const PurchaseOrders = () => {
 
       {isModalOpen && <CreatePurchaseOrderModal orderData={clickedOrder} producerData={producer} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}/>} 
       {isPrintModalOpen && clickedOrder && <PurchaseOrderPrintPreviewModal isOpen={isPrintModalOpen} data={clickedOrder} onClose={() => setIsPrintModalOpen(false) } onConfirmPrint={()=>{}}/>}
+      <ShareDocModal
+        isOpen={isShareModalOpen}
+        docId={clickedOrder?.idPO}
+        docType="BON_ACHAT"
+        docLabel={clickedOrder?.poNumber ? `Purchase Order ${clickedOrder.poNumber}` : undefined}
+        onClose={() => setIsShareModalOpen(false)}
+      />
     </div>
   )
 }

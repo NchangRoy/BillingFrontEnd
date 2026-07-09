@@ -56,7 +56,8 @@ export const mapBackendResponseToUI = (apiRes: BonLivraisonResponse): DeliveryNo
         SaleOrderNumber: apiRes.saleOrderNumber,
 
         createdAt: apiRes.dateSysteme,
-        updatedAt: apiRes.updatedAt
+        updatedAt: apiRes.updatedAt,
+        docPermission: apiRes.docPermission,
     };
 };
 
