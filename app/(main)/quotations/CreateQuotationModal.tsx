@@ -12,7 +12,8 @@ import { UpdatedClientResponse } from "@/src/api/models/UpdatedClientResponse";
 import { UpdatedDevisResponse } from "@/src/api/models/UpdatedDevisResponse";
 import { MOCK_QUOTATIONS } from "@/src/api/models/UpdatedDevisResponse";
 import { mapUpdatedResponseToCreateRequest } from "@/src/Mappers/DevisMapper";
-import { DevisService } from "@/src/src2/api";
+import { createDevisOffline, updateDevisOffline } from "@/src/offline/services/devisService";
+import { isFullyOnline } from "@/src/offline/network/connectivity";
 import { toast } from 'sonner';
 import { UpdatedSellerResponse } from "@/src/api/models/UpdatedSellerResponse";
 import { getVisibleClients } from "@/src/api/scopedTiers";
@@ -164,17 +165,20 @@ const finalPayload: UpdatedDevisResponse = {
     console.log(request)
 
   try {
+    const online = await isFullyOnline();
+
     if (!quotationData?.idDevis) {
-      // MODE CRÉATION (also covers a prefilled-but-not-yet-saved draft, e.g. transformed from a proposal)
-      await DevisService.createDevis(request);
-      console.log("Devis créé");
+      await createDevisOffline(request);
+      console.log("Devis créé localement");
     } else {
-      // MODE ÉDITION
-      await DevisService.updateDevis(quotationData.idDevis, request);
-      console.log("Devis mis à jour");
+      await updateDevisOffline(quotationData.idDevis, request);
+      console.log("Devis mis à jour localement");
     }
 
-    toast.success(quotationData?.idDevis ? "Quotation updated successfully." : "Quotation created successfully.")
+    const offlineMsg = !online ? " (sauvegardé localement, synchronisation en attente)" : "";
+    toast.success(
+      (quotationData?.idDevis ? "Quotation updated successfully." : "Quotation created successfully.") + offlineMsg
+    );
     router.refresh();
     onClose(false);
   } catch (error) {
