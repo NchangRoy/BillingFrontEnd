@@ -13,7 +13,8 @@ import ClientHeader from "./ClientHeader"; // Ensure this handles UpdatedFacture
 import InvoiceDetails from "./InvoiceDetails";
 import InvoicePrintPreviewModal from "./InvoicePrintPreviewModal";
 import { mapUpdatedFactureToCreateRequest } from "@/src/Mappers/FactureMapper";
-import { FactureService } from "@/src/src2/api/services/FactureService";
+import { createFactureOffline, updateFactureOffline } from "@/src/offline/services/factureService";
+import { isFullyOnline } from "@/src/offline/network/connectivity";
 import { useRouter } from "next/navigation";
 import { UpdatedSellerResponse } from "@/src/api/models/UpdatedSellerResponse";
 import { toast } from 'sonner';
@@ -120,19 +121,20 @@ const CreateInvoiceModal = ({ isOpen, onClose, clientData, factureData }: Props)
     const tranformed=mapUpdatedFactureToCreateRequest(finalPayload)
     console.log(tranformed)
 
-
+    const online = await isFullyOnline();
 
     if (!factureData?.idFacture) {
-      console.log("API CALL: Creating new Invoice...");
-      await FactureService.createFacture(tranformed);
-
+      console.log("API CALL: Creating new Invoice (offline-first)...");
+      await createFactureOffline(tranformed);
     } else {
-      console.log("API CALL: Updating existing Invoice...");
-      if (factureData.idFacture) {
-        await FactureService.updateFacture(factureData.idFacture, tranformed);
-      }
+      console.log("API CALL: Updating existing Invoice (offline-first)...");
+      await updateFactureOffline(factureData.idFacture, tranformed);
     }
-    toast.success(factureData?.idFacture ? "Invoice updated successfully." : "Invoice created successfully.")
+
+    const offlineMsg = !online ? " (sauvegardé localement, synchronisation en attente)" : "";
+    toast.success(
+      (factureData?.idFacture ? "Invoice updated successfully." : "Invoice created successfully.") + offlineMsg
+    )
     router.refresh()
     onClose(false);
   };
