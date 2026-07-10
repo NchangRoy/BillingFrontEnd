@@ -23,7 +23,11 @@ export type OutboxAction =
   | 'CREATE_BON_ACHAT'
   | 'UPDATE_BON_ACHAT'
   | 'CREATE_BACK_ORDER'
-  | 'UPDATE_BACK_ORDER';
+  | 'UPDATE_BACK_ORDER'
+  | 'CREATE_FACTURE_FOURNISSEUR'
+  | 'UPDATE_FACTURE_FOURNISSEUR'
+  | 'CREATE_BON_RECEPTION'
+  | 'UPDATE_BON_RECEPTION';
 
 export interface BaseLocalEntity {
   organizationId: string;
@@ -44,6 +48,11 @@ export interface LocalTiersClient extends BaseLocalEntity {
   telephone?: string;
   adresse?: string;
   username?: string;
+  categorie?: string;
+  siteWeb?: string;
+  allowedSaleSizes?: string[];
+  typeClient?: string;
+  ntva?: boolean;
   [key: string]: unknown;
 }
 
@@ -55,6 +64,32 @@ export interface LocalTiersFournisseur extends BaseLocalEntity {
   email?: string;
   telephone?: string;
   adresse?: string;
+  username?: string;
+  categorie?: string;
+  siteWeb?: string;
+  allowedSaleSizes?: string[];
+  typeFournisseur?: string;
+  ntva?: boolean;
+  [key: string]: unknown;
+}
+
+export interface LocalProduct extends BaseLocalEntity {
+  idProduit: string;
+  nomProduit?: string;
+  typeProduit?: string;
+  prixVente?: number;
+  cout?: number;
+  categorie?: string;
+  reference?: string;
+  codeBarre?: string;
+  photo?: string;
+  active?: boolean;
+  uom?: string;
+  allowedSaleSizes?: unknown[];
+  activePromotions?: unknown[];
+  stockQuantity?: number;
+  availableQuantity?: number;
+  reservedQuantity?: number;
   [key: string]: unknown;
 }
 
@@ -224,6 +259,55 @@ export interface LocalBackOrder extends BaseLocalEntity {
   nomClient?: string;
   agencyId?: string;
   createdBy?: string;
+  [key: string]: unknown;
+}
+
+export interface LocalFactureFournisseur extends BaseLocalEntity {
+  idFactureFournisseur: string;
+  numeroFacture?: string;
+  idFournisseur?: string;
+  nomFournisseur?: string;
+  adresseFournisseur?: string;
+  emailFournisseur?: string;
+  telephoneFournisseur?: string;
+  lines: unknown[];
+  montantHT?: number;
+  montantTVA?: number;
+  montantTTC?: number;
+  montantTotal?: number;
+  modeReglement?: string;
+  nbreEcheance?: number;
+  montantRestant?: number;
+  dateFacture?: string;
+  dateEcheance?: string;
+  statut: string;
+  applyVat?: boolean;
+  devise?: string;
+  notes?: string;
+  pdfPath?: string;
+  createdBy?: string;
+  idBonReception?: string;
+  numeroBonReception?: string;
+  dateSysteme?: string;
+  agencyId?: string;
+  [key: string]: unknown;
+}
+
+export interface LocalBonReception extends BaseLocalEntity {
+  idBonReception: string;
+  numeroReception?: string;
+  idFournisseur?: string;
+  nomFournisseur?: string;
+  lines: unknown[];
+  dateReception?: string;
+  statut: string;
+  notes?: string;
+  createdBy?: string;
+  dateSysteme?: string;
+  numeroBonAchat?: string;
+  idBonAchat?: string;
+  agenceDeTransport?: string;
+  agencyId?: string;
   [key: string]: unknown;
 }
 

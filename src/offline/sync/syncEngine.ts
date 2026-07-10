@@ -87,6 +87,14 @@ const markEntitySynced = async (entry: OutboxEntry): Promise<void> => {
     case 'UPDATE_BACK_ORDER':
       await offlineDb.back_orders.update(entry.entityId, { syncStatus: 'synced', updatedAt: now });
       break;
+    case 'CREATE_FACTURE_FOURNISSEUR':
+    case 'UPDATE_FACTURE_FOURNISSEUR':
+      await offlineDb.factures_fournisseur.update(entry.entityId, { syncStatus: 'synced', updatedAt: now });
+      break;
+    case 'CREATE_BON_RECEPTION':
+    case 'UPDATE_BON_RECEPTION':
+      await offlineDb.bon_receptions.update(entry.entityId, { syncStatus: 'synced', updatedAt: now });
+      break;
   }
 };
 
@@ -132,6 +140,14 @@ const markEntityConflict = async (entry: OutboxEntry, error: string): Promise<vo
     case 'CREATE_BACK_ORDER':
     case 'UPDATE_BACK_ORDER':
       await offlineDb.back_orders.update(entry.entityId, { syncStatus: 'conflict', updatedAt: new Date().toISOString() });
+      break;
+    case 'CREATE_FACTURE_FOURNISSEUR':
+    case 'UPDATE_FACTURE_FOURNISSEUR':
+      await offlineDb.factures_fournisseur.update(entry.entityId, { syncStatus: 'conflict', updatedAt: new Date().toISOString() });
+      break;
+    case 'CREATE_BON_RECEPTION':
+    case 'UPDATE_BON_RECEPTION':
+      await offlineDb.bon_receptions.update(entry.entityId, { syncStatus: 'conflict', updatedAt: new Date().toISOString() });
       break;
   }
   console.error(`[Sync] Conflict on ${entry.action}:`, error);

@@ -4,10 +4,13 @@ import type {
   LocalBonAchat,
   LocalBonCommande,
   LocalBonLivraison,
+  LocalBonReception,
   LocalDevis,
   LocalFacture,
+  LocalFactureFournisseur,
   LocalNoteCredit,
   LocalPaiement,
+  LocalProduct,
   LocalProforma,
   LocalTaxe,
   LocalTiersClient,
@@ -28,6 +31,9 @@ export class BillingOfflineDB extends Dexie {
   note_credits!: Table<LocalNoteCredit, string>;
   bon_achats!: Table<LocalBonAchat, string>;
   back_orders!: Table<LocalBackOrder, string>;
+  products!: Table<LocalProduct, string>;
+  factures_fournisseur!: Table<LocalFactureFournisseur, string>;
+  bon_receptions!: Table<LocalBonReception, string>;
   outbox!: Table<OutboxEntry, string>;
 
   constructor() {
@@ -53,6 +59,15 @@ export class BillingOfflineDB extends Dexie {
       note_credits: 'idNoteCredit, organizationId, idClient, statut, syncStatus, dateEmission',
       bon_achats: 'idBonAchat, organizationId, supplierId, statut, syncStatus, dateBonAchat',
       back_orders: 'idBackOrder, organizationId, idBonLivraison, statut, syncStatus, dateCreation',
+    });
+
+    this.version(4).stores({
+      products: 'idProduit, organizationId, nomProduit, categorie, active',
+    });
+
+    this.version(5).stores({
+      factures_fournisseur: 'idFactureFournisseur, organizationId, idFournisseur, statut, syncStatus, dateFacture',
+      bon_receptions: 'idBonReception, organizationId, idFournisseur, statut, syncStatus, dateReception',
     });
   }
 }

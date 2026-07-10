@@ -135,7 +135,11 @@ const CreateInvoiceModal = ({ isOpen, onClose, clientData, factureData }: Props)
     toast.success(
       (factureData?.idFacture ? "Invoice updated successfully." : "Invoice created successfully.") + offlineMsg
     )
-    router.refresh()
+    // router.refresh() does a live RSC fetch of the current route — with no
+    // service worker and no network, that fetch fails hard and can take the
+    // whole page down with it. The invoices list already re-fetches itself
+    // via page.tsx's isModalOpen effect, so this is safe to skip offline.
+    if (online) router.refresh()
     onClose(false);
   };
 

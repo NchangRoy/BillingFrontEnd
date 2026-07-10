@@ -6,7 +6,7 @@ export { isBrowserOnline, isFullyOnline, pingBackendHealth } from './network/con
 
 export { createOutboxEntry, getOutboxCount, getPendingOutbox, retryOutboxEntry, discardOutboxEntry } from './sync/outbox';
 export { processOutbox, startSyncEngine } from './sync/syncEngine';
-export { syncReferenceData, getLocalClients, getLocalFournisseurs, getLocalTaxes } from './sync/referenceSync';
+export { syncReferenceData, getLocalClients, getLocalFournisseurs, getLocalTaxes, getLocalProducts } from './sync/referenceSync';
 
 export { createDevisOffline, updateDevisOffline, pullAndCacheDevis } from './services/devisService';
 export { createFactureOffline, updateFactureOffline, pullAndCacheFactures } from './services/factureService';
@@ -17,7 +17,9 @@ export { createBonLivraisonOffline, updateBonLivraisonOffline, pullAndCacheBonLi
 export { createNoteCreditOffline, updateNoteCreditOffline, pullAndCacheNoteCredits } from './services/noteCreditService';
 export { createBonAchatOffline, updateBonAchatOffline, pullAndCacheBonAchats } from './services/bonAchatService';
 export { createBackOrderOffline, updateBackOrderOffline, pullAndCacheBackOrders } from './services/backOrderService';
-export { getClientsOfflineFirst, getFournisseursOfflineFirst } from './services/referenceService';
+export { createFactureFournisseurOffline, updateFactureFournisseurOffline, pullAndCacheFacturesFournisseur } from './services/factureFournisseurService';
+export { createBonReceptionOffline, updateBonReceptionOffline, pullAndCacheBonReceptions } from './services/bonReceptionService';
+export { getClientsOfflineFirst, getFournisseursOfflineFirst, getProductsOfflineFirst } from './services/referenceService';
 
 export { useOnlineStatus } from './hooks/useOnlineStatus';
 export { useOutboxCount, useOutboxEntries, usePendingSyncCount } from './hooks/useOutboxCount';

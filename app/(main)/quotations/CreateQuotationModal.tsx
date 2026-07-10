@@ -179,7 +179,9 @@ const finalPayload: UpdatedDevisResponse = {
     toast.success(
       (quotationData?.idDevis ? "Quotation updated successfully." : "Quotation created successfully.") + offlineMsg
     );
-    router.refresh();
+    // router.refresh() does a live RSC fetch — fails hard with no service
+    // worker/network and can crash the page. Skip it when offline.
+    if (online) router.refresh();
     onClose(false);
   } catch (error) {
     console.error("Erreur lors de la sauvegarde :", error);
