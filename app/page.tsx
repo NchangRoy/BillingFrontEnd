@@ -69,9 +69,11 @@ const STEPS = [
 
 const Logo = ({ variant = "dark" }: { variant?: "dark" | "light" }) => (
   <div className="flex items-center gap-2.5">
-    <div className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-white bg-gradient-to-br from-secondary-mid to-primary shadow-lg shadow-secondary-mid/25 text-sm">
-      KSM
-    </div>
+    <img
+      src="/logo.png"
+      alt="KSM Logo"
+      className="w-9 h-9 object-contain"
+    />
     <div className="flex items-baseline gap-1.5">
       <span className={`text-lg font-black tracking-tight ${variant === "dark" ? "text-primary" : "text-white"}`}>Billing</span>
       <span className={`text-[10px] font-bold uppercase tracking-widest ${variant === "dark" ? "text-secondary-gray" : "text-white/50"}`}>by KSM</span>

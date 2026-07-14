@@ -24,9 +24,7 @@ export function SiteHeader() {
           <div className="flex items-center gap-8">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-white bg-gradient-to-br from-blue-500 to-blue-700 shadow-lg shadow-blue-500/20 text-sm">
-                KSM
-              </div>
+              <img src="/logo.png" alt="KSM Logo" className="w-9 h-9 object-contain" />
               <div className="flex items-baseline gap-1.5">
                 <span className="text-lg font-black tracking-tight text-gray-900">Billing</span>
                 <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">by KSM</span>

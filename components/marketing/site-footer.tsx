@@ -83,9 +83,7 @@ export function SiteFooter() {
 
         <div className="mt-8 border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-white bg-blue-600 text-xs">
-              KSM
-            </div>
+            <img src="/logo.png" alt="KSM Logo" className="w-8 h-8 object-contain" />
             <span className="text-sm font-bold text-gray-400">
               Billing <span className="text-xs text-gray-500 font-normal">by KSM</span>
             </span>
