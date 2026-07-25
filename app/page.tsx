@@ -13,154 +13,141 @@ import Reveal from "@/components/Reveal";
 import AuthModal from "@/components/AuthModal";
 import { getStoredSeller } from "@/src/api/session";
 
-const COMPARISON_CATEGORIES = [
+const COMPARISON_ITEMS = [
   {
-    category: "POS & Sales Terminal",
-    items: [
-      {
-        feature: "Offline-First POS Selling",
-        description: "Full offline register capability with Dexie/IndexedDB local storage & automatic background synchronization when internet restores.",
-        ksm: true,
-        ksmNote: "Full offline-first with auto-sync",
-        traditional: "Limited",
-        traditionalNote: "Requires active network connection",
-        manual: false,
-        manualNote: "No offline capabilities",
-      },
-      {
-        feature: "Session Lifecycle & Cash Float",
-        description: "UTC-aligned session scheduling, open/close float balance validation, cash drawer tracking, and automatic timeout gates.",
-        ksm: true,
-        ksmNote: "UTC gates + float audit trail",
-        traditional: "Basic",
-        traditionalNote: "Basic daily open/close",
-        manual: false,
-        manualNote: "Manual paper registers",
-      },
-      {
-        feature: "Tiered Pricing per Sale Size",
-        description: "Automatic price application for Detail, Demi-Gros, Gros, and Super-Gros customer categories.",
-        ksm: true,
-        ksmNote: "4-tier automatic pricing",
-        traditional: "Limited",
-        traditionalNote: "Single fixed price list",
-        manual: false,
-        manualNote: "Manual calculation errors",
-      },
-    ],
+    feature: "Offline mode: sales and consultation without connection, with automatic background sync",
+    ksm: "check",
+    odoo: "check",
+    classic: "cross",
   },
   {
-    category: "Documents & Automation",
-    items: [
-      {
-        feature: "10+ Specialized Document Types",
-        description: "Quotations, Proformas, Sales Orders, Invoices, Delivery Notes, Credit Notes, Back Orders, Goods Receipts, Supplier Invoices & Purchase Orders.",
-        ksm: true,
-        ksmNote: "Complete 10+ document suite",
-        traditional: "Basic",
-        traditionalNote: "Invoices & Receipts only",
-        manual: false,
-        manualNote: "Word / Excel templates",
-      },
-      {
-        feature: "1-Click Document Transformations",
-        description: "Seamlessly turn Quotations ➔ Sales Orders ➔ Invoices ➔ Delivery Notes without re-typing line items.",
-        ksm: true,
-        ksmNote: "Automated workflow pipeline",
-        traditional: false,
-        traditionalNote: "Manual re-entry required",
-        manual: false,
-        manualNote: "Re-copying across files",
-      },
-      {
-        feature: "Custom Composable Document Numbering",
-        description: "Define custom prefix, organization code, agency code, tax flags, dates, and sequence rules per document type.",
-        ksm: true,
-        ksmNote: "Fully composable rules",
-        traditional: "Limited",
-        traditionalNote: "Rigid auto-increment IDs",
-        manual: false,
-        manualNote: "Manual numbers & duplicates",
-      },
-    ],
+    feature: "Multi-agency hierarchy (organizations, isolated agencies, and sales points)",
+    ksm: "check",
+    odoo: "dash",
+    classic: "cross",
   },
   {
-    category: "Multi-Agency & Portal",
-    items: [
-      {
-        feature: "Multi-Agency & Sales Point Scoping",
-        description: "Hierarchy management across Organizations, Agencies, and Sales Points with strict data isolation.",
-        ksm: true,
-        ksmNote: "Org ➔ Agency ➔ Sales Point",
-        traditional: "Limited",
-        traditionalNote: "Single location focus",
-        manual: false,
-        manualNote: "Disconnected spreadsheets",
-      },
-      {
-        feature: "Public Customer Portal & Sharing",
-        description: "Generate secure token-based public links for customer quotation approvals, proposal reviews, and invoice downloads.",
-        ksm: true,
-        ksmNote: "Tokenized public portal",
-        traditional: false,
-        traditionalNote: "Email PDF attachments only",
-        manual: false,
-        manualNote: "Physical paper printouts",
-      },
-      {
-        feature: "Granular Role-Based Access (RBAC)",
-        description: "Fine-grained permissions for discount caps, price overrides, quotation negotiations, and document approval workflows.",
-        ksm: true,
-        ksmNote: "Custom seller & manager RBAC",
-        traditional: "Basic",
-        traditionalNote: "Generic Admin/User roles",
-        manual: false,
-        manualNote: "Zero access controls",
-      },
-      {
-        feature: "Real-Time Sync & WebSocket Alerts",
-        description: "Instant updates across terminals, live notifications for session events, and full financial audit logs.",
-        ksm: true,
-        ksmNote: "Live WebSockets + Audit trail",
-        traditional: false,
-        traditionalNote: "Delayed batch updates",
-        manual: false,
-        manualNote: "No audit trails",
-      },
-    ],
+    feature: "Real-time POS sessions, cash float tracking, and UTC closing gates",
+    ksm: "check",
+    odoo: "dash",
+    classic: "cross",
+  },
+  {
+    feature: "10+ Specialized document types (Quotations, Orders, Invoices, Delivery Notes, etc.)",
+    ksm: "check",
+    odoo: "dash",
+    classic: "cross",
+  },
+  {
+    feature: "1-Click automated document transformations (Quotation ➔ Sales Order ➔ Invoice)",
+    ksm: "check",
+    odoo: "dash",
+    classic: "cross",
+  },
+  {
+    feature: "Custom composable document numbering (prefixes, branch codes, tax status, date sequences)",
+    ksm: "check",
+    odoo: "dash",
+    classic: "cross",
+  },
+  {
+    feature: "Tiered sale-size pricing (Detail, Demi-Gros, Gros, Super-Gros)",
+    ksm: "check",
+    odoo: "dash",
+    classic: "cross",
+  },
+  {
+    feature: "Public customer portal & secure tokenized link sharing for quotes and invoices",
+    ksm: "check",
+    odoo: "dash",
+    classic: "cross",
+  },
+  {
+    feature: "Granular role-based access control (Seller, Agency Manager, Organization Admin)",
+    ksm: "check",
+    odoo: "dash",
+    classic: "cross",
+  },
+  {
+    feature: "Document journals, sales history, and audit log tracking",
+    ksm: "check",
+    odoo: "check",
+    classic: "dash",
+  },
+  {
+    feature: "Management of customers, suppliers, invoices, and payment status tracking",
+    ksm: "check",
+    odoo: "check",
+    classic: "dash",
+  },
+  {
+    feature: "Multiple organizations and agencies managed on a single platform",
+    ksm: "check",
+    odoo: "dash",
+    classic: "cross",
+  },
+  {
+    feature: "Real-time POS terminal sync & live WebSocket notifications",
+    ksm: "check",
+    odoo: "dash",
+    classic: "cross",
+  },
+  {
+    feature: "Cloud & local hybrid deployment without per-module lockouts",
+    ksm: "check",
+    odoo: "dash",
+    classic: "cross",
   },
 ];
 
 const FEATURES = [
   {
     icon: ReceiptText,
-    title: "Sales & Quotations",
-    description: "Create quotations, sales orders and invoices with negotiable, tiered pricing per sale size.",
+    title: "10+ Document Types & Transformations",
+    description: "Create Quotations, Proformas, Sales Orders, Invoices, Delivery Notes, Credit Notes, and Supplier Invoices. Transform quotes into orders and invoices in 1 click.",
+    badge: "1-Click Transform",
+  },
+  {
+    icon: Zap,
+    title: "Offline-First POS Selling",
+    description: "Sell continuously at sales points even without internet connection using Dexie local storage and automatic background sync when network restores.",
+    badge: "Offline Register",
   },
   {
     icon: Building2,
-    title: "Multi-Agency Organizations",
-    description: "Manage agencies, sellers, customers and suppliers across your entire organization from one place.",
+    title: "Multi-Agency & Sales Points",
+    description: "Manage multiple organizations, branches, agencies, and sale points from a single platform with strict scope isolation and seller routing.",
+    badge: "Enterprise Hierarchy",
   },
   {
     icon: PlayCircle,
-    title: "Real-Time Sessions",
-    description: "Open, suspend and reconcile seller sessions per sale point with a full audit trail.",
+    title: "Real-Time POS Sessions & Cash Float",
+    description: "Schedule, open, suspend, and close seller POS sessions per sale point with cash float balance validation, UTC gates, and full audit logs.",
+    badge: "Cash Audit",
   },
   {
     icon: Package,
-    title: "Product Catalog",
-    description: "Track stock, configure sale-size pricing tiers, and manage product photos in one catalog.",
+    title: "Tiered Pricing per Sale Size",
+    description: "Configure product catalog pricing tiers automatically for Detail, Demi-Gros, Gros, and Super-Gros customer categories.",
+    badge: "4 Price Tiers",
   },
   {
     icon: Hash,
-    title: "Custom Document Numbering",
-    description: "Compose your own invoice, quotation and delivery note numbers exactly the way your business needs.",
+    title: "Custom Composable Document Numbering",
+    description: "Define your own numbering formula (organization code, agency prefix, tax status flag, date format, and sequence) per document type.",
+    badge: "Fully Composable",
+  },
+  {
+    icon: Globe,
+    title: "Customer Portal & Link Sharing",
+    description: "Share secure token-based public links with customers to view proposals, approve quotations online, and download signed invoices.",
+    badge: "Public Portal",
   },
   {
     icon: ShieldCheck,
-    title: "Role-Based Access",
-    description: "Fine-grained seller permissions for pricing, discounts and document approvals, agency by agency.",
+    title: "Granular Role-Based Access Control",
+    description: "Assign fine-grained seller and manager permissions for price overrides, discount caps, document approvals, and session controls.",
+    badge: "Seller RBAC",
   },
 ];
 
@@ -453,17 +440,24 @@ const LandingPage = () => {
           </div>
         </Reveal>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {FEATURES.map((feature, i) => {
             const Icon = feature.icon;
             return (
-              <Reveal key={feature.title} delay={(i % 3) * 100}>
-                <div className="h-full p-8 rounded-[2rem] border border-secondary-light bg-white hover:shadow-xl hover:shadow-primary/5 hover:border-secondary-mid/20 hover:-translate-y-1 transition-all duration-300">
-                  <div className="w-12 h-12 rounded-2xl bg-secondary-super-light text-secondary-mid flex items-center justify-center mb-5">
-                    <Icon size={22} />
+              <Reveal key={feature.title} delay={(i % 4) * 80}>
+                <div className="h-full p-7 rounded-[2rem] border border-secondary-light bg-white hover:shadow-xl hover:shadow-primary/5 hover:border-secondary-mid/20 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-5">
+                      <div className="w-12 h-12 rounded-2xl bg-secondary-super-light text-secondary-mid flex items-center justify-center shrink-0">
+                        <Icon size={22} />
+                      </div>
+                      <span className="text-[10px] font-black uppercase tracking-wider bg-secondary-super-light text-secondary-mid px-2.5 py-1 rounded-full border border-secondary-light/60">
+                        {feature.badge}
+                      </span>
+                    </div>
+                    <h3 className="text-sm font-black text-primary mb-2 leading-snug">{feature.title}</h3>
+                    <p className="text-xs text-secondary-gray font-medium leading-relaxed">{feature.description}</p>
                   </div>
-                  <h3 className="text-base font-black text-primary mb-2">{feature.title}</h3>
-                  <p className="text-sm text-secondary-gray font-medium leading-relaxed">{feature.description}</p>
                 </div>
               </Reveal>
             );
@@ -472,118 +466,126 @@ const LandingPage = () => {
       </section>
 
       {/* FEATURE COMPARISON MATRIX */}
-      <section id="comparison" className="bg-secondary-background border-y border-secondary-light py-24">
-        <div className="max-w-7xl mx-auto px-6">
+      <section id="comparison" className="bg-slate-50/50 border-y border-slate-200/80 py-20">
+        <div className="max-w-6xl mx-auto px-6">
           <Reveal>
-            <div className="text-center mb-16">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white border border-secondary-light shadow-sm text-secondary-mid rounded-full text-[11px] font-black uppercase tracking-widest mb-4">
-                <Sparkles size={13} /> Feature Comparison Matrix
-              </div>
+            <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-black text-primary tracking-tight mb-3">
-                Why modern multi-agency teams choose KSM Billing
+                General Billing &amp; Sales: KSM vs Odoo
               </h2>
-              <p className="text-secondary-gray font-medium max-w-2xl mx-auto">
-                Compare KSM Billing against traditional POS/ERP software and fragmented manual spreadsheets.
+              <p className="text-secondary-gray font-medium max-w-2xl mx-auto text-sm md:text-base">
+                Sales, POS, quotations, multi-agency, and modular documents — billing built for modern businesses.
               </p>
             </div>
           </Reveal>
 
           <Reveal delay={100}>
-            <div className="bg-white rounded-[2.5rem] border border-secondary-light shadow-xl shadow-primary/5 overflow-hidden">
+            <div className="bg-white rounded-[2rem] border border-slate-200 shadow-2xl shadow-slate-900/5 p-6 md:p-8 overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[760px]">
+                <table className="w-full text-left border-collapse min-w-[700px]">
                   <thead>
-                    <tr className="border-b border-secondary-light bg-secondary-background/60 text-xs font-black uppercase tracking-wider text-secondary-gray">
-                      <th className="py-6 px-8 w-2/5">Function / Capability</th>
-                      <th className="py-6 px-6 w-1/5 bg-primary/5 text-primary border-x border-primary/10 relative">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                          <span className="font-black text-sm text-primary">KSM Billing</span>
-                          <span className="ml-auto text-[9px] bg-primary text-white px-2 py-0.5 rounded-full font-black uppercase tracking-widest">Full Suite</span>
+                    <tr className="border-b border-slate-100 text-[11px] font-black uppercase tracking-wider text-slate-400">
+                      <th className="py-4 px-4 w-1/2">Functionality</th>
+                      <th className="py-4 px-4 text-center w-1/6">
+                        <div className="flex flex-col items-center gap-1">
+                          <img src="/logo.png" alt="KSM Logo" className="w-6 h-6 object-contain" />
+                          <span className="font-black text-xs text-primary tracking-tight">KSM Billing</span>
                         </div>
                       </th>
-                      <th className="py-6 px-6 w-1/5 text-secondary-gray">Traditional POS / ERP</th>
-                      <th className="py-6 px-6 w-1/5 text-secondary-gray">Manual &amp; Spreadsheets</th>
+                      <th className="py-4 px-4 text-center w-1/6">
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="font-bold text-xs text-slate-700">Odoo</span>
+                          <span className="text-[10px] text-slate-400 font-medium">Standard ERP</span>
+                        </div>
+                      </th>
+                      <th className="py-4 px-4 text-center w-1/6">
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="font-bold text-xs text-slate-700">Classic Solutions</span>
+                          <span className="text-[10px] text-slate-400 font-medium">Manual / Spreadsheets</span>
+                        </div>
+                      </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-secondary-light text-sm">
-                    {COMPARISON_CATEGORIES.map((cat) => (
-                      <React.Fragment key={cat.category}>
-                        <tr className="bg-secondary-super-light/50">
-                          <td colSpan={4} className="py-3 px-8 text-xs font-black text-secondary-mid uppercase tracking-widest">
-                            {cat.category}
-                          </td>
-                        </tr>
-                        {cat.items.map((item) => (
-                          <tr key={item.feature} className="hover:bg-secondary-super-light/30 transition-colors">
-                            <td className="py-5 px-8">
-                              <p className="font-black text-primary text-sm mb-1">{item.feature}</p>
-                              <p className="text-xs text-secondary-gray font-medium leading-relaxed max-w-md">{item.description}</p>
-                            </td>
-                            {/* KSM BILLING */}
-                            <td className="py-5 px-6 bg-primary/[0.02] border-x border-primary/10">
-                              <div className="flex items-start gap-2.5">
-                                <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-200 shrink-0 mt-0.5">
-                                  <Check size={14} className="stroke-[3]" />
-                                </div>
-                                <div>
-                                  <span className="font-black text-xs text-emerald-700 uppercase tracking-wide block">Included</span>
-                                  <span className="text-[11px] text-secondary-gray font-medium">{item.ksmNote}</span>
-                                </div>
-                              </div>
-                            </td>
-                            {/* TRADITIONAL POS */}
-                            <td className="py-5 px-6">
-                              {item.traditional === true ? (
-                                <div className="flex items-start gap-2.5">
-                                  <div className="p-1 rounded-md bg-emerald-50 text-emerald-600 shrink-0 mt-0.5">
-                                    <Check size={14} />
-                                  </div>
-                                  <span className="text-xs font-bold text-primary">{item.traditionalNote}</span>
-                                </div>
-                              ) : item.traditional === "Limited" || item.traditional === "Basic" ? (
-                                <div className="flex items-start gap-2.5">
-                                  <div className="p-1 rounded-md bg-amber-50 text-amber-600 shrink-0 mt-0.5">
-                                    <Minus size={14} className="stroke-[3]" />
-                                  </div>
-                                  <div>
-                                    <span className="font-bold text-xs text-amber-700 uppercase tracking-wide block">{item.traditional}</span>
-                                    <span className="text-[11px] text-secondary-gray font-medium">{item.traditionalNote}</span>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="flex items-start gap-2.5">
-                                  <div className="p-1 rounded-md bg-rose-50 text-rose-500 shrink-0 mt-0.5">
-                                    <X size={14} className="stroke-[3]" />
-                                  </div>
-                                  <span className="text-xs font-medium text-secondary-gray">{item.traditionalNote}</span>
-                                </div>
-                              )}
-                            </td>
-                            {/* MANUAL / SPREADSHEETS */}
-                            <td className="py-5 px-6">
-                              {item.manual === true ? (
-                                <div className="flex items-start gap-2.5">
-                                  <div className="p-1 rounded-md bg-emerald-50 text-emerald-600 shrink-0 mt-0.5">
-                                    <Check size={14} />
-                                  </div>
-                                  <span className="text-xs font-bold text-primary">{item.manualNote}</span>
-                                </div>
-                              ) : (
-                                <div className="flex items-start gap-2.5">
-                                  <div className="p-1 rounded-md bg-rose-50 text-rose-500 shrink-0 mt-0.5">
-                                    <X size={14} className="stroke-[3]" />
-                                  </div>
-                                  <span className="text-xs font-medium text-secondary-gray">{item.manualNote}</span>
-                                </div>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </React.Fragment>
+                  <tbody className="divide-y divide-slate-100 text-xs md:text-sm">
+                    {COMPARISON_ITEMS.map((item, i) => (
+                      <tr key={i} className="hover:bg-slate-50/70 transition-colors">
+                        <td className="py-3.5 px-4 font-semibold text-slate-700 leading-snug">
+                          {item.feature}
+                        </td>
+                        {/* KSM BILLING */}
+                        <td className="py-3.5 px-4 text-center">
+                          {item.ksm === "check" ? (
+                            <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-sm">
+                              <Check size={13} className="stroke-[3]" />
+                            </div>
+                          ) : item.ksm === "dash" ? (
+                            <div className="w-6 h-6 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto shadow-sm">
+                              <Minus size={13} className="stroke-[3]" />
+                            </div>
+                          ) : (
+                            <div className="w-6 h-6 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center mx-auto shadow-sm">
+                              <X size={13} className="stroke-[3]" />
+                            </div>
+                          )}
+                        </td>
+                        {/* ODOO */}
+                        <td className="py-3.5 px-4 text-center">
+                          {item.odoo === "check" ? (
+                            <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+                              <Check size={13} className="stroke-[3]" />
+                            </div>
+                          ) : item.odoo === "dash" ? (
+                            <div className="w-6 h-6 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto">
+                              <Minus size={13} className="stroke-[3]" />
+                            </div>
+                          ) : (
+                            <div className="w-6 h-6 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center mx-auto">
+                              <X size={13} className="stroke-[3]" />
+                            </div>
+                          )}
+                        </td>
+                        {/* CLASSIC SOLUTIONS */}
+                        <td className="py-3.5 px-4 text-center">
+                          {item.classic === "check" ? (
+                            <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+                              <Check size={13} className="stroke-[3]" />
+                            </div>
+                          ) : item.classic === "dash" ? (
+                            <div className="w-6 h-6 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto">
+                              <Minus size={13} className="stroke-[3]" />
+                            </div>
+                          ) : (
+                            <div className="w-6 h-6 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center mx-auto">
+                              <X size={13} className="stroke-[3]" />
+                            </div>
+                          )}
+                        </td>
+                      </tr>
                     ))}
                   </tbody>
                 </table>
+              </div>
+
+              {/* LEGEND */}
+              <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-center gap-6 text-xs text-slate-500 font-medium">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-600 inline-flex items-center justify-center">
+                    <Check size={10} className="stroke-[3]" />
+                  </span>
+                  Included
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-4 h-4 rounded-full bg-amber-100 text-amber-600 inline-flex items-center justify-center">
+                    <Minus size={10} className="stroke-[3]" />
+                  </span>
+                  Limited / Option
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-4 h-4 rounded-full bg-rose-100 text-rose-500 inline-flex items-center justify-center">
+                    <X size={10} className="stroke-[3]" />
+                  </span>
+                  Not supported
+                </span>
               </div>
             </div>
           </Reveal>
