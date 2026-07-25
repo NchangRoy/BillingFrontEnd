@@ -1,11 +1,16 @@
-import React from "react";
+"use client";
+
+import React, { useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ReceiptText, Building2, PlayCircle, Package,
   Hash, ShieldCheck, ArrowRight, Sparkles,
   FileCheck2, Layers, Zap, Settings2, Rocket
 } from "lucide-react";
 import Reveal from "@/components/Reveal";
+import AuthModal from "@/components/AuthModal";
+import { getStoredSeller } from "@/src/api/session";
 
 const FEATURES = [
   {
@@ -80,6 +85,15 @@ const Logo = ({ variant = "dark" }: { variant?: "dark" | "light" }) => (
 );
 
 const LandingPage = () => {
+  const router = useRouter();
+  const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
+
+  useEffect(() => {
+    if (getStoredSeller()?.accessToken) {
+      router.replace("/dashboard");
+    }
+  }, [router]);
+
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
       {/* TOP ACCENT */}
@@ -96,12 +110,13 @@ const LandingPage = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            <Link
-              href="/login"
+            <button
+              type="button"
+              onClick={() => setIsAuthModalOpen(true)}
               className="text-sm font-bold text-primary hover:text-secondary-mid transition-colors px-2"
             >
               Sign In
-            </Link>
+            </button>
             <Link
               href="/try-out"
               className="flex items-center gap-1.5 bg-primary hover:bg-secondary-mid text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 transition-all active:scale-95"
@@ -151,12 +166,13 @@ const LandingPage = () => {
               >
                 Try It Out <ArrowRight size={16} />
               </Link>
-              <Link
-                href="/login"
+              <button
+                type="button"
+                onClick={() => setIsAuthModalOpen(true)}
                 className="flex items-center gap-2 bg-white border-2 border-secondary-light hover:border-secondary-mid text-primary px-8 py-4 rounded-2xl font-black text-sm transition-all active:scale-95"
               >
                 Sign In
-              </Link>
+              </button>
             </div>
             <div className="flex items-center gap-6 text-secondary-gray">
               <div className="flex items-center gap-2 text-xs font-bold">
@@ -348,12 +364,13 @@ const LandingPage = () => {
                 >
                   Try It Out <ArrowRight size={16} />
                 </Link>
-                <Link
-                  href="/login"
+                <button
+                  type="button"
+                  onClick={() => setIsAuthModalOpen(true)}
                   className="inline-flex items-center gap-2 border-2 border-white/30 hover:border-white text-white px-8 py-4 rounded-2xl font-black text-sm transition-all active:scale-95"
                 >
                   Sign In
-                </Link>
+                </button>
               </div>
             </div>
           </div>
@@ -374,7 +391,13 @@ const LandingPage = () => {
             <div className="flex flex-col gap-2.5">
               <a href="#workflow" className="text-sm font-bold text-white/70 hover:text-white transition-colors w-fit">How it works</a>
               <a href="#features" className="text-sm font-bold text-white/70 hover:text-white transition-colors w-fit">Features</a>
-              <Link href="/login" className="text-sm font-bold text-white/70 hover:text-white transition-colors w-fit">Sign In</Link>
+              <button
+                type="button"
+                onClick={() => setIsAuthModalOpen(true)}
+                className="text-sm font-bold text-white/70 hover:text-white transition-colors w-fit text-left"
+              >
+                Sign In
+              </button>
             </div>
           </div>
           <div>
@@ -390,6 +413,8 @@ const LandingPage = () => {
           </div>
         </div>
       </footer>
+
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
     </div>
   );
 };

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   EmailOutlined,
   LockOutlined,
@@ -34,7 +34,7 @@ const PortalLoginPage = () => {
       const data = await PortalApi.login(formData.email, formData.password);
       setPortalSession(data);
       // Hard navigation — see PortalSidebar's handleLogout for why.
-      window.location.href = data.mustChangePassword ? '/portal/change-password' : '/portal/dashboard';
+      window.location.href = '/portal/dashboard';
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Authentication failed');
     } finally {

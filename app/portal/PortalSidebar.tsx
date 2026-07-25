@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { getPortalSession, clearPortalSession } from "@/src/api/portalSession";
+import { getPortalSession, clearPortalSession, getPortalRoles } from "@/src/api/portalSession";
 import {
   Dashboard as DashboardIcon,
   RequestQuote as RequestQuoteIcon,
@@ -29,10 +29,12 @@ const PortalSidebar = () => {
   const pathname = usePathname();
   const router = useRouter();
   const session = getPortalSession();
+  const roles = getPortalRoles(session);
 
   const items = [
     { content: "Dashboard", Icon: DashboardIcon, path: "/portal/dashboard" },
-    ...(session?.partyRole === "SUPPLIER" ? SUPPLIER_ITEMS : CUSTOMER_ITEMS),
+    ...(roles.includes("CUSTOMER") ? CUSTOMER_ITEMS : []),
+    ...(roles.includes("SUPPLIER") ? SUPPLIER_ITEMS : []),
   ];
 
   const handleLogout = () => {

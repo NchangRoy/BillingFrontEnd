@@ -42,6 +42,7 @@ import PermissionBadge from '@/components/PermissionBadge'
 import ShareDocModal from '@/components/ShareDocModal'
 import { useCanEditDocuments } from '@/src/hooks/useCanEditDocuments'
 import SyncStatusIndicator from '@/components/SyncStatusIndicator'
+import { offlineDb } from '@/src/offline/db/database'
 
 const columns = {
   "PO #": "poNumber",
@@ -131,6 +132,13 @@ const PurchaseOrders = () => {
   const handleSendToPortal = async (order: PurchaseOrderResponse) => {
     if (!order.idPO) return;
     setActiveMenuId(null);
+    // Purchase orders created offline sit in the local outbox until they sync —
+    // sales-core has never heard of that id yet, so sending would 404.
+    const local = await offlineDb.bon_achats.get(order.idPO);
+    if (local && local.syncStatus !== 'synced') {
+      toast.info("This purchase order hasn't finished syncing yet — try again in a moment.");
+      return;
+    }
     try {
       await BonDAchatService.sendToPortal(order.idPO);
       setOrders(prev => prev.map(o => o.idPO === order.idPO ? { ...o, statut: 'ENVOYE' as any } : o));

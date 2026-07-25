@@ -103,6 +103,22 @@ export class FactureFournisseurControllerService {
         });
     }
     /**
+     * Envoyer la facture fournisseur au fournisseur via le portail (login requis)
+     * @param id
+     * @throws ApiError
+     */
+    public static sendToPortal1(
+        id: string,
+    ): CancelablePromise<void> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/facture-fournisseurs/{id}/send-to-portal',
+            path: {
+                'id': id,
+            },
+        });
+    }
+    /**
      * @param id
      * @returns any OK
      * @throws ApiError

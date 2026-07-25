@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import DropDown from "@mui/icons-material/ArrowDropDown"
 import SearchIcon from "@mui/icons-material/Search"
 import AddIcon from "@mui/icons-material/Add"
-import { Pencil, Trash2, MoreVertical, Printer, Truck, Eye, Share2, ReceiptText } from "lucide-react";
+import { Pencil, Trash2, MoreVertical, Printer, Truck, Eye, Share2, ReceiptText, Globe } from "lucide-react";
 
 // API & Models
 import { FactureResponse, UpdatedSupplierFactureResponse } from '@/src/api/models/UpdatedSupplierFactureResponse'
@@ -26,6 +26,7 @@ import ActionButton from '@/components/ActionButton'
 import ShareDocModal from '@/components/ShareDocModal'
 import PermissionBadge from '@/components/PermissionBadge'
 import { useCanEditDocuments } from '@/src/hooks/useCanEditDocuments'
+import { offlineDb } from '@/src/offline/db/database'
 
 // Helper for date formatting
 const formatDate = (dateString?: string) => {
@@ -162,6 +163,24 @@ const SupplierFactures = () => {
     } catch (error) {
       console.error("Sync error:", error);
       toast.error("Error occurred when accounting bill");
+    }
+  };
+
+  const handleSendToPortal = async (f: UpdatedSupplierFactureResponse) => {
+    if (!f.idFacture) return;
+    // Supplier invoices created offline sit in the local outbox until they sync —
+    // sales-core has never heard of that id yet, so sending would 404.
+    const local = await offlineDb.factures_fournisseur.get(f.idFacture);
+    if (local && local.syncStatus !== 'synced') {
+      toast.info("This invoice hasn't finished syncing yet — try again in a moment.");
+      return;
+    }
+    try {
+      await FactureFournisseurControllerService.sendToPortal1(f.idFacture);
+      setFactures(prev => prev.map(item => item.idFacture === f.idFacture ? { ...item, etat: 'ENVOYE' as any } : item));
+      toast.success(`${f.numeroFacture} sent — fournisseur can now view it in their portal.`);
+    } catch (error: any) {
+      toast.error(error?.body?.message || "Failed to send invoice to the fournisseur's portal.");
     }
   };
 
@@ -317,6 +336,12 @@ const SupplierFactures = () => {
                           onClick={() => { handleAccountingSync(facture); setActiveMenuId(null); }}
                           className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-orange-600 transition-all"
                         ><ReceiptText size={14} /></ActionButton>
+
+                        <ActionButton
+                          label="Send to Portal"
+                          onClick={() => { handleSendToPortal(facture); setActiveMenuId(null); }}
+                          className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-blue-700 transition-all"
+                        ><Globe size={14} /></ActionButton>
 
                         <ActionButton
                           label="Delete"

@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { X, Search, Trash2, Plus, ShoppingCart, Calculator, Tag, Receipt, Save, ImageOff } from 'lucide-react';
+import { X, Search, Trash2, Plus, ShoppingCart, Calculator, Tag, Receipt, Save, ImageOff, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PortalApi } from '@/src/api/portalApi';
-import { getPortalSession } from '@/src/api/portalSession';
+import { getPortalSession, PortalOrganizationOption } from '@/src/api/portalSession';
 
 const inputStyles = "w-full border border-gray-200 rounded-lg outline-none py-2 px-3 focus:ring-2 focus:ring-secondary-mid/10 focus:border-secondary-mid transition-all text-sm text-gray-700 bg-white shadow-sm placeholder:text-gray-300";
 const labelStyles = "text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1 block ml-0.5";
@@ -40,19 +40,31 @@ const ProposeQuotationModal: React.FC<ProposeQuotationModalProps> = ({ isOpen, o
   const [applyVat, setApplyVat] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // A proposal is tied to one org's catalog/pricing — the user must pick
+  // which org before anything else loads, since products/pricing differ per org.
+  const [customerOrgs, setCustomerOrgs] = useState<PortalOrganizationOption[]>([]);
+  const [selectedOrg, setSelectedOrg] = useState<PortalOrganizationOption | null>(null);
+  const [loadingCatalog, setLoadingCatalog] = useState(false);
+
   useEffect(() => {
     if (!isOpen) return;
     const session = getPortalSession();
-    if (!session) return;
-
-    PortalApi.getProducts(session.organizationId)
-      .then(setProducts)
-      .catch(() => toast.error("Failed to load products."));
-
-    PortalApi.getMyClientInfo()
-      .then(setMyClient)
-      .catch(() => toast.error("Failed to load your account details."));
+    const orgs = session?.organizations.filter((o) => o.roles.includes('CUSTOMER')) ?? [];
+    setCustomerOrgs(orgs);
+    // Only auto-select when there's genuinely nothing to choose between.
+    setSelectedOrg(orgs.length === 1 ? orgs[0] : null);
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || !selectedOrg) return;
+    setLoadingCatalog(true);
+    Promise.all([
+      PortalApi.getProducts(selectedOrg.organizationId).then(setProducts),
+      PortalApi.getMyClientInfo(selectedOrg.organizationId).then(setMyClient),
+    ])
+      .catch(() => toast.error("Failed to load the catalog for this organization."))
+      .finally(() => setLoadingCatalog(false));
+  }, [isOpen, selectedOrg]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -62,17 +74,20 @@ const ProposeQuotationModal: React.FC<ProposeQuotationModalProps> = ({ isOpen, o
       setProductSearch("");
       setSelectedSize("");
       setQuantity(1);
+      setSelectedOrg(null);
+      setProducts([]);
+      setMyClient(null);
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const filteredProducts = productSearch.trim()
-    ? products.filter((p) =>
-        p.nomProduit?.toLowerCase().includes(productSearch.toLowerCase()) &&
-        p.nomProduit?.toLowerCase() !== selectedProduct?.nomProduit?.toLowerCase()
-      )
-    : [];
+  // Behaves like a real dropdown, not search-only: with no search term typed
+  // yet, show the whole catalog for the selected org rather than nothing.
+  const filteredProducts = products.filter((p) =>
+    (!productSearch.trim() || p.nomProduit?.toLowerCase().includes(productSearch.toLowerCase())) &&
+    p.nomProduit?.toLowerCase() !== selectedProduct?.nomProduit?.toLowerCase()
+  );
 
   // Only the client's own allowed sale sizes matter here — no seller
   // permission/negotiation gating, this is a client-authored draft.
@@ -120,10 +135,11 @@ const ProposeQuotationModal: React.FC<ProposeQuotationModalProps> = ({ isOpen, o
   const montantTTC = montantHT + montantTVA;
 
   const handleSubmit = async () => {
-    if (lines.length === 0) return;
+    if (lines.length === 0 || !selectedOrg) return;
     setIsSubmitting(true);
     try {
       await PortalApi.createQuotationProposal({
+        organizationId: selectedOrg.organizationId,
         nomClient: myClient?.raisonSociale || myClient?.username,
         commentary: commentary || undefined,
         applyVat,
@@ -173,8 +189,40 @@ const ProposeQuotationModal: React.FC<ProposeQuotationModalProps> = ({ isOpen, o
         <div className="flex-1 overflow-y-auto p-8 space-y-6 bg-gray-50/50">
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
             <div className="flex items-center gap-2 mb-6 border-b border-gray-50 pb-4">
+              <Building2 className="text-secondary-mid" size={18} />
+              <h3 className="text-sm font-black text-secondary uppercase tracking-tight">Organization</h3>
+            </div>
+            {customerOrgs.length === 0 ? (
+              <p className="text-sm text-gray-400 italic">You don't have a customer record with any organization yet.</p>
+            ) : (
+              <select
+                className={inputStyles}
+                value={selectedOrg?.organizationId ?? ""}
+                onChange={(e) => {
+                  const org = customerOrgs.find((o) => o.organizationId === e.target.value);
+                  setSelectedOrg(org ?? null);
+                }}
+              >
+                <option value="" disabled>Select an organization…</option>
+                {customerOrgs.map((org) => (
+                  <option key={org.organizationId} value={org.organizationId}>
+                    {org.organizationName}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          {!selectedOrg ? (
+            <div className="bg-white p-10 rounded-2xl shadow-sm border border-dashed border-gray-200 text-center">
+              <p className="text-sm text-gray-400 font-medium">Choose an organization above to load its product catalog.</p>
+            </div>
+          ) : (
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div className="flex items-center gap-2 mb-6 border-b border-gray-50 pb-4">
               <ShoppingCart className="text-secondary-mid" size={18} />
               <h3 className="text-sm font-black text-secondary uppercase tracking-tight">Add a Product</h3>
+              {loadingCatalog && <span className="text-[10px] text-gray-400 font-bold uppercase">Loading catalog…</span>}
             </div>
 
             <div className="grid grid-cols-12 gap-4 items-start">
@@ -270,6 +318,7 @@ const ProposeQuotationModal: React.FC<ProposeQuotationModalProps> = ({ isOpen, o
               </div>
             </div>
           </div>
+          )}
 
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <table className="w-full text-left">

@@ -47,6 +47,22 @@ export class FactureService {
         });
     }
     /**
+     * Envoyer la facture au client via le portail (login requis)
+     * @param factureId
+     * @throws ApiError
+     */
+    public static sendToPortal(
+        factureId: string,
+    ): CancelablePromise<void> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/factures/{factureId}/send-to-portal',
+            path: {
+                'factureId': factureId,
+            },
+        });
+    }
+    /**
      * Supprimer une facture
      * @param factureId
      * @returns any OK

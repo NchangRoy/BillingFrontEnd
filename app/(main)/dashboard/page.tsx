@@ -2,21 +2,17 @@
 
 import React, { useEffect, useMemo, useState } from 'react'
 import {
-  TrendingUp,
-  TrendingDown,
-  ReceiptLong,
-  AccessTime,
-  CheckCircle,
-  AccountBalanceWallet,
-} from "@mui/icons-material";
-import { getVisibleFactures, getVisibleFacturesFournisseur } from '@/src/api/scopedDocs'
-import { FactureResponse, FactureFournisseurResponse } from '@/src/src2/api'
+  ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
+  BarChart, Bar, Legend,
+} from 'recharts'
+import { TrendingUp, TrendingDown, Camera } from 'lucide-react'
+import { getVisibleFactures, getVisibleFacturesFournisseur, getVisiblePaiements } from '@/src/api/scopedDocs'
+import { FactureResponse, FactureFournisseurResponse, PaiementResponse } from '@/src/src2/api'
 import { getStoredSeller, updateStoredSellerProfileImage } from '@/src/api/session'
 import { SellerRole } from '@/src/api/models/UpdatedSellerResponse'
 import { toast } from 'sonner'
 import SellerAvatar from '@/components/SellerAvatar'
 import UploadSellerAvatarModal from '@/components/UploadSellerAvatarModal'
-import { Camera } from 'lucide-react'
 
 const formatMoney = (amount?: number) => `${Math.round(amount ?? 0).toLocaleString()} XAF`
 
@@ -26,27 +22,30 @@ const formatDate = (dateString?: string) => {
 };
 
 // --- Metric Card ---
-const StatCard = ({ title, value, icon: Icon, tone = 'default' }: { title: string; value: string; icon: any; tone?: 'default' | 'positive' | 'negative' }) => (
-  <div className="bg-white p-5 rounded-xl border border-[var(--color-secondary-light)] shadow-sm transition-all hover:border-[var(--color-secondary-mid)]/20 hover:shadow-md group">
-    <div className="flex justify-between items-start">
-      <div className={`p-2 rounded-lg transition-colors ${
-        tone === 'positive' ? 'bg-emerald-50 group-hover:bg-emerald-500' :
-        tone === 'negative' ? 'bg-rose-50 group-hover:bg-rose-500' :
-        'bg-[var(--color-secondary-super-light)] group-hover:bg-[var(--color-secondary-mid)]'
-      }`}>
-        <Icon className={
-          tone === 'positive' ? 'text-emerald-600 group-hover:text-white' :
-          tone === 'negative' ? 'text-rose-600 group-hover:text-white' :
-          'text-[var(--color-secondary-mid)] group-hover:text-white'
-        } fontSize="small" />
+type Trend = { pct: number; positiveIsGood: boolean } | null;
+
+const StatCard = ({ title, value, icon: Icon, trend }: { title: string; value: string; icon: any; trend?: Trend }) => {
+  const trendUp = trend != null && trend.pct >= 0;
+  const trendGood = trend != null && (trendUp === trend.positiveIsGood);
+  return (
+    <div className="bg-white p-5 rounded-2xl border border-[var(--color-secondary-light)] shadow-sm transition-all hover:shadow-md">
+      <div className="flex items-center justify-between mb-3">
+        <div className="p-2 rounded-xl bg-[var(--color-secondary-super-light)]">
+          <Icon size={16} className="text-[var(--color-secondary-mid)]" />
+        </div>
+        {trend && (
+          <span className={`flex items-center gap-1 text-[10px] font-black ${trendGood ? 'text-emerald-600' : 'text-rose-600'}`}>
+            {trendUp ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+            {trendUp ? '+' : ''}{trend.pct.toFixed(0)}%
+          </span>
+        )}
       </div>
-    </div>
-    <div className="mt-4">
       <p className="text-[10px] font-bold text-[var(--color-secondary-gray)] uppercase tracking-wider">{title}</p>
       <h3 className="text-xl font-black text-[var(--color-primary)] mt-0.5 tracking-tight">{value}</h3>
+      {trend && <p className="text-[10px] text-[var(--color-secondary-gray)] font-medium mt-1">vs last month</p>}
     </div>
-  </div>
-);
+  );
+};
 
 interface CashSummary {
   count: number;
@@ -85,9 +84,31 @@ type Transaction = {
   restant?: number;
 };
 
+const isSameMonth = (dateString: string | undefined, ref: Date) => {
+  if (!dateString) return false;
+  const d = new Date(dateString);
+  return d.getFullYear() === ref.getFullYear() && d.getMonth() === ref.getMonth();
+};
+
+const trendPct = (current: number, previous: number): number => {
+  if (previous === 0) return current === 0 ? 0 : 100;
+  return ((current - previous) / previous) * 100;
+};
+
+const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+const PAYMENT_MODE_LABELS: Record<string, string> = {
+  ESPECES: 'Cash',
+  CHEQUE: 'Cheque',
+  VIREMENT: 'Transfer',
+  CARTE_BANCAIRE: 'Card',
+  AUTRE: 'Other',
+};
+
 const ProfessionalDashboard = () => {
   const [invoices, setInvoices] = useState<FactureResponse[]>([]);
   const [supplierInvoices, setSupplierInvoices] = useState<FactureFournisseurResponse[]>([]);
+  const [paiements, setPaiements] = useState<PaiementResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const seller = getStoredSeller();
@@ -97,12 +118,14 @@ const ProfessionalDashboard = () => {
     const load = async () => {
       setIsLoading(true);
       try {
-        const [factures, facturesFournisseur] = await Promise.all([
+        const [factures, facturesFournisseur, paymentsList] = await Promise.all([
           getVisibleFactures(),
           getVisibleFacturesFournisseur(),
+          getVisiblePaiements(),
         ]);
         setInvoices(factures);
         setSupplierInvoices(facturesFournisseur);
+        setPaiements(paymentsList);
       } catch (error) {
         console.error("Failed to load dashboard stats:", error);
         toast.error("Failed to load dashboard stats.");
@@ -143,8 +166,70 @@ const ProfessionalDashboard = () => {
     [supplierInvoices]
   );
 
-  const netCollected = cashIn.totalPaid - cashOut.totalPaid;
-  const netExposure = cashIn.totalPending - cashOut.totalPending;
+  const now = useMemo(() => new Date(), []);
+  const lastMonthRef = useMemo(() => new Date(now.getFullYear(), now.getMonth() - 1, 1), [now]);
+
+  // Real month-over-month comparisons — no fabricated numbers. Revenue and
+  // collected both have a well-defined "this month vs last month" reading;
+  // pending/open counts are snapshots with no natural period to compare
+  // against, so those cards render without a trend badge instead of a fake one.
+  const revenueThisMonth = useMemo(
+    () => invoices.filter((f) => f.etat !== FactureResponse.etat.ANNULE && isSameMonth(f.dateFacturation, now))
+      .reduce((sum, f) => sum + (f.montantTTC ?? 0), 0),
+    [invoices, now]
+  );
+  const revenueLastMonth = useMemo(
+    () => invoices.filter((f) => f.etat !== FactureResponse.etat.ANNULE && isSameMonth(f.dateFacturation, lastMonthRef))
+      .reduce((sum, f) => sum + (f.montantTTC ?? 0), 0),
+    [invoices, lastMonthRef]
+  );
+
+  const collectedThisMonth = useMemo(
+    () => paiements.filter((p) => isSameMonth(p.date, now)).reduce((sum, p) => sum + (p.montant ?? 0), 0),
+    [paiements, now]
+  );
+  const collectedLastMonth = useMemo(
+    () => paiements.filter((p) => isSameMonth(p.date, lastMonthRef)).reduce((sum, p) => sum + (p.montant ?? 0), 0),
+    [paiements, lastMonthRef]
+  );
+
+  const openInvoicesCount = useMemo(
+    () => invoices.filter((f) => f.etat !== FactureResponse.etat.ANNULE && (f.montantRestant ?? 0) > 0).length,
+    [invoices]
+  );
+
+  // Last 6 months of revenue (client invoices) vs expenses (supplier invoices).
+  const monthlySeries = useMemo(() => {
+    const months: { key: string; label: string; year: number; month: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push({ key: `${d.getFullYear()}-${d.getMonth()}`, label: MONTH_LABELS[d.getMonth()], year: d.getFullYear(), month: d.getMonth() });
+    }
+    return months.map(({ label, year, month }) => {
+      const revenue = invoices
+        .filter((f) => f.etat !== FactureResponse.etat.ANNULE && f.dateFacturation
+          && new Date(f.dateFacturation).getFullYear() === year && new Date(f.dateFacturation).getMonth() === month)
+        .reduce((sum, f) => sum + (f.montantTTC ?? 0), 0);
+      const expenses = supplierInvoices
+        .filter((f) => f.statut !== FactureFournisseurResponse.statut.ANNULE && f.dateFacture
+          && new Date(f.dateFacture).getFullYear() === year && new Date(f.dateFacture).getMonth() === month)
+        .reduce((sum, f) => sum + (f.montantTTC ?? 0), 0);
+      return { month: label, Revenue: Math.round(revenue), Expenses: Math.round(expenses) };
+    });
+  }, [invoices, supplierInvoices, now]);
+
+  // Real breakdown of actual recorded payments by mode — not fabricated categories.
+  const paymentMethodSeries = useMemo(() => {
+    const totals = new Map<string, number>();
+    for (const p of paiements) {
+      const mode = p.modePaiement ?? 'AUTRE';
+      totals.set(mode, (totals.get(mode) ?? 0) + (p.montant ?? 0));
+    }
+    return Object.keys(PAYMENT_MODE_LABELS).map((mode) => ({
+      name: PAYMENT_MODE_LABELS[mode],
+      Amount: Math.round(totals.get(mode) ?? 0),
+    }));
+  }, [paiements]);
 
   const recentTransactions: Transaction[] = useMemo(() => {
     const inTx: Transaction[] = invoices
@@ -177,79 +262,112 @@ const ProfessionalDashboard = () => {
   return (
     <div className="w-full p-8 min-h-screen bg-[var(--color-secondary-background)] text-[var(--color-primary)] font-sans overflow-y-auto">
 
-      {/* Header Section */}
-      <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between border-b border-[var(--color-secondary-light)] pb-8 gap-4">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => setIsAvatarModalOpen(true)}
-            className="relative group/avatar shrink-0"
-            title="Change profile photo"
-          >
-            <SellerAvatar name={seller?.username} imageUrl={profileImageUrl} size={56} />
-            <span className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover/avatar:opacity-100 flex items-center justify-center transition-opacity">
-              <Camera size={18} className="text-white" />
-            </span>
-          </button>
-          <div>
-            <h1 className="text-2xl font-black text-[var(--color-primary)] tracking-tight uppercase">{scopeLabel} Cash Flow</h1>
-            <p className="text-[var(--color-secondary-gray)] text-sm mt-0.5 font-medium italic">Cash in from client invoices vs. cash out to supplier invoices</p>
-          </div>
+      {/* Header: title left, profile top-right */}
+      <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-black text-[var(--color-primary)] tracking-tight uppercase">{scopeLabel} Dashboard</h1>
+          <p className="text-[var(--color-secondary-gray)] text-sm mt-0.5 font-medium">Billing overview across invoices, expenses and payments</p>
         </div>
+
+        <button
+          onClick={() => setIsAvatarModalOpen(true)}
+          className="group/avatar flex items-center gap-3 bg-white border border-[var(--color-secondary-light)] rounded-2xl pl-4 pr-2 py-2 shadow-sm hover:shadow-md transition-all self-start md:self-auto"
+          title="Change profile photo"
+        >
+          <div className="text-right">
+            <p className="text-xs font-black text-[var(--color-primary)] leading-tight">{seller?.username}</p>
+            <p className="text-[10px] text-[var(--color-secondary-gray)] font-medium leading-tight">{seller?.email || seller?.organizationEmail}</p>
+          </div>
+          <div className="relative shrink-0">
+            <SellerAvatar name={seller?.username} imageUrl={profileImageUrl} size={40} />
+            <span className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover/avatar:opacity-100 flex items-center justify-center transition-opacity">
+              <Camera size={14} className="text-white" />
+            </span>
+          </div>
+        </button>
       </header>
 
-      {/* Net Position */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
-        <StatCard title="Net Cash Collected" value={isLoading ? "…" : formatMoney(netCollected)} icon={AccountBalanceWallet} tone={netCollected >= 0 ? 'positive' : 'negative'} />
-        <StatCard title="Net Pending Exposure" value={isLoading ? "…" : formatMoney(netExposure)} icon={AccessTime} tone={netExposure >= 0 ? 'default' : 'negative'} />
+      {/* Stat cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <StatCard
+          title="Revenue This Month"
+          value={isLoading ? "…" : formatMoney(revenueThisMonth)}
+          icon={TrendingUp}
+          trend={isLoading ? undefined : { pct: trendPct(revenueThisMonth, revenueLastMonth), positiveIsGood: true }}
+        />
+        <StatCard
+          title="Pending Payments"
+          value={isLoading ? "…" : formatMoney(cashIn.totalPending)}
+          icon={TrendingDown}
+        />
+        <StatCard
+          title="Total Collected This Month"
+          value={isLoading ? "…" : formatMoney(collectedThisMonth)}
+          icon={TrendingUp}
+          trend={isLoading ? undefined : { pct: trendPct(collectedThisMonth, collectedLastMonth), positiveIsGood: true }}
+        />
+        <StatCard
+          title="Open Invoices"
+          value={isLoading ? "…" : `${openInvoicesCount}`}
+          icon={TrendingDown}
+        />
       </div>
 
-      {/* Cash In */}
-      <section className="mb-8">
-        <h2 className="text-xs font-black text-emerald-700 uppercase tracking-widest mb-3 flex items-center gap-2">
-          <TrendingUp fontSize="small" /> Cash In — Client Invoices
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard title="Invoices Issued" value={isLoading ? "…" : `${cashIn.count}`} icon={ReceiptLong} />
-          <StatCard title="Total Invoiced" value={isLoading ? "…" : formatMoney(cashIn.totalInvoiced)} icon={TrendingUp} />
-          <StatCard title="Paid" value={isLoading ? "…" : formatMoney(cashIn.totalPaid)} icon={CheckCircle} tone="positive" />
-          <StatCard title="Pending / Hanging" value={isLoading ? "…" : formatMoney(cashIn.totalPending)} icon={AccessTime} tone={cashIn.totalPending > 0 ? 'negative' : 'default'} />
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="bg-white p-6 rounded-2xl border border-[var(--color-secondary-light)] shadow-sm">
+          <h3 className="text-xs font-black text-[var(--color-primary)] uppercase tracking-widest mb-4">Revenue vs Expenses</h3>
+          <ResponsiveContainer width="100%" height={260}>
+            <LineChart data={monthlySeries}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-secondary-light)" vertical={false} />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'var(--color-secondary-gray)' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: 'var(--color-secondary-gray)' }} axisLine={false} tickLine={false} width={40}
+                tickFormatter={(v) => v >= 1000 ? `${Math.round(v / 1000)}k` : `${v}`} />
+              <RechartsTooltip formatter={(v: any) => formatMoney(Number(v) || 0)} contentStyle={{ borderRadius: 12, border: '1px solid var(--color-secondary-light)', fontSize: 12 }} />
+              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <Line type="monotone" dataKey="Revenue" stroke="#10b981" strokeWidth={2.5} dot={false} />
+              <Line type="monotone" dataKey="Expenses" stroke="#f43f5e" strokeWidth={2.5} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
-      </section>
 
-      {/* Cash Out */}
-      <section className="mb-8">
-        <h2 className="text-xs font-black text-rose-700 uppercase tracking-widest mb-3 flex items-center gap-2">
-          <TrendingDown fontSize="small" /> Cash Out — Supplier Invoices
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard title="Invoices Received" value={isLoading ? "…" : `${cashOut.count}`} icon={ReceiptLong} />
-          <StatCard title="Total Billed" value={isLoading ? "…" : formatMoney(cashOut.totalInvoiced)} icon={TrendingDown} />
-          <StatCard title="Paid" value={isLoading ? "…" : formatMoney(cashOut.totalPaid)} icon={CheckCircle} tone="positive" />
-          <StatCard title="Pending / Hanging" value={isLoading ? "…" : formatMoney(cashOut.totalPending)} icon={AccessTime} tone={cashOut.totalPending > 0 ? 'negative' : 'default'} />
+        <div className="bg-white p-6 rounded-2xl border border-[var(--color-secondary-light)] shadow-sm">
+          <h3 className="text-xs font-black text-[var(--color-primary)] uppercase tracking-widest mb-4">Payment Methods</h3>
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={paymentMethodSeries}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-secondary-light)" vertical={false} />
+              <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'var(--color-secondary-gray)' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: 'var(--color-secondary-gray)' }} axisLine={false} tickLine={false} width={40}
+                tickFormatter={(v) => v >= 1000 ? `${Math.round(v / 1000)}k` : `${v}`} />
+              <RechartsTooltip formatter={(v: any) => formatMoney(Number(v) || 0)} contentStyle={{ borderRadius: 12, border: '1px solid var(--color-secondary-light)', fontSize: 12 }} />
+              <Bar dataKey="Amount" fill="var(--color-secondary-mid)" radius={[8, 8, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
-      </section>
+      </div>
 
-      {/* Recent Transactions */}
-      <section className="border border-[var(--color-secondary-light)] bg-white rounded-xl overflow-hidden shadow-sm">
+      {/* Recent Bills */}
+      <section className="border border-[var(--color-secondary-light)] bg-white rounded-2xl overflow-hidden shadow-sm">
         <div className="px-6 py-4 border-b border-[var(--color-secondary-super-light)]">
-          <h3 className="text-xs font-black text-[var(--color-primary)] uppercase tracking-widest">Recent Transactions</h3>
+          <h3 className="text-xs font-black text-[var(--color-primary)] uppercase tracking-widest">Recent Bills</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-[var(--color-secondary-background)]">
               <tr className="text-[10px] font-black uppercase tracking-widest text-[var(--color-secondary-gray)] border-b border-[var(--color-secondary-light)]">
-                <th className="px-6 py-4">Flow</th>
-                <th className="px-6 py-4">Reference</th>
+                <th className="px-6 py-4">Bill No</th>
                 <th className="px-6 py-4">Counterparty</th>
-                <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4">Date</th>
                 <th className="px-6 py-4 text-right">Amount</th>
+                <th className="px-6 py-4 text-right">Balance</th>
+                <th className="px-6 py-4">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--color-secondary-super-light)] text-sm font-medium">
               {isLoading ? (
-                <tr><td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-400 font-medium">Loading…</td></tr>
+                <tr><td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-400 font-medium">Loading…</td></tr>
               ) : recentTransactions.length === 0 ? (
-                <tr><td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-400 font-medium">No transactions yet.</td></tr>
+                <tr><td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-400 font-medium">No bills yet.</td></tr>
               ) : recentTransactions.map((tx) => {
                 const restant = tx.restant ?? 0;
                 const total = tx.totalTTC ?? 0;
@@ -260,19 +378,17 @@ const ProfessionalDashboard = () => {
                   'text-rose-700 bg-rose-50 border-rose-100';
                 return (
                   <tr key={tx.id} className="hover:bg-[var(--color-secondary-super-light)]/40 transition-colors">
-                    <td className="px-6 py-4">
-                      <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase border ${
-                        tx.flow === 'IN' ? 'text-emerald-700 bg-emerald-50 border-emerald-100' : 'text-rose-700 bg-rose-50 border-rose-100'
-                      }`}>
-                        {tx.flow === 'IN' ? 'Cash In' : 'Cash Out'}
-                      </span>
+                    <td className="px-6 py-4 font-mono text-xs text-[var(--color-secondary-gray)]">
+                      <span className={`inline-block w-1.5 h-1.5 rounded-full mr-2 ${tx.flow === 'IN' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                      {tx.reference || '—'}
                     </td>
-                    <td className="px-6 py-4 font-mono text-xs text-[var(--color-secondary-gray)]">{tx.reference || '—'}</td>
                     <td className="px-6 py-4 font-bold text-[var(--color-primary)]">{tx.counterparty || '—'}</td>
+                    <td className="px-6 py-4 text-[var(--color-secondary-gray)]">{formatDate(tx.date)}</td>
+                    <td className="px-6 py-4 text-right font-black text-[var(--color-primary)]">{formatMoney(tx.totalTTC)}</td>
+                    <td className="px-6 py-4 text-right text-[var(--color-secondary-gray)]">{formatMoney(tx.restant)}</td>
                     <td className="px-6 py-4">
                       <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase border ${statusColor}`}>{status}</span>
                     </td>
-                    <td className="px-6 py-4 text-right font-black text-[var(--color-primary)]">{formatMoney(tx.totalTTC)}</td>
                   </tr>
                 );
               })}

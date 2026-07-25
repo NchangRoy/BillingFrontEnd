@@ -27,9 +27,15 @@ const TYPE_BADGES: Record<string, { label: string; icon: React.ElementType; clas
   SALES: { label: "Sales", icon: Briefcase, className: "bg-purple-50 text-purple-600 border-purple-200" },
 };
 
+// Kernel's session startTime/endTime come back as naive (no offset) strings
+// that are actually UTC wall-clock values (see CreateSessionModal's
+// toServerUtcNaive for why) — parsed as-is, JS's Date would treat them as
+// local time instead, showing the wrong hour. Forcing the UTC interpretation
+// here, then letting toLocaleString convert to the viewer's local time,
+// round-trips correctly.
 const formatDateTime = (value?: string) => {
   if (!value) return null;
-  const date = new Date(value);
+  const date = new Date(value.endsWith("Z") ? value : `${value}Z`);
   if (Number.isNaN(date.getTime())) return null;
   return date.toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 };
@@ -319,7 +325,8 @@ const SessionsAdminPage = () => {
                         })()}
                       </td>
                       <td className="px-6 py-4 text-right relative">
-                        {(session.status === SessionResponse.status.OPEN
+                        {(session.status === SessionResponse.status.PENDING
+                          || session.status === SessionResponse.status.OPEN
                           || session.status === SessionResponse.status.SUSPENDED
                           || session.status === SessionResponse.status.CLOSED) && (
                           <>
@@ -332,6 +339,16 @@ const SessionsAdminPage = () => {
 
                             {activeMenuId === session.id && (
                               <div ref={menuRef} className="absolute right-16 top-1/2 -translate-y-1/2 z-40 bg-white border border-slate-100 rounded-2xl shadow-2xl p-1.5 flex gap-1 animate-in fade-in slide-in-from-right-2 duration-200">
+                                {session.status === SessionResponse.status.PENDING && (
+                                  <ActionButton
+                                    label="Cancel"
+                                    onClick={() => handleCancelSession(session)}
+                                    disabled={actingId === session.id}
+                                    className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 transition-all text-gray-500 disabled:opacity-50"
+                                  >
+                                    <Ban size={14} />
+                                  </ActionButton>
+                                )}
                                 {session.status === SessionResponse.status.OPEN && (
                                   <>
                                     <ActionButton

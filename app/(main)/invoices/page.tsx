@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import DropDown from "@mui/icons-material/ArrowDropDown"
 import SearchIcon from "@mui/icons-material/Search"
 import AddIcon from "@mui/icons-material/Add"
-import { Pencil, Trash2, MoreVertical, Printer, FileText, ReceiptText, Eye, Share2, Banknote } from "lucide-react";
+import { Pencil, Trash2, MoreVertical, Printer, FileText, ReceiptText, Eye, Share2, Banknote, Globe } from "lucide-react";
 import CreateInvoiceModal from './CreateInvoiceModal'
 import CreateInvoicePrintModal from './InvoicePrintPreviewModal'
 import RegisterPaymentModal from './RegisterPaymentModal'
@@ -27,6 +27,7 @@ import PermissionBadge from '@/components/PermissionBadge'
 import ShareDocModal from '@/components/ShareDocModal'
 import SyncStatusIndicator from '@/components/SyncStatusIndicator'
 import { useCanEditDocuments } from '@/src/hooks/useCanEditDocuments'
+import { offlineDb } from '@/src/offline/db/database'
 // Adjusting Table Columns for Invoices
 const columns = {
   "Invoice #": "numeroFacture",
@@ -168,17 +169,38 @@ const Factures = () => {
       color: "text-emerald-600",
       hidden: (f: UpdatedFactureResponse) => (f.montantRestant ?? 0) <= 0,
     },
-    { 
-      label: "Print PDF", 
-      icon: <Printer size={14} />, 
+    {
+      label: "Print PDF",
+      icon: <Printer size={14} />,
       action: (f: UpdatedFactureResponse) => {
         setClickedFacture(f);
         setIsPrintModalOpen(true);
       },
-      color: "text-purple-800" 
+      color: "text-purple-800"
     },
-    { 
-      label: "Delete", 
+    {
+      label: "Send to Portal",
+      icon: <Globe size={14} />,
+      action: async (f: UpdatedFactureResponse) => {
+        if (!f.idFacture) return;
+        // Invoices created offline sit in the local outbox until they sync —
+        // sales-core has never heard of that id yet, so sending would 404.
+        const local = await offlineDb.factures.get(f.idFacture);
+        if (local && local.syncStatus !== 'synced') {
+          toast.info("This invoice hasn't finished syncing yet — try again in a moment.");
+          return;
+        }
+        FactureService.sendToPortal(f.idFacture)
+          .then(() => {
+            setFactures(prev => prev.map(item => item.idFacture === f.idFacture ? { ...item, etat: 'ENVOYE' as any } : item));
+            toast.success(`${f.numeroFacture} sent — client can now view it in their portal.`);
+          })
+          .catch((error: any) => toast.error(error?.body?.message || "Failed to send invoice to the client's portal."));
+      },
+      color: "text-blue-700",
+    },
+    {
+      label: "Delete",
       icon: <Trash2 size={14} />, 
       action: (f: UpdatedFactureResponse) => {
         setFactures(prev => prev.filter(item => item.idFacture !== f.idFacture));

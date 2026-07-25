@@ -4,13 +4,13 @@ import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  SearchIcon, MenuIcon, SettingsIcon, LogOut, User,
+  SearchIcon, MenuIcon, LogOut, User,
   ShieldCheck, MapPin, Store, Building2, Mail, ChevronDown
 } from "lucide-react";
 import { UpdatedSellerResponse } from "@/src/api/models/UpdatedSellerResponse";
 import { clearSession, getStoredSeller } from "@/src/api/session";
-import NotificationHeaderIcon from "./NotificationHeaderIcon";
 import OfflineStatusBadge from "./OfflineStatusBadge";
+import SessionStatusBadge from "./SessionStatusBadge";
 
 interface Props {
   name: string;
@@ -62,20 +62,29 @@ const Navbar = ({ name, signedIn }: Props) => {
           </div>
         </div>
 
-        {/* Dynamic Location Pills */}
-        {signedIn && seller && (
+        {/* Dynamic Location Pills — hidden individually when the seller has no
+            agency/sale point (e.g. a SALES-session seller has no sale point
+            at all, that's a POS-only concept), rather than showing a bare
+            icon with nothing next to it. */}
+        {signedIn && seller && (seller.agency || seller.salePoint) && (
           <div className="hidden items-center gap-2 lg:flex">
-            <div className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-bold text-gray-600 bg-gray-100/50 border border-gray-200/50 rounded-full shadow-inner transition-all hover:bg-gray-100">
-              <MapPin size={12} className="text-[var(--color-secondary)]" />
-              <span>{seller.agency}</span>
-              <span className="px-1.5 py-0.5 text-[9px] bg-white rounded-full text-gray-400 shadow-sm">
-                {seller.agencyCity}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-bold text-gray-600 bg-[var(--color-primary)]/[0.03] border border-[var(--color-primary)]/[0.08] rounded-full transition-all hover:bg-[var(--color-primary)]/[0.06]">
-              <Store size={12} className="text-[var(--color-primary)]" />
-              <span>{seller.salePoint}</span>
-            </div>
+            {seller.agency && (
+              <div className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-bold text-gray-600 bg-gray-100/50 border border-gray-200/50 rounded-full shadow-inner transition-all hover:bg-gray-100">
+                <MapPin size={12} className="text-[var(--color-secondary)]" />
+                <span>{seller.agency}</span>
+                {seller.agencyCity && (
+                  <span className="px-1.5 py-0.5 text-[9px] bg-white rounded-full text-gray-400 shadow-sm">
+                    {seller.agencyCity}
+                  </span>
+                )}
+              </div>
+            )}
+            {seller.salePoint && (
+              <div className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-bold text-gray-600 bg-[var(--color-primary)]/[0.03] border border-[var(--color-primary)]/[0.08] rounded-full transition-all hover:bg-[var(--color-primary)]/[0.06]">
+                <Store size={12} className="text-[var(--color-primary)]" />
+                <span>{seller.salePoint}</span>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -105,10 +114,9 @@ const Navbar = ({ name, signedIn }: Props) => {
 
             <div className="h-6 w-px bg-gray-200 mx-1 hidden sm:block" />
 
+            <SessionStatusBadge />
             <OfflineStatusBadge />
 
-            <NotificationHeaderIcon Icon={SettingsIcon} path="/settings" />
-            
             {/* Profile Dropdown */}
             <div className="relative" ref={dropdownRef}>
               <button

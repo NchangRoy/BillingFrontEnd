@@ -44,6 +44,7 @@ import PermissionBadge from '@/components/PermissionBadge'
 import ShareDocModal from '@/components/ShareDocModal'
 import SyncStatusIndicator from '@/components/SyncStatusIndicator'
 import { useCanEditDocuments } from '@/src/hooks/useCanEditDocuments'
+import { offlineDb } from '@/src/offline/db/database'
 
 const columns = {
   "Devis Number": "numeroDevis",
@@ -178,6 +179,13 @@ const Quotation = () => {
   const handleSendToPortal = async (quotation: UpdatedDevisResponse) => {
     if (!quotation.idDevis) return;
     setActiveMenuId(null);
+    // Quotations created offline sit in the local outbox until they sync —
+    // sales-core has never heard of that id yet, so sending would 404.
+    const local = await offlineDb.devis.get(quotation.idDevis);
+    if (local && local.syncStatus !== 'synced') {
+      toast.info("This quotation hasn't finished syncing yet — try again in a moment.");
+      return;
+    }
     try {
       await DevisService.sendToPortal(quotation.idDevis);
       setQuotations(prev => prev.map(q => q.idDevis === quotation.idDevis ? { ...q, statut: 'ENVOYE' as any } : q));

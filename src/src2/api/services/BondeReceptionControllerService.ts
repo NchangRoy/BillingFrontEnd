@@ -45,6 +45,22 @@ export class BondeReceptionControllerService {
         });
     }
     /**
+     * Notifier le fournisseur que ce bon de réception a été enregistré (login requis)
+     * @param id
+     * @throws ApiError
+     */
+    public static sendToPortal(
+        id: string,
+    ): CancelablePromise<void> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/facturation/bon-receptions/{id}/send-to-portal',
+            path: {
+                'id': id,
+            },
+        });
+    }
+    /**
      * @param id
      * @returns any OK
      * @throws ApiError

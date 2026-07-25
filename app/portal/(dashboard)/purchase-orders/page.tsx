@@ -2,11 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import { PortalApi } from "@/src/api/portalApi";
+import { getPortalSession, getOrganizationName } from "@/src/api/portalSession";
 import TableSkeleton from "@/components/TableSkeleton";
 import EmptyState from "@/components/EmptyState";
 import PurchaseOrderActionModal from "./PurchaseOrderActionModal";
 
-const COLUMNS = ["Order #", "Date", "Expected Delivery", "Status", "Total"];
+const COLUMNS = ["Order #", "Organization", "Date", "Expected Delivery", "Status", "Total"];
 
 const VISIBLE_STATUSES = new Set(["ENVOYE", "ACCEPTE", "REJETE"]);
 
@@ -20,6 +21,7 @@ export default function PortalPurchaseOrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<any | null>(null);
+  const session = getPortalSession();
 
   useEffect(() => {
     PortalApi.getPurchaseOrders()
@@ -66,6 +68,9 @@ export default function PortalPurchaseOrdersPage() {
                     className="hover:bg-secondary-super-light/40 transition-all cursor-pointer"
                   >
                     <td className="px-8 py-5 font-black text-primary">{po.numeroBonAchat}</td>
+                    <td className="px-8 py-5 text-sm text-secondary-gray font-bold">
+                      {getOrganizationName(session, po.organizationId)}
+                    </td>
                     <td className="px-8 py-5 text-sm text-secondary-gray font-bold">
                       {po.dateBonAchat ? new Date(po.dateBonAchat).toLocaleDateString() : "-"}
                     </td>

@@ -13,6 +13,7 @@ export const mapAuthToUpdatedSeller = (data: SellerAuthResponse): UpdatedSellerR
     // Basic Info & Renaming
     Id: data.Id ?? '',
     username: data.username ?? '',
+    email: (data as any).email ?? '',
     role: (data.role as SellerRole) ?? SellerRole.SELLER,
     agency: data.agency ?? '',
     salePoint: data.salePoint ?? '',

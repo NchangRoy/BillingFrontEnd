@@ -17,7 +17,8 @@ import {
   ReceiptText,
   ChevronRight,
   Eye,
-  Share2
+  Share2,
+  Globe
 } from "lucide-react";
 
 // API & Models
@@ -42,6 +43,7 @@ import ActionButton from '@/components/ActionButton'
 import PermissionBadge from '@/components/PermissionBadge'
 import ShareDocModal from '@/components/ShareDocModal'
 import { useCanEditDocuments } from '@/src/hooks/useCanEditDocuments'
+import { offlineDb } from '@/src/offline/db/database'
 
 // Mapping Table Columns for GRN
 const columns = {
@@ -373,6 +375,26 @@ const GoodsReceiptNotes = () => {
                           onClick={() => { setClickedGRN(grn); setIsPrintModalOpen(true); setActiveMenuId(null); }}
                           className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-purple-800 transition-all"
                         ><Printer size={14} /></ActionButton>
+
+                        {/* Notify Supplier */}
+                        <ActionButton
+                          label="Notify Supplier"
+                          onClick={async () => {
+                            setActiveMenuId(null);
+                            if (!grn.idGRN) return;
+                            // GRNs created offline sit in the local outbox until they sync —
+                            // sales-core has never heard of that id yet, so sending would 404.
+                            const local = await offlineDb.bon_receptions.get(grn.idGRN);
+                            if (local && local.syncStatus !== 'synced') {
+                              toast.info("This GRN hasn't finished syncing yet — try again in a moment.");
+                              return;
+                            }
+                            BondeReceptionControllerService.sendToPortal(grn.idGRN)
+                              .then(() => toast.success(`${grn.grnNumber ?? "GRN"} sent — supplier can now view it in their portal.`))
+                              .catch((error: any) => toast.error(error?.body?.message || "Failed to notify the supplier."));
+                          }}
+                          className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-blue-700 transition-all"
+                        ><Globe size={14} /></ActionButton>
 
                         {/* Delete */}
                         <ActionButton

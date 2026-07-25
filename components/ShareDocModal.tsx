@@ -4,7 +4,21 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import CloseIcon from "@mui/icons-material/Close";
 import SearchIcon from "@mui/icons-material/Search";
 import { Share2, CheckCircle2, Send, ChevronDown, UserX, Users } from "lucide-react";
-import { DocPermissionsService, SellerAdminService, SellerListItemResponse } from "@/src/src2/api";
+import {
+  BackOrderService,
+  BonCommandeService,
+  BonDAchatService,
+  BonDeLivraisonService,
+  BondeReceptionControllerService,
+  DevisService,
+  DocPermissionsService,
+  FactureFournisseurControllerService,
+  FactureService,
+  FacturesProformaService,
+  NoteCreditControllerService,
+  SellerAdminService,
+  SellerListItemResponse,
+} from "@/src/src2/api";
 import type { DocPermissionResponse } from "@/src/src2/api/models/DocPermissionResponse";
 import { getStoredSeller } from "@/src/api/session";
 import { toast } from "sonner";
@@ -20,6 +34,41 @@ export type ShareableDocType =
   | "BON_LIVRAISON"
   | "BON_RECEPTION"
   | "FACTURE_FOURNISSEUR";
+
+/**
+ * A document created (or still syncing) offline can be identified locally by
+ * a client-generated id that never made it to the server, or that the server
+ * later replaced. Checking local IndexedDB state for "is this synced" isn't
+ * reliable — a doc can be missing from local storage for reasons that have
+ * nothing to do with it being safe to share (already pruned, never pulled on
+ * this device, etc). The only real answer is whether the server has ever
+ * heard of this id, so this asks it directly, right before Share is allowed
+ * to proceed. A 404 (or any other failure) blocks the share.
+ */
+async function docExistsOnServer(docId: string, docType: ShareableDocType, organizationId?: string): Promise<boolean> {
+  try {
+    switch (docType) {
+      case "DEVIS": return !!(await DevisService.getDevisById(docId));
+      case "FACTURE": return !!(await FactureService.getFactureById(docId));
+      case "FACTURE_PROFORMA": return !!(await FacturesProformaService.getProformaById(docId));
+      case "BACK_ORDER": return !!(await BackOrderService.getBackOrderById(docId));
+      case "NOTE_CREDIT": return !!(await NoteCreditControllerService.getNoteCreditById(docId));
+      case "BON_ACHAT": return !!(await BonDAchatService.getBonAchatById(docId));
+      case "BON_COMMANDE": return !!(await BonCommandeService.getBonCommandeById(docId));
+      case "BON_LIVRAISON": return !!(await BonDeLivraisonService.getBonLivraisonById(docId));
+      case "BON_RECEPTION": return !!(await BondeReceptionControllerService.getBonById(docId));
+      case "FACTURE_FOURNISSEUR": {
+        // No dedicated get-by-id endpoint for this type — fall back to the
+        // org-wide list and check membership.
+        if (!organizationId) return false;
+        const list = await FactureFournisseurControllerService.getByOrganizationId3(organizationId);
+        return list.some((f) => f.idFactureFournisseur === docId);
+      }
+    }
+  } catch {
+    return false;
+  }
+}
 
 interface Props {
   isOpen: boolean;
@@ -171,6 +220,12 @@ const ShareDocModal = ({ isOpen, docId, docType, docLabel, onClose }: Props) => 
     const seller = shareCandidates.find((s) => s.id === selectedSellerId);
 
     setIsSharing(true);
+    if (!(await docExistsOnServer(docId, docType, currentSeller?.organizationId))) {
+      toast.error("This document hasn't finished syncing yet. Please wait a moment and try again.");
+      setIsSharing(false);
+      return;
+    }
+
     try {
       await DocPermissionsService.share({
         sellerId: selectedSellerId,

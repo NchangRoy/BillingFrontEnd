@@ -12,13 +12,12 @@ interface Props {
   onClose: (created: boolean) => void;
 }
 
-type SalesPersonnelRole = 'POS_SELLER' | 'SELLER' | 'AGENCY_MANAGER' | 'OWNER';
+type SalesPersonnelRole = 'POS_SELLER' | 'SELLER' | 'AGENCY_MANAGER';
 
 const ROLE_OPTIONS: { value: SalesPersonnelRole; label: string; description: string }[] = [
   { value: "POS_SELLER", label: "POS Seller", description: "Point-of-sale checkout only" },
   { value: "SELLER", label: "Seller", description: "Standard sales personnel" },
   { value: "AGENCY_MANAGER", label: "Agency Manager", description: "Manages an agency's sellers and sessions" },
-  { value: "OWNER", label: "Owner", description: "Full organization access" },
 ];
 
 const emptyForm = {
@@ -84,7 +83,7 @@ const CreateSellerModal = ({ isOpen, onClose }: Props) => {
         organizationId: seller.organizationId,
         organizationName: seller.organizationName || undefined,
       });
-      toast.success(`Sales personnel created. Temporary password: ${res.temporaryPassword} — POS PIN: ${res.pin}`, { duration: 15000 });
+      toast.success(`Sales personnel invited — an email with their login credentials has been sent. POS PIN: ${res.pin}`, { duration: 15000 });
       onClose(true);
     } catch (error) {
       const message = error instanceof ApiError ? (error.body?.message ?? error.message) : "Failed to create seller. Please try again.";
@@ -156,7 +155,7 @@ const CreateSellerModal = ({ isOpen, onClose }: Props) => {
 
           <div className="space-y-2">
             <label className={label}>Role</label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               {ROLE_OPTIONS.map((option) => (
                 <button
                   key={option.value}
@@ -204,7 +203,7 @@ const CreateSellerModal = ({ isOpen, onClose }: Props) => {
           </div>
 
           <p className="text-xs text-gray-400 font-medium bg-secondary-super-light/50 rounded-xl px-4 py-3">
-            A temporary password will be generated and emailed to the seller. They&apos;ll be required to set a new password on first login.
+            An invitation email with login credentials will be sent to this address.
           </p>
         </div>
 

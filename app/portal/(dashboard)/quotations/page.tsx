@@ -2,11 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import { PortalApi } from "@/src/api/portalApi";
+import { getPortalSession, getOrganizationName } from "@/src/api/portalSession";
 import TableSkeleton from "@/components/TableSkeleton";
 import EmptyState from "@/components/EmptyState";
 import QuotationActionModal from "./QuotationActionModal";
 
-const COLUMNS = ["Quotation #", "Date", "Status", "Total"];
+const COLUMNS = ["Quotation #", "Organization", "Date", "Status", "Total"];
 
 const VISIBLE_STATUSES = new Set(["ENVOYE", "ACCEPTE", "REFUSE"]);
 
@@ -25,6 +26,7 @@ export default function PortalQuotationsPage() {
   const [quotations, setQuotations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<any | null>(null);
+  const session = getPortalSession();
 
   useEffect(() => {
     PortalApi.getQuotations()
@@ -71,6 +73,9 @@ export default function PortalQuotationsPage() {
                     className="hover:bg-secondary-super-light/40 transition-all cursor-pointer"
                   >
                     <td className="px-8 py-5 font-black text-primary">{q.numeroDevis}</td>
+                    <td className="px-8 py-5 text-sm text-secondary-gray font-bold">
+                      {getOrganizationName(session, q.organizationId)}
+                    </td>
                     <td className="px-8 py-5 text-sm text-secondary-gray font-bold">
                       {q.dateCreation ? new Date(q.dateCreation).toLocaleDateString() : "-"}
                     </td>

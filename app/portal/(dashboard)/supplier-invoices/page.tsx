@@ -2,11 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import { PortalApi } from "@/src/api/portalApi";
+import { getPortalSession, getOrganizationName } from "@/src/api/portalSession";
 import TableSkeleton from "@/components/TableSkeleton";
 import EmptyState from "@/components/EmptyState";
 import SupplierInvoicePreviewModal from "./SupplierInvoicePreviewModal";
 
-const COLUMNS = ["Invoice #", "Date", "Due Date", "Status", "Total", "Remaining"];
+const COLUMNS = ["Invoice #", "Organization", "Date", "Due Date", "Status", "Total", "Remaining"];
 
 const STATUS_STYLES: Record<string, string> = {
   PAYEE: "bg-emerald-50 text-emerald-600 border-emerald-200",
@@ -21,6 +22,7 @@ export default function PortalSupplierInvoicesPage() {
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<any | null>(null);
+  const session = getPortalSession();
 
   useEffect(() => {
     PortalApi.getSupplierInvoices()
@@ -61,6 +63,9 @@ export default function PortalSupplierInvoicesPage() {
                     className="hover:bg-secondary-super-light/40 transition-all cursor-pointer"
                   >
                     <td className="px-8 py-5 font-black text-primary">{inv.numeroFacture}</td>
+                    <td className="px-8 py-5 text-sm text-secondary-gray font-bold">
+                      {getOrganizationName(session, inv.organizationId)}
+                    </td>
                     <td className="px-8 py-5 text-sm text-secondary-gray font-bold">
                       {inv.dateFacture ? new Date(inv.dateFacture).toLocaleDateString() : "-"}
                     </td>

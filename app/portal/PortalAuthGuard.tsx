@@ -15,10 +15,6 @@ const PortalAuthGuard = ({ children }: { children: React.ReactNode }) => {
       router.replace("/portal/login");
       return;
     }
-    if (session.mustChangePassword) {
-      router.replace("/portal/change-password");
-      return;
-    }
     setChecked(true);
   }, [router]);
 

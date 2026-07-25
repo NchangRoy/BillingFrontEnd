@@ -41,6 +41,7 @@ export type UpdatedSellerResponse = {
   accessToken: string;
   Id:string,
   username: string;
+  email?: string;
   role: SellerRole;
   agency: string;
   salePoint: string;

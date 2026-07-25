@@ -30,7 +30,8 @@ import {
   PointOfSale as SalesPointsIcon,
   PlayCircleOutline as SessionsIcon,
   Inventory2 as ProductsIcon,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  NotificationsActive as NotificationContactsIcon
 } from "@mui/icons-material";
 
 const iconMap: Record<string, React.ElementType> = {
@@ -58,7 +59,8 @@ const iconMap: Record<string, React.ElementType> = {
   SalesPointsIcon,
   SessionsIcon,
   ProductsIcon,
-  SettingsIcon
+  SettingsIcon,
+  NotificationContactsIcon
 };
 
 const MENU_SECTIONS = [
@@ -119,6 +121,7 @@ const MENU_SECTIONS = [
     icon: "SettingsIcon",
     items: [
       { content: "Preferences", Icon: "SettingsIcon", path: "/settings" },
+      { content: "Notification Contacts", Icon: "NotificationContactsIcon", path: "/settings/notifications" },
     ],
   },
 ];

@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { RequestQuote, Receipt, ShoppingBag, Description } from "@mui/icons-material";
 import { PortalApi } from "@/src/api/portalApi";
-import { getPortalSession } from "@/src/api/portalSession";
+import { getPortalSession, getPortalRoles } from "@/src/api/portalSession";
 
 const StatCard = ({ label, value, Icon }: { label: string; value: number; Icon: React.ElementType }) => (
   <div className="bg-white rounded-2xl border border-secondary-light shadow-sm p-6 flex items-center gap-4">
@@ -19,20 +19,36 @@ const StatCard = ({ label, value, Icon }: { label: string; value: number; Icon: 
 
 export default function PortalDashboardPage() {
   const session = getPortalSession();
-  const isSupplier = session?.partyRole === "SUPPLIER";
-  const [counts, setCounts] = useState({ a: 0, b: 0 });
+  const roles = getPortalRoles(session);
+  const isCustomer = roles.includes("CUSTOMER");
+  const isSupplier = roles.includes("SUPPLIER");
+  const [counts, setCounts] = useState({ quotations: 0, invoices: 0, purchaseOrders: 0, supplierInvoices: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loaders = isSupplier
-      ? [PortalApi.getPurchaseOrders(), PortalApi.getSupplierInvoices()]
-      : [PortalApi.getQuotations(), PortalApi.getInvoices()];
-
-    Promise.all(loaders)
-      .then(([a, b]) => setCounts({ a: a.length, b: b.length }))
+    Promise.all([
+      isCustomer ? PortalApi.getQuotations() : Promise.resolve([]),
+      isCustomer ? PortalApi.getInvoices() : Promise.resolve([]),
+      isSupplier ? PortalApi.getPurchaseOrders() : Promise.resolve([]),
+      isSupplier ? PortalApi.getSupplierInvoices() : Promise.resolve([]),
+    ])
+      .then(([quotations, invoices, purchaseOrders, supplierInvoices]) =>
+        setCounts({
+          quotations: quotations.length,
+          invoices: invoices.length,
+          purchaseOrders: purchaseOrders.length,
+          supplierInvoices: supplierInvoices.length,
+        })
+      )
       .catch((err) => console.error("Failed to load dashboard counts", err))
       .finally(() => setLoading(false));
-  }, [isSupplier]);
+  }, [isCustomer, isSupplier]);
+
+  const summary = isCustomer && isSupplier
+    ? "Here's a summary of your customer and supplier account."
+    : isSupplier
+    ? "Here's a summary of your supplier account."
+    : "Here's a summary of your customer account.";
 
   return (
     <div className="p-8">
@@ -40,9 +56,7 @@ export default function PortalDashboardPage() {
         <h1 className="text-3xl font-black text-primary tracking-tight">
           Welcome, {session?.name || "Partner"}
         </h1>
-        <p className="text-secondary-gray text-sm font-medium">
-          {isSupplier ? "Here's a summary of your supplier account." : "Here's a summary of your customer account."}
-        </p>
+        <p className="text-secondary-gray text-sm font-medium">{summary}</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
@@ -51,15 +65,12 @@ export default function PortalDashboardPage() {
             <div className="h-24 bg-white rounded-2xl border border-secondary-light animate-pulse" />
             <div className="h-24 bg-white rounded-2xl border border-secondary-light animate-pulse" />
           </>
-        ) : isSupplier ? (
-          <>
-            <StatCard label="Purchase Orders" value={counts.a} Icon={ShoppingBag} />
-            <StatCard label="Supplier Invoices" value={counts.b} Icon={Description} />
-          </>
         ) : (
           <>
-            <StatCard label="Quotations" value={counts.a} Icon={RequestQuote} />
-            <StatCard label="Invoices" value={counts.b} Icon={Receipt} />
+            {isCustomer && <StatCard label="Quotations" value={counts.quotations} Icon={RequestQuote} />}
+            {isCustomer && <StatCard label="Invoices" value={counts.invoices} Icon={Receipt} />}
+            {isSupplier && <StatCard label="Purchase Orders" value={counts.purchaseOrders} Icon={ShoppingBag} />}
+            {isSupplier && <StatCard label="Supplier Invoices" value={counts.supplierInvoices} Icon={Description} />}
           </>
         )}
       </div>

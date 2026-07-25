@@ -18,6 +18,23 @@ interface Props {
   onClose: (created: boolean) => void;
 }
 
+/**
+ * Kernel's session startTime/endTime are Java LocalDateTime — no timezone
+ * attached — and its own comparisons (e.g. "has this session's start time
+ * arrived yet?") run against the server's own naive clock, which defaults to
+ * UTC in these deployments. The <input type="datetime-local"> value here is
+ * the browser's local wall-clock reading with no offset info of its own, so
+ * sending it as-is gets compared against the wrong reference frame (off by
+ * the local UTC offset — an hour early/late depending on the sign). This
+ * converts the picked local moment to its UTC digits before sending, so the
+ * server's own naive-UTC comparison lines up with what was actually picked.
+ */
+const toServerUtcNaive = (datetimeLocalValue: string): string => {
+  const d = new Date(datetimeLocalValue);
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}T${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}`;
+};
+
 const emptyForm = {
   type: CreateSessionRequest.type.POS,
   agencyId: "",
@@ -104,8 +121,8 @@ const CreateSessionModal = ({ isOpen, onClose }: Props) => {
         agencyId: isPos ? undefined : form.agencyId,
         sellerId: form.sellerId,
         openingAmount: Number(form.openingAmount),
-        startTime: form.startTime || undefined,
-        endTime: form.endTime || undefined,
+        startTime: form.startTime ? toServerUtcNaive(form.startTime) : undefined,
+        endTime: form.endTime ? toServerUtcNaive(form.endTime) : undefined,
       };
       if (scheduleForLater) {
         await SessionsService.schedule(payload);

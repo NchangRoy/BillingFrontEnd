@@ -1,4 +1,4 @@
-import { getPortalSession } from './portalSession';
+import { getPortalSession, clearPortalSession, PortalOrganizationOption } from './portalSession';
 
 // Deliberately NOT the generated OpenAPI client — that singleton's TOKEN/HEADERS
 // are already claimed by the seller session (src/api/session.ts). The portal
@@ -15,15 +15,25 @@ async function portalFetch<T>(path: string, options: RequestInit = {}): Promise<
   if (session?.accessToken) {
     headers['Authorization'] = `Bearer ${session.accessToken}`;
   }
-  // Some account-app services (e.g. ClientUseCase) read the org id out of a
-  // reactive context populated only from this header, not from the portal
-  // JWT itself — without it they fail with "Organization ID absent du
-  // contexte réactif" even though the JWT's organizationId claim is right there.
-  if (session?.organizationId) {
-    headers['X-Organization-ID'] = session.organizationId;
-  }
+  // No X-Organization-ID header anymore: an account can have a record in
+  // more than one org, so the backend resolves every one of them itself
+  // per request (see PortalIdentityResolver) rather than being scoped to
+  // a single client-supplied org.
 
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
+
+  // Kernel access tokens only last 15 minutes — a session left open across a
+  // long testing/review session routinely outlives its token, which then
+  // fails every subsequent call with 401. Surfacing that as a generic
+  // "failed to load" error is confusing, so send the user back to a fresh
+  // login instead of leaving them staring at a broken page.
+  if (res.status === 401) {
+    clearPortalSession();
+    if (typeof window !== 'undefined') {
+      window.location.href = '/portal/login?expired=1';
+    }
+    throw new Error('Your session has expired. Please sign in again.');
+  }
 
   // Several endpoints (accept/reject, etc.) reply 200 with an empty body,
   // not 204 — res.json() on an empty body throws "Unexpected end of JSON
@@ -39,26 +49,22 @@ async function portalFetch<T>(path: string, options: RequestInit = {}): Promise<
 
 export interface PortalAuthResponse {
   accessToken: string;
-  id: string;
-  clientId: string;
-  organizationId: string;
   email: string;
   name: string;
-  partyRole: 'CUSTOMER' | 'SUPPLIER';
-  mustChangePassword: boolean;
+  // Every organization this account has a customer/supplier record in — an
+  // actor can legitimately have several (a third-party record's id is
+  // per-org, Kernel has no cross-org concept). No "pick one" step: documents
+  // are aggregated across all of them, the frontend labels each row by org.
+  organizations: PortalOrganizationOption[];
 }
 
 export const PortalApi = {
+  // A person's normal Kernel actor login (email + password) — same identity
+  // system as sellers, not a separate portal-only account.
   login: (email: string, password: string) =>
     portalFetch<PortalAuthResponse>('/api/portal/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
-    }),
-
-  changePassword: (email: string, currentPassword: string, newPassword: string) =>
-    portalFetch<PortalAuthResponse>('/api/portal/auth/change-password', {
-      method: 'POST',
-      body: JSON.stringify({ email, currentPassword, newPassword }),
+      body: JSON.stringify({ principal: email, password }),
     }),
 
   getQuotations: () => portalFetch<any[]>('/api/portal/quotations'),
@@ -89,7 +95,10 @@ export const PortalApi = {
   // Own client record (allowedSaleSizes, name, etc.) — getClientById by
   // itself is broken for some clients (a pre-existing Kernel-lookup bug), so
   // this goes through the account app's own getAllClients-then-filter route.
-  getMyClientInfo: () => portalFetch<any>('/api/portal/me/client'),
+  // organizationId picks which of the account's client records to return
+  // (they differ per org — code, credit limit, allowed sale sizes, etc.).
+  getMyClientInfo: (organizationId?: string) =>
+    portalFetch<any>(`/api/portal/me/client${organizationId ? `?organizationId=${organizationId}` : ''}`),
 
   getQuotationProposals: () => portalFetch<any[]>('/api/portal/quotation-proposals'),
   createQuotationProposal: (payload: any) =>

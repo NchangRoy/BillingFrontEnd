@@ -249,7 +249,22 @@ export const getResponseBody = async (response: Response): Promise<any> => {
     return undefined;
 };
 
+// Kernel access tokens only last 15 minutes — a session left open across a
+// long testing/working session routinely outlives its token, after which
+// every request 401s. Rather than leaving the user staring at cryptic
+// "failed to load" errors call after call, send them back to a fresh login.
+// Mirrors the same handling in src/api/portalApi.ts for the client portal.
+const handleExpiredSession = () => {
+    if (typeof window === 'undefined') return;
+    localStorage.removeItem('seller');
+    window.location.href = '/login?expired=1';
+};
+
 export const catchErrorCodes = (options: ApiRequestOptions, result: ApiResult): void => {
+    if (result.status === 401) {
+        handleExpiredSession();
+    }
+
     const errors: Record<number, string> = {
         400: 'Bad Request',
         401: 'Unauthorized',

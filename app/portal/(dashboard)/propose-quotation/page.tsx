@@ -3,11 +3,12 @@
 import React, { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import { PortalApi } from "@/src/api/portalApi";
+import { getPortalSession, getOrganizationName } from "@/src/api/portalSession";
 import TableSkeleton from "@/components/TableSkeleton";
 import EmptyState from "@/components/EmptyState";
 import ProposeQuotationModal from "./ProposeQuotationModal";
 
-const COLUMNS = ["Proposal #", "Date", "Status", "Total", "Seller Feedback"];
+const COLUMNS = ["Proposal #", "Organization", "Date", "Status", "Total", "Seller Feedback"];
 
 const STATUS_STYLES: Record<string, string> = {
   ACCEPTED: "bg-emerald-50 text-emerald-600 border-emerald-200",
@@ -19,6 +20,7 @@ export default function ProposeQuotationPage() {
   const [proposals, setProposals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const session = getPortalSession();
 
   const load = () => {
     setLoading(true);
@@ -66,6 +68,9 @@ export default function ProposeQuotationPage() {
                 proposals.map((p) => (
                   <tr key={p.idProposal} className="hover:bg-secondary-super-light/40 transition-all">
                     <td className="px-8 py-5 font-black text-primary">{p.numeroProposal}</td>
+                    <td className="px-8 py-5 text-sm text-secondary-gray font-bold">
+                      {getOrganizationName(session, p.organizationId)}
+                    </td>
                     <td className="px-8 py-5 text-sm text-secondary-gray font-bold">
                       {p.dateCreation ? new Date(p.dateCreation).toLocaleDateString() : "-"}
                     </td>
