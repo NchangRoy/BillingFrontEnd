@@ -4,7 +4,7 @@ import { getPortalSession, clearPortalSession, PortalOrganizationOption } from '
 // are already claimed by the seller session (src/api/session.ts). The portal
 // is a separate auth realm (its own JWT, its own login), so it gets its own
 // tiny fetch wrapper instead of fighting over the same global config.
-const BASE_URL = 'http://localhost:8080';
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
 async function portalFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const session = getPortalSession();
