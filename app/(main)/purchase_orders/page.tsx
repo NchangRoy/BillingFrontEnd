@@ -140,7 +140,7 @@ const PurchaseOrders = () => {
       return;
     }
     try {
-      await BonDAchatService.sendToPortal(order.idPO);
+      await BonDAchatService.sendToPortal4(order.idPO);
       setOrders(prev => prev.map(o => o.idPO === order.idPO ? { ...o, statut: 'ENVOYE' as any } : o));
       toast.success(`${order.poNumber} sent — supplier can now view it in their portal.`);
     } catch (error: any) {

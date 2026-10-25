@@ -190,7 +190,7 @@ const Factures = () => {
           toast.info("This invoice hasn't finished syncing yet — try again in a moment.");
           return;
         }
-        FactureService.sendToPortal(f.idFacture)
+        FactureService.sendToPortal1(f.idFacture)
           .then(() => {
             setFactures(prev => prev.map(item => item.idFacture === f.idFacture ? { ...item, etat: 'ENVOYE' as any } : item));
             toast.success(`${f.numeroFacture} sent — client can now view it in their portal.`);

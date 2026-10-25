@@ -96,12 +96,29 @@ export class BonCommandeService {
         });
     }
     /**
+     * Récupérer les bons de commande créés par un vendeur
+     * @param sellerId
+     * @returns BonCommandeResponse OK
+     * @throws ApiError
+     */
+    public static getBySellerId6(
+        sellerId: string,
+    ): CancelablePromise<Array<BonCommandeResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/bon-commande/seller/{sellerId}',
+            path: {
+                'sellerId': sellerId,
+            },
+        });
+    }
+    /**
      * Récupérer les bons de commande par organisation
      * @param organizationId
      * @returns BonCommandeResponse OK
      * @throws ApiError
      */
-    public static getByOrganizationId6(
+    public static getByOrganizationId7(
         organizationId: string,
     ): CancelablePromise<Array<BonCommandeResponse>> {
         return __request(OpenAPI, {
@@ -126,23 +143,6 @@ export class BonCommandeService {
             url: '/api/bon-commande/agence/{agencyId}',
             path: {
                 'agencyId': agencyId,
-            },
-        });
-    }
-    /**
-     * Récupérer les bons de commande accessibles par un vendeur (via ses permissions)
-     * @param sellerId
-     * @returns BonCommandeResponse OK
-     * @throws ApiError
-     */
-    public static getBySellerId6(
-        sellerId: string,
-    ): CancelablePromise<Array<BonCommandeResponse>> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/bon-commande/seller/{sellerId}',
-            path: {
-                'sellerId': sellerId,
             },
         });
     }

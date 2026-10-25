@@ -46,10 +46,6 @@ export type FactureCreateRequest = {
     sessionId?: string;
 };
 export namespace FactureCreateRequest {
-    export enum originType {
-        POS = 'POS',
-        SALES = 'SALES',
-    }
     export enum etat {
         BROUILLON = 'BROUILLON',
         ENVOYE = 'ENVOYE',
@@ -58,6 +54,8 @@ export namespace FactureCreateRequest {
         EN_RETARD = 'EN_RETARD',
         ANNULE = 'ANNULE',
         EN_ATTENTE = 'EN_ATTENTE',
+        ACCOUNT_PENDING = 'ACCOUNT_PENDING',
+        ACCOUNTED = 'ACCOUNTED',
     }
     export enum modeReglement {
         VIREMENT = 'VIREMENT',
@@ -69,6 +67,10 @@ export namespace FactureCreateRequest {
         ORANGE_MONEY = 'ORANGE_MONEY',
         MOBILE_MONEY = 'MOBILE_MONEY',
         AUTRE = 'AUTRE',
+    }
+    export enum originType {
+        POS = 'POS',
+        SALES = 'SALES',
     }
 }
 

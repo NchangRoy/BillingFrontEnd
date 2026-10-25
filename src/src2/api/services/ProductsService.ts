@@ -3,7 +3,6 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { ProductResponse } from '../models/ProductResponse';
-import type { SaleSize } from '../models/SaleSize';
 import type { UpdatePhotoRequest } from '../models/UpdatePhotoRequest';
 import type { UpdateSaleSizesRequest } from '../models/UpdateSaleSizesRequest';
 import type { CancelablePromise } from '../core/CancelablePromise';
@@ -11,16 +10,16 @@ import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
 export class ProductsService {
     /**
-     * Configure a product's allowed sale sizes and per-size pricing
+     * Configure a product's image, allowed sale sizes/pricing/negotiability, and VAT applicability
      * @param productId
      * @param requestBody
-     * @returns SaleSize OK
+     * @returns ProductResponse OK
      * @throws ApiError
      */
     public static updateSaleSizes(
         productId: string,
         requestBody: UpdateSaleSizesRequest,
-    ): CancelablePromise<Array<SaleSize>> {
+    ): CancelablePromise<ProductResponse> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/api/products/{productId}/sale-sizes',
@@ -38,7 +37,7 @@ export class ProductsService {
      * @returns string OK
      * @throws ApiError
      */
-    public static updatePhoto(
+    public static updatePhoto1(
         productId: string,
         requestBody: UpdatePhotoRequest,
     ): CancelablePromise<string> {

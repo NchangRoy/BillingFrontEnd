@@ -37,7 +37,7 @@ const SaleOrderJournalPage = () => {
     }
     setLoading(true);
     Promise.all([
-      BonCommandeService.getByOrganizationId6(seller.organizationId),
+      BonCommandeService.getByOrganizationId7(seller.organizationId),
       AgenciesService.getAll3(seller.organizationId),
       SellerAdminService.getAll1(seller.organizationId),
     ])

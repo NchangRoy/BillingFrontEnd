@@ -86,6 +86,22 @@ export class NoteCreditControllerService {
         });
     }
     /**
+     * @param sellerId
+     * @returns NoteCreditResponse OK
+     * @throws ApiError
+     */
+    public static getNotesCreditBySellerId(
+        sellerId: string,
+    ): CancelablePromise<Array<NoteCreditResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/facturation/note-credits/seller/{sellerId}',
+            path: {
+                'sellerId': sellerId,
+            },
+        });
+    }
+    /**
      * @param organizationId
      * @returns NoteCreditResponse OK
      * @throws ApiError
@@ -114,23 +130,6 @@ export class NoteCreditControllerService {
             url: '/api/v1/facturation/note-credits/agence/{agencyId}',
             path: {
                 'agencyId': agencyId,
-            },
-        });
-    }
-    /**
-     * Récupérer les notes de crédit accessibles par un vendeur (via ses permissions)
-     * @param sellerId
-     * @returns NoteCreditResponse OK
-     * @throws ApiError
-     */
-    public static getNotesCreditBySellerId(
-        sellerId: string,
-    ): CancelablePromise<Array<NoteCreditResponse>> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/v1/facturation/note-credits/seller/{sellerId}',
-            path: {
-                'sellerId': sellerId,
             },
         });
     }

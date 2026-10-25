@@ -7,15 +7,8 @@ export type ContactResponse = {
     name?: string;
     email?: string;
     organizationId?: string;
-    status?: ContactResponse.status;
+    status?: string;
     linked?: boolean;
     createdAt?: string;
 };
-export namespace ContactResponse {
-    export enum status {
-        PENDING = 'PENDING',
-        ACTIVE = 'ACTIVE',
-        BLOCKED_BY_ADMIN = 'BLOCKED_BY_ADMIN',
-        BLOCKED_BY_USER = 'BLOCKED_BY_USER',
-    }
-}
+

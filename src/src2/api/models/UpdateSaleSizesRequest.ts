@@ -5,5 +5,7 @@
 import type { SaleSize } from './SaleSize';
 export type UpdateSaleSizesRequest = {
     allowedSaleSizes: Array<SaleSize>;
+    photo?: string;
+    vatApplicable?: boolean;
 };
 

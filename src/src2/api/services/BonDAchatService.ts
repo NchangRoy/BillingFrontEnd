@@ -64,6 +64,40 @@ export class BonDAchatService {
         });
     }
     /**
+     * Refuser un bon d'achat
+     * @param id
+     * @returns any OK
+     * @throws ApiError
+     */
+    public static refuserBonAchat(
+        id: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/bons-achat/{id}/refuser',
+            path: {
+                'id': id,
+            },
+        });
+    }
+    /**
+     * Accepter un bon d'achat
+     * @param id
+     * @returns any OK
+     * @throws ApiError
+     */
+    public static accepterBonAchat(
+        id: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/bons-achat/{id}/accepter',
+            path: {
+                'id': id,
+            },
+        });
+    }
+    /**
      * Lister tous les bons d'achat
      * @returns BonAchatResponse OK
      * @throws ApiError
@@ -72,22 +106,6 @@ export class BonDAchatService {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/bons-achat',
-        });
-    }
-    /**
-     * Envoyer le bon d'achat au fournisseur via le portail (login requis)
-     * @param id
-     * @throws ApiError
-     */
-    public static sendToPortal(
-        id: string,
-    ): CancelablePromise<void> {
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/api/bons-achat/{id}/send-to-portal',
-            path: {
-                'id': id,
-            },
         });
     }
     /**
@@ -107,12 +125,46 @@ export class BonDAchatService {
         });
     }
     /**
+     * Envoyer le bon d'achat au fournisseur via le portail (login requis)
+     * @param id
+     * @returns any OK
+     * @throws ApiError
+     */
+    public static sendToPortal4(
+        id: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/bons-achat/{id}/send-to-portal',
+            path: {
+                'id': id,
+            },
+        });
+    }
+    /**
+     * Récupérer les bons d'achat créés par un vendeur
+     * @param sellerId
+     * @returns BonAchatResponse OK
+     * @throws ApiError
+     */
+    public static getBySellerId5(
+        sellerId: string,
+    ): CancelablePromise<Array<BonAchatResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/bons-achat/seller/{sellerId}',
+            path: {
+                'sellerId': sellerId,
+            },
+        });
+    }
+    /**
      * Récupérer les bons d'achat par organisation
      * @param organizationId
      * @returns BonAchatResponse OK
      * @throws ApiError
      */
-    public static getByOrganizationId5(
+    public static getByOrganizationId6(
         organizationId: string,
     ): CancelablePromise<Array<BonAchatResponse>> {
         return __request(OpenAPI, {
@@ -137,23 +189,6 @@ export class BonDAchatService {
             url: '/api/bons-achat/agence/{agencyId}',
             path: {
                 'agencyId': agencyId,
-            },
-        });
-    }
-    /**
-     * Récupérer les bons d'achat accessibles par un vendeur (via ses permissions)
-     * @param sellerId
-     * @returns BonAchatResponse OK
-     * @throws ApiError
-     */
-    public static getBySellerId5(
-        sellerId: string,
-    ): CancelablePromise<Array<BonAchatResponse>> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/bons-achat/seller/{sellerId}',
-            path: {
-                'sellerId': sellerId,
             },
         });
     }

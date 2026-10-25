@@ -35,6 +35,8 @@ export type BonAchatRequest = {
 export namespace BonAchatRequest {
     export enum status {
         BROUILLON = 'BROUILLON',
+        ENVOYE = 'ENVOYE',
+        ACCEPTE = 'ACCEPTE',
         RECU_PARTIEL = 'RECU_PARTIEL',
         RECU = 'RECU',
         REJETE = 'REJETE',

@@ -7,13 +7,13 @@ import type { LigneBackOrder } from './LigneBackOrder';
 export type BackOrderResponse = {
     idBackOrder?: string;
     numeroBackOrder?: string;
-    idBonLivraison?: string;
-    numeroBonLivraison?: string;
     idClient?: string;
     nomClient?: string;
     adresseClient?: string;
     emailClient?: string;
     telephoneClient?: string;
+    idBonLivraison?: string;
+    numeroBonLivraison?: string;
     lignes?: Array<LigneBackOrder>;
     dateCreation?: string;
     dateLivraisonPrevue?: string;

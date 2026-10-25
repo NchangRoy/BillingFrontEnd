@@ -113,6 +113,23 @@ export class BackOrderService {
         });
     }
     /**
+     * Récupérer les back-orders créés par un vendeur
+     * @param sellerId
+     * @returns BackOrderResponse OK
+     * @throws ApiError
+     */
+    public static getBySellerId2(
+        sellerId: string,
+    ): CancelablePromise<Array<BackOrderResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/facturation/back-orders/seller/{sellerId}',
+            path: {
+                'sellerId': sellerId,
+            },
+        });
+    }
+    /**
      * Récupérer les back-orders par organisation
      * @param organizationId
      * @returns BackOrderResponse OK
@@ -160,23 +177,6 @@ export class BackOrderService {
             url: '/api/v1/facturation/back-orders/agence/{agencyId}',
             path: {
                 'agencyId': agencyId,
-            },
-        });
-    }
-    /**
-     * Récupérer les back-orders accessibles par un vendeur (via ses permissions)
-     * @param sellerId
-     * @returns BackOrderResponse OK
-     * @throws ApiError
-     */
-    public static getBySellerId2(
-        sellerId: string,
-    ): CancelablePromise<Array<BackOrderResponse>> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/v1/facturation/back-orders/seller/{sellerId}',
-            path: {
-                'sellerId': sellerId,
             },
         });
     }

@@ -5,3 +5,4 @@
 export type UpdateSellerPhotoRequest = {
     profileImageUrl: string;
 };
+

@@ -11,7 +11,7 @@ import {
   BonDeLivraisonService,
   BondeReceptionControllerService,
   DevisService,
-  DocPermissionsService,
+  DocumentPermissionsService,
   FactureFournisseurControllerService,
   FactureService,
   FacturesProformaService,
@@ -20,6 +20,7 @@ import {
   SellerListItemResponse,
 } from "@/src/src2/api";
 import type { DocPermissionResponse } from "@/src/src2/api/models/DocPermissionResponse";
+import type { AssignDocPermissionRequest } from "@/src/src2/api/models/AssignDocPermissionRequest";
 import { getStoredSeller } from "@/src/api/session";
 import { toast } from "sonner";
 
@@ -61,7 +62,7 @@ async function docExistsOnServer(docId: string, docType: ShareableDocType, organ
         // No dedicated get-by-id endpoint for this type — fall back to the
         // org-wide list and check membership.
         if (!organizationId) return false;
-        const list = await FactureFournisseurControllerService.getByOrganizationId3(organizationId);
+        const list = await FactureFournisseurControllerService.getByOrganizationId4(organizationId);
         return list.some((f) => f.idFactureFournisseur === docId);
       }
     }
@@ -110,7 +111,7 @@ const ShareDocModal = ({ isOpen, docId, docType, docLabel, onClose }: Props) => 
   const loadAccessList = () => {
     if (!docId) return;
     setIsLoadingAccess(true);
-    DocPermissionsService.listByDoc(docId, docType)
+    DocumentPermissionsService.listByDoc(docId, docType)
       .then((res) => setAccessList(res))
       .catch(() => toast.error("Failed to load who has access."))
       .finally(() => setIsLoadingAccess(false));
@@ -181,11 +182,11 @@ const ShareDocModal = ({ isOpen, docId, docType, docLabel, onClose }: Props) => 
     setMutatingSellerId(sellerId);
     setOpenMenuForSellerId(null);
     try {
-      await DocPermissionsService.grant({
+      await DocumentPermissionsService.grant({
         sellerId,
         docId,
-        docType,
-        permission: newPermission,
+        docType: docType as unknown as AssignDocPermissionRequest.docType,
+        permission: newPermission as unknown as AssignDocPermissionRequest.permission,
         recipientEmail: seller?.email,
         recipientName: seller?.username,
       });
@@ -204,7 +205,7 @@ const ShareDocModal = ({ isOpen, docId, docType, docLabel, onClose }: Props) => 
     setMutatingSellerId(sellerId);
     setOpenMenuForSellerId(null);
     try {
-      await DocPermissionsService.revoke(sellerId, docId, docType);
+      await DocumentPermissionsService.revoke(sellerId, docId, docType);
       toast.success(`Removed ${seller?.username || "seller"}'s access.`);
       setAccessList((prev) => prev.filter((p) => p.sellerId !== sellerId));
     } catch {
@@ -227,11 +228,11 @@ const ShareDocModal = ({ isOpen, docId, docType, docLabel, onClose }: Props) => 
     }
 
     try {
-      await DocPermissionsService.share({
+      await DocumentPermissionsService.share({
         sellerId: selectedSellerId,
         docId,
-        docType,
-        permission,
+        docType: docType as unknown as AssignDocPermissionRequest.docType,
+        permission: permission as unknown as AssignDocPermissionRequest.permission,
         recipientEmail: seller?.email,
         recipientName: seller?.username,
         sharedByName: currentSeller?.username,

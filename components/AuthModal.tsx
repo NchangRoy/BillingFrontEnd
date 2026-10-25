@@ -76,7 +76,7 @@ const AuthModal = ({ isOpen, onClose }: Props) => {
     setIsSubmitting(true);
 
     try {
-      const data = await AuthService.login({
+      const data = await AuthService.login1({
         username: formData.username,
         password: formData.password,
       });
@@ -99,7 +99,7 @@ const AuthModal = ({ isOpen, onClose }: Props) => {
     setError(null);
     setIsSubmitting(true);
     try {
-      const data = await AuthService.login({
+      const data = await AuthService.login1({
         username: formData.username,
         password: formData.password,
         organizationId,

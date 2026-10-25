@@ -51,7 +51,7 @@ const UploadProductPhotoModal = ({ isOpen, onClose, product }: Props) => {
           position: 0,
           altText: product.nomProduit,
         }),
-        ProductsService.updatePhoto(product.idProduit, { photo: photoUrl }),
+        ProductsService.updatePhoto1(product.idProduit, { photo: photoUrl }),
       ]);
       toast.success("Product photo uploaded successfully.");
       onClose(true, stored.id, photoUrl);

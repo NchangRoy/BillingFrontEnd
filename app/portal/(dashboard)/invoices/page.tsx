@@ -7,7 +7,7 @@ import TableSkeleton from "@/components/TableSkeleton";
 import EmptyState from "@/components/EmptyState";
 import InvoicePreviewModal from "./InvoicePreviewModal";
 
-const COLUMNS = ["Invoice #", "Organization", "Date", "Due Date", "Status", "Total", "Remaining"];
+const COLUMNS = ["Invoice #", "Organization", "Date", "Due Date", "Status", "Total", "Remaining", ""];
 
 const STATUS_STYLES: Record<string, string> = {
   PAYEE: "bg-emerald-50 text-emerald-600 border-emerald-200",
@@ -18,10 +18,18 @@ const STATUS_STYLES: Record<string, string> = {
   PENDING: "bg-amber-50 text-amber-600 border-amber-200",
 };
 
+// Invoices sent with one of these payment methods get a real Kernel payment
+// order attached (referenceCommande) when the seller sends them — see
+// FactureUseCaseImpl.sendToPortal (backend). Everything else (cash, bank
+// transfer, card taken in person, etc.) has no online payment link.
+const ONLINE_PAYABLE_METHODS = new Set(["MOBILE_MONEY", "ORANGE_MONEY"]);
+
 export default function PortalInvoicesPage() {
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<any | null>(null);
+  const [payingId, setPayingId] = useState<string | null>(null);
+  const [payError, setPayError] = useState<{ id: string; message: string } | null>(null);
   const session = getPortalSession();
 
   useEffect(() => {
@@ -30,6 +38,24 @@ export default function PortalInvoicesPage() {
       .catch((err) => console.error("Failed to load invoices", err))
       .finally(() => setLoading(false));
   }, []);
+
+  const handlePay = async (inv: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPayError(null);
+    setPayingId(inv.idFacture);
+    try {
+      const order = await PortalApi.getPaymentOrder(inv.referenceCommande);
+      if (order?.redirectUrl) {
+        window.location.href = order.redirectUrl;
+      } else {
+        setPayError({ id: inv.idFacture, message: "This payment link is no longer available — contact the seller for a new one." });
+      }
+    } catch (err) {
+      setPayError({ id: inv.idFacture, message: err instanceof Error ? err.message : "Could not start payment." });
+    } finally {
+      setPayingId(null);
+    }
+  };
 
   return (
     <div className="p-8">
@@ -82,6 +108,22 @@ export default function PortalInvoicesPage() {
                     </td>
                     <td className="px-8 py-5 font-bold text-secondary-gray">
                       {inv.montantRestant?.toLocaleString()} {inv.devise}
+                    </td>
+                    <td className="px-8 py-5">
+                      {inv.montantRestant > 0 && ONLINE_PAYABLE_METHODS.has(inv.modeReglement) && inv.referenceCommande && (
+                        <div className="flex flex-col items-end gap-1">
+                          <button
+                            onClick={(e) => handlePay(inv, e)}
+                            disabled={payingId === inv.idFacture}
+                            className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-widest transition-all disabled:opacity-60"
+                          >
+                            {payingId === inv.idFacture ? "Redirecting…" : "Pay"}
+                          </button>
+                          {payError && payError.id === inv.idFacture && (
+                            <p className="text-[10px] text-red-500 font-bold text-right max-w-[160px]">{payError.message}</p>
+                          )}
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))

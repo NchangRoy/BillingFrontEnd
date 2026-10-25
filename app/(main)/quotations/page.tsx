@@ -187,7 +187,7 @@ const Quotation = () => {
       return;
     }
     try {
-      await DevisService.sendToPortal(quotation.idDevis);
+      await DevisService.sendToPortal3(quotation.idDevis);
       setQuotations(prev => prev.map(q => q.idDevis === quotation.idDevis ? { ...q, statut: 'ENVOYE' as any } : q));
       toast.success(`${quotation.numeroDevis} sent — client can now view it in their portal.`);
     } catch (error: any) {

@@ -43,7 +43,7 @@ const CreateAgencyModal = ({ isOpen, onClose }: Props) => {
 
     setIsSaving(true);
     try {
-      await AgenciesService.create3(seller.organizationId, {
+      await AgenciesService.create4(seller.organizationId, {
         code: form.code,
         name: form.name,
         agencyType: form.agencyType,

@@ -24,11 +24,11 @@ const ProposalReviewModal: React.FC<ProposalReviewModalProps> = ({ isOpen, onClo
     setIsSubmitting(true);
     try {
       if (accept) {
-        await QuotationProposalsService.accept(proposal.idProposal, commentary || undefined);
+        await QuotationProposalsService.accept(proposal.idProposal, { commentary: commentary || undefined });
         toast.success('Proposal accepted.');
         onDecided(proposal.idProposal, 'ACCEPTED', commentary || undefined);
       } else {
-        await QuotationProposalsService.reject(proposal.idProposal, commentary || undefined);
+        await QuotationProposalsService.reject(proposal.idProposal, { commentary: commentary || undefined });
         toast.success('Proposal rejected.');
         onDecided(proposal.idProposal, 'REJECTED', commentary || undefined);
       }

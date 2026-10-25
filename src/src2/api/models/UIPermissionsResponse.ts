@@ -13,7 +13,6 @@ export type UIPermissionsResponse = {
     salesInvoices?: boolean;
     salesDeliveryNotes?: boolean;
     salesCreditNotes?: boolean;
-    salesStoreCredit?: boolean;
     salesBackOrders?: boolean;
     purchasingPurchaseOrders?: boolean;
     purchasingGoodsRns?: boolean;

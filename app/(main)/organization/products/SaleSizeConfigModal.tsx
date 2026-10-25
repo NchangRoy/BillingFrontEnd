@@ -80,7 +80,7 @@ const SaleSizeConfigModal = ({ isOpen, onClose, product }: Props) => {
     try {
       const result = await ProductsService.updateSaleSizes(product.idProduit, { allowedSaleSizes });
       toast.success("Sale sizes updated successfully.");
-      onClose(true, result);
+      onClose(true, result.allowedSaleSizes);
     } catch (error) {
       const message = error instanceof ApiError ? (error.body?.message ?? error.message) : "Failed to update sale sizes. Please try again.";
       toast.error(message);

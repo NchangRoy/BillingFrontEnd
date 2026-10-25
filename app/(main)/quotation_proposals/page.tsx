@@ -32,7 +32,7 @@ const QuotationProposalsPage = () => {
 
   useEffect(() => {
     setIsLoading(true);
-    QuotationProposalsService.getAll()
+    QuotationProposalsService.getAll5()
       .then(setProposals)
       .catch(() => toast.error("Failed to load quotation proposals."))
       .finally(() => setIsLoading(false));

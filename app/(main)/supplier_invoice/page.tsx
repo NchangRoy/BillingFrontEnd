@@ -176,7 +176,7 @@ const SupplierFactures = () => {
       return;
     }
     try {
-      await FactureFournisseurControllerService.sendToPortal1(f.idFacture);
+      await FactureFournisseurControllerService.sendToPortal2(f.idFacture);
       setFactures(prev => prev.map(item => item.idFacture === f.idFacture ? { ...item, etat: 'ENVOYE' as any } : item));
       toast.success(`${f.numeroFacture} sent — fournisseur can now view it in their portal.`);
     } catch (error: any) {

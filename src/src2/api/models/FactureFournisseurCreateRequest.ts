@@ -49,6 +49,8 @@ export namespace FactureFournisseurCreateRequest {
         PARTIELLEMENT_PAYE = 'PARTIELLEMENT_PAYE',
         EN_RETARD = 'EN_RETARD',
         ANNULE = 'ANNULE',
+        ACCOUNT_PENDING = 'ACCOUNT_PENDING',
+        ACCOUNTED = 'ACCOUNTED',
     }
 }
 

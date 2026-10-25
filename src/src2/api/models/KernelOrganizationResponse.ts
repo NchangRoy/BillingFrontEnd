@@ -12,3 +12,4 @@ export type KernelOrganizationResponse = {
     logoUri?: string;
     isActive?: boolean;
 };
+

@@ -6,7 +6,6 @@ export type CreateSellerResponse = {
     id?: string;
     username?: string;
     role?: string;
-    temporaryPassword?: string;
     pin?: string;
 };
 

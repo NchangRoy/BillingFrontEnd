@@ -108,19 +108,20 @@ export class SessionsService {
         });
     }
     /**
-     * Schedule a session for a seller to start themselves later
-     * @param requestBody
+     * Suspend an open session
+     * @param id
      * @returns SessionResponse OK
      * @throws ApiError
      */
-    public static schedule(
-        requestBody: CreateSessionRequest,
+    public static suspend(
+        id: string,
     ): CancelablePromise<SessionResponse> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/sessions/schedule',
-            body: requestBody,
-            mediaType: 'application/json',
+            url: '/api/sessions/{id}/suspend',
+            path: {
+                'id': id,
+            },
         });
     }
     /**
@@ -134,21 +135,7 @@ export class SessionsService {
     ): CancelablePromise<SessionResponse> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: `/api/sessions/${id}/start`,
-        });
-    }
-    /**
-     * Suspend an open session
-     * @param id
-     * @returns SessionResponse OK
-     * @throws ApiError
-     */
-    public static suspend(
-        id: string,
-    ): CancelablePromise<SessionResponse> {
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/api/sessions/{id}/suspend',
+            url: '/api/sessions/{id}/start',
             path: {
                 'id': id,
             },
@@ -224,6 +211,22 @@ export class SessionsService {
             path: {
                 'id': id,
             },
+        });
+    }
+    /**
+     * Schedule a session for a seller to start themselves later
+     * @param requestBody
+     * @returns SessionResponse Created
+     * @throws ApiError
+     */
+    public static schedule(
+        requestBody: CreateSessionRequest,
+    ): CancelablePromise<SessionResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/sessions/schedule',
+            body: requestBody,
+            mediaType: 'application/json',
         });
     }
 }

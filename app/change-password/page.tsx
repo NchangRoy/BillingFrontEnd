@@ -8,8 +8,6 @@ import {
   VisibilityOffOutlined,
   LoginOutlined
 } from "@mui/icons-material";
-import { ApiError, AuthService } from '@/src/src2/api';
-import { mapAuthToUpdatedSeller } from '@/src/Mappers/SellerAuthMapper';
 import { getStoredSeller } from '@/src/api/session';
 
 const PENDING_CHANGE_KEY = "pendingPasswordChange";
@@ -59,23 +57,10 @@ const ChangePasswordForm = () => {
       return;
     }
 
-    setIsSubmitting(true);
-    try {
-      const data = await AuthService.changePassword({
-        email: credentials.email,
-        currentPassword: credentials.currentPassword,
-        newPassword: formData.newPassword,
-      });
-      const sellerData = mapAuthToUpdatedSeller(data);
-      localStorage.setItem("seller", JSON.stringify(sellerData));
-      sessionStorage.removeItem(PENDING_CHANGE_KEY);
-      router.push("/dashboard");
-    } catch (err) {
-      const message = err instanceof ApiError ? (err.body?.message ?? err.message) : 'Password change failed';
-      setError(message);
-    } finally {
-      setIsSubmitting(false);
-    }
+    // TODO: the backend has no password-change endpoint yet (AuthController
+    // only exposes login/try-out/mfa/pin-login) — this form is disabled until
+    // that's implemented, rather than silently pretending to succeed.
+    setError('Password changes aren\'t available yet. Please contact an administrator to reset your password.');
   };
 
   const inputWrapper = "flex items-center gap-3 bg-gray-50 border border-gray-100 px-4 py-3 rounded-xl focus-within:border-secondary-mid focus-within:bg-white focus-within:ring-4 focus-within:ring-secondary-mid/5 transition-all duration-200";

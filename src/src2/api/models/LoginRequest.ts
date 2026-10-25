@@ -6,5 +6,6 @@ export type LoginRequest = {
     username?: string;
     password?: string;
     organizationId?: string;
+    tenantId?: string;
 };
 

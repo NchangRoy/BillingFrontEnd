@@ -3,5 +3,6 @@
 /* tslint:disable */
 /* eslint-disable */
 export type UpdateDelayRequest = {
-    delayMinutes: number;
+    delayMinutes?: number;
 };
+

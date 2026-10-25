@@ -3,11 +3,11 @@
 /* tslint:disable */
 /* eslint-disable */
 export type CreateSellerRequest = {
-    username: string;
+    username?: string;
     email: string;
-    firstName: string;
-    lastName: string;
-    role?: 'POS_SELLER' | 'SELLER' | 'AGENCY_MANAGER' | 'OWNER';
+    firstName?: string;
+    lastName?: string;
+    role?: string;
     agency?: string;
     salePoint?: string;
     permissions?: Array<string>;

@@ -3,10 +3,32 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { FournisseurResponse } from '../models/FournisseurResponse';
+import type { InviteClientRequest } from '../models/InviteClientRequest';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
 export class FournisseursService {
+    /**
+     * (Ré)envoyer les identifiants du portail fournisseur
+     * @param id
+     * @param requestBody
+     * @returns any OK
+     * @throws ApiError
+     */
+    public static inviteFournisseur(
+        id: string,
+        requestBody: InviteClientRequest,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/tiers/fournisseurs/{id}/invite',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
     /**
      * Lister tous les fournisseurs actifs
      * @returns FournisseurResponse OK

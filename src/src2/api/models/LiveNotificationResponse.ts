@@ -10,4 +10,12 @@ export type LiveNotificationResponse = {
     delayMinutes?: number;
     lastSentAt?: string;
     active?: boolean;
+    channel?: LiveNotificationResponse.channel;
 };
+export namespace LiveNotificationResponse {
+    export enum channel {
+        TELEGRAM = 'TELEGRAM',
+        EMAIL = 'EMAIL',
+    }
+}
+

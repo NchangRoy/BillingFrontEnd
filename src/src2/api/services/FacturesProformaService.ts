@@ -113,6 +113,23 @@ export class FacturesProformaService {
         });
     }
     /**
+     * Récupérer les factures proforma créées par un vendeur
+     * @param sellerId
+     * @returns ProformaInvoiceResponse OK
+     * @throws ApiError
+     */
+    public static getProformasBySellerId(
+        sellerId: string,
+    ): CancelablePromise<Array<ProformaInvoiceResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/factures-proforma/seller/{sellerId}',
+            path: {
+                'sellerId': sellerId,
+            },
+        });
+    }
+    /**
      * Récupérer les factures proforma par organisation
      * @param organizationId
      * @returns ProformaInvoiceResponse OK
@@ -160,23 +177,6 @@ export class FacturesProformaService {
             url: '/api/factures-proforma/agence/{agencyId}',
             path: {
                 'agencyId': agencyId,
-            },
-        });
-    }
-    /**
-     * Récupérer les factures proforma accessibles par un vendeur (via ses permissions)
-     * @param sellerId
-     * @returns ProformaInvoiceResponse OK
-     * @throws ApiError
-     */
-    public static getProformasBySellerId(
-        sellerId: string,
-    ): CancelablePromise<Array<ProformaInvoiceResponse>> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/factures-proforma/seller/{sellerId}',
-            path: {
-                'sellerId': sellerId,
             },
         });
     }

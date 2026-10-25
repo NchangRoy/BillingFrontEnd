@@ -26,8 +26,8 @@ export type BonLivraisonResponse = {
     updatedAt?: string;
     organizationId?: string;
     agencyId?: string;
-    partial?: boolean;
     docPermission?: DocPermissionResponse;
+    partial?: boolean;
 };
 export namespace BonLivraisonResponse {
     export enum statut {

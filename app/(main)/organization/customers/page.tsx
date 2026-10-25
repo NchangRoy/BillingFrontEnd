@@ -60,7 +60,7 @@ const CustomersAdminPage = () => {
     const org = getStoredSeller();
     if (!org?.organizationId) return;
     try {
-      const res = await CustomerAssignmentsService.listByOrganization(org.organizationId);
+      const res = await CustomerAssignmentsService.listByOrganization1(org.organizationId);
       const byClientId: Record<string, CustomerAssignmentResponse> = {};
       res.forEach((a) => { if (a.clientId) byClientId[a.clientId] = a; });
       setAssignments(byClientId);

@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import CloseIcon from "@mui/icons-material/Close";
 import { UserPlus } from "lucide-react";
-import { NotificationsService } from "@/src/src2/api";
+import { NotificationContactsService } from "@/src/src2/api";
 import { toast } from "sonner";
 
 interface Props {
@@ -36,7 +36,7 @@ const AddContactModal = ({ isOpen, onClose }: Props) => {
 
     setIsSaving(true);
     try {
-      await NotificationsService.addContact({ name: name.trim(), email: email.trim() });
+      await NotificationContactsService.addContact({ name: name.trim(), email: email.trim() });
       toast.success(`${name.trim()} was added — a Telegram invite link has been emailed to them.`);
       onClose(true);
     } catch (error: any) {

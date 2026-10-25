@@ -5,7 +5,7 @@ import {
   Search, MessageCircle, Mail, ChevronRight, MoreVertical,
   UserPlus, Ban, Trash2, CheckCircle2, Clock, ShieldOff,
 } from "lucide-react";
-import { NotificationsService, ContactResponse } from "@/src/src2/api";
+import { NotificationContactsService, ContactResponse } from "@/src/src2/api";
 import { toast } from "sonner";
 import TableSkeleton from "@/components/TableSkeleton";
 import EmptyState from "@/components/EmptyState";
@@ -43,7 +43,7 @@ const NotificationContactsPage = () => {
   const fetchContacts = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await NotificationsService.listContacts();
+      const res = await NotificationContactsService.listContacts();
       setContacts(res);
     } catch (error) {
       console.error("Error fetching notification contacts:", error);
@@ -67,8 +67,8 @@ const NotificationContactsPage = () => {
     setActiveMenuId(null);
     setMutatingId(contact.id);
     try {
-      await NotificationsService.blockContact(contact.id);
-      setContacts((prev) => prev.map((c) => (c.id === contact.id ? { ...c, status: ContactResponse.status.BLOCKED_BY_ADMIN } : c)));
+      await NotificationContactsService.blockContact(contact.id);
+      setContacts((prev) => prev.map((c) => (c.id === contact.id ? { ...c, status: "BLOCKED_BY_ADMIN" } : c)));
       toast.success(`${contact.name} will no longer receive notifications.`);
     } catch (error: any) {
       toast.error(error?.body?.message || "Failed to block contact. Please try again.");
@@ -83,7 +83,7 @@ const NotificationContactsPage = () => {
     setActiveMenuId(null);
     setMutatingId(contact.id);
     try {
-      await NotificationsService.removeContact(contact.id);
+      await NotificationContactsService.removeContact(contact.id);
       setContacts((prev) => prev.filter((c) => c.id !== contact.id));
       toast.success(`${contact.name} was removed.`);
     } catch (error: any) {
@@ -99,9 +99,9 @@ const NotificationContactsPage = () => {
     return contacts.filter((c) => [c.name, c.email].some((v) => v?.toLowerCase().includes(term)));
   }, [contacts, search]);
 
-  const activeCount = useMemo(() => contacts.filter((c) => c.status === ContactResponse.status.ACTIVE).length, [contacts]);
+  const activeCount = useMemo(() => contacts.filter((c) => c.status === "ACTIVE").length, [contacts]);
   const blockedCount = useMemo(
-    () => contacts.filter((c) => c.status === ContactResponse.status.BLOCKED_BY_ADMIN || c.status === ContactResponse.status.BLOCKED_BY_USER).length,
+    () => contacts.filter((c) => c.status === "BLOCKED_BY_ADMIN" || c.status === "BLOCKED_BY_USER").length,
     [contacts]
   );
 
@@ -182,7 +182,7 @@ const NotificationContactsPage = () => {
                 filteredContacts.map((contact) => {
                   const statusMeta = STATUS_STYLES[contact.status ?? ""] ?? STATUS_STYLES.PENDING;
                   const StatusIcon = statusMeta.icon;
-                  const isBlocked = contact.status === ContactResponse.status.BLOCKED_BY_ADMIN || contact.status === ContactResponse.status.BLOCKED_BY_USER;
+                  const isBlocked = contact.status === "BLOCKED_BY_ADMIN" || contact.status === "BLOCKED_BY_USER";
                   const isMutating = mutatingId === contact.id;
                   return (
                     <tr key={contact.id} className="hover:bg-secondary-super-light/40 transition-all group border-l-4 border-l-transparent hover:border-l-secondary-mid">

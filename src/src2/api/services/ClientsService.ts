@@ -3,10 +3,32 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { ClientResponse } from '../models/ClientResponse';
+import type { InviteClientRequest } from '../models/InviteClientRequest';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
 export class ClientsService {
+    /**
+     * (Ré)envoyer les identifiants du portail client
+     * @param id
+     * @param requestBody
+     * @returns any OK
+     * @throws ApiError
+     */
+    public static inviteClient(
+        id: string,
+        requestBody: InviteClientRequest,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/tiers/clients/{id}/invite',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
     /**
      * Lister tous les clients actifs
      * @returns ClientResponse OK
@@ -44,26 +66,6 @@ export class ClientsService {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/tiers/clients/count',
-        });
-    }
-    /**
-     * (Ré)envoyer les identifiants du portail client
-     * @param id
-     * @param requestBody
-     * @throws ApiError
-     */
-    public static inviteClient(
-        id: string,
-        requestBody: { email: string; name: string },
-    ): CancelablePromise<void> {
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/api/tiers/clients/{id}/invite',
-            path: {
-                'id': id,
-            },
-            body: requestBody,
-            mediaType: 'application/json',
         });
     }
 }

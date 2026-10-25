@@ -64,7 +64,7 @@ const LoginForm = () => {
     setIsSubmitting(true);
 
     try {
-      const data = await AuthService.login({
+      const data = await AuthService.login1({
         username: formData.username,
         password: formData.password,
       });
@@ -90,7 +90,7 @@ const LoginForm = () => {
     setError(null);
     setIsSubmitting(true);
     try {
-      const data = await AuthService.login({
+      const data = await AuthService.login1({
         username: formData.username,
         password: formData.password,
         organizationId,

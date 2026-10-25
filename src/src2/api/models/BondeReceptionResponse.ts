@@ -21,6 +21,8 @@ export type BondeReceptionResponse = {
     agenceDeTransport?: string;
     organizationId?: string;
     agencyId?: string;
+    envoyeParEmail?: boolean;
+    dateEnvoiEmail?: string;
     docPermission?: DocPermissionResponse;
 };
 export namespace BondeReceptionResponse {

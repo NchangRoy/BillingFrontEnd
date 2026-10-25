@@ -14,7 +14,7 @@ export const mapAuthToUpdatedSeller = (data: SellerAuthResponse): UpdatedSellerR
     Id: data.Id ?? '',
     username: data.username ?? '',
     email: (data as any).email ?? '',
-    role: (data.role as SellerRole) ?? SellerRole.SELLER,
+    role: (data.role as unknown as SellerRole) ?? SellerRole.SELLER,
     agency: data.agency ?? '',
     salePoint: data.salePoint ?? '',
 

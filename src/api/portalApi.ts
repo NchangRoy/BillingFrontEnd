@@ -69,6 +69,12 @@ export const PortalApi = {
 
   getQuotations: () => portalFetch<any[]>('/api/portal/quotations'),
   getInvoices: () => portalFetch<any[]>('/api/portal/invoices'),
+
+  // Kernel payment-order lookup (card/mobile-money gateway) — no dedicated
+  // /api/portal/* route for this, it's the same proxy endpoint the POS uses,
+  // just reachable here too since it has no auth restriction beyond a valid
+  // bearer token (this one's just a different auth realm's token).
+  getPaymentOrder: (orderId: string) => portalFetch<any>(`/api/payments/orders/${orderId}`),
   getPurchaseOrders: () => portalFetch<any[]>('/api/portal/purchase-orders'),
   getSupplierInvoices: () => portalFetch<any[]>('/api/portal/supplier-invoices'),
 

@@ -42,14 +42,13 @@ export type FactureResponse = {
     referalClientId?: string;
     organizationId?: string;
     agencyId?: string;
+    originType?: FactureResponse.originType;
+    sessionId?: string;
+    session?: SessionResponse;
     remiseGlobalePourcentage?: number;
     remiseGlobaleMontant?: number;
     createdBy?: string;
     createdByUsername?: string;
-    originType?: FactureResponse.originType;
-    sessionId?: string;
-    /** Populated only by the agency+session enrichment endpoint; undefined otherwise. */
-    session?: SessionResponse;
     validatedBy?: string;
     validatedByUsername?: string;
     validatedAt?: string;
@@ -59,10 +58,6 @@ export type FactureResponse = {
     docPermission?: DocPermissionResponse;
 };
 export namespace FactureResponse {
-    export enum originType {
-        POS = 'POS',
-        SALES = 'SALES',
-    }
     export enum etat {
         BROUILLON = 'BROUILLON',
         ENVOYE = 'ENVOYE',
@@ -71,6 +66,8 @@ export namespace FactureResponse {
         EN_RETARD = 'EN_RETARD',
         ANNULE = 'ANNULE',
         EN_ATTENTE = 'EN_ATTENTE',
+        ACCOUNT_PENDING = 'ACCOUNT_PENDING',
+        ACCOUNTED = 'ACCOUNTED',
     }
     export enum modeReglement {
         VIREMENT = 'VIREMENT',
@@ -82,6 +79,10 @@ export namespace FactureResponse {
         ORANGE_MONEY = 'ORANGE_MONEY',
         MOBILE_MONEY = 'MOBILE_MONEY',
         AUTRE = 'AUTRE',
+    }
+    export enum originType {
+        POS = 'POS',
+        SALES = 'SALES',
     }
 }
 

@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import CloseIcon from "@mui/icons-material/Close";
-import { UserPlus, Save } from "lucide-react";
+import { UserPlus, Save, Users, Mail } from "lucide-react";
 import { SellerAdminService, ApiError } from "@/src/src2/api";
+import { listOrganizationEmployees, createSellerFromEmployee, OrganizationEmployeeResponse } from "@/src/api/sellerEmployees";
 import { getStoredSeller } from "@/src/api/session";
 import { toast } from "sonner";
 
@@ -12,6 +13,7 @@ interface Props {
   onClose: (created: boolean) => void;
 }
 
+type Mode = "EMPLOYEE" | "INVITE";
 type SalesPersonnelRole = 'POS_SELLER' | 'SELLER' | 'AGENCY_MANAGER';
 
 const ROLE_OPTIONS: { value: SalesPersonnelRole; label: string; description: string }[] = [
@@ -20,74 +22,122 @@ const ROLE_OPTIONS: { value: SalesPersonnelRole; label: string; description: str
   { value: "AGENCY_MANAGER", label: "Agency Manager", description: "Manages an agency's sellers and sessions" },
 ];
 
-const emptyForm = {
-  firstName: "",
-  lastName: "",
-  username: "",
-  email: "",
-  role: "SELLER" as SalesPersonnelRole,
-};
+const inputWrapper = "flex items-center gap-3 bg-gray-50 border border-gray-100 px-4 py-3 rounded-xl focus-within:border-secondary-mid focus-within:bg-white focus-within:ring-4 focus-within:ring-secondary-mid/5 transition-all duration-200";
+const inputStyle = "bg-transparent border-none outline-none text-gray-700 w-full text-sm placeholder:text-gray-400";
+const label = "text-[11px] font-black uppercase tracking-widest text-gray-400 ml-1";
 
-// Strips accents/punctuation and joins as firstname.lastname, e.g. "Jean" "Dûpont" -> "jean.dupont"
-const generateUsername = (firstName: string, lastName: string) => {
-  const COMBINING_MARKS = /[̀-ͯ]/g;
-  const slugify = (value: string) =>
-    value
-      .normalize("NFD").replace(COMBINING_MARKS, "")
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "");
-  const first = slugify(firstName);
-  const last = slugify(lastName);
-  if (!first && !last) return "";
-  return [first, last].filter(Boolean).join(".");
-};
+const RoleGrid = ({ role, onChange }: { role: SalesPersonnelRole; onChange: (role: SalesPersonnelRole) => void }) => (
+  <div className="space-y-2">
+    <label className={label}>Role</label>
+    <div className="grid grid-cols-3 gap-3">
+      {ROLE_OPTIONS.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          onClick={() => onChange(option.value)}
+          className={`text-left p-3 rounded-xl border-2 transition-all ${
+            role === option.value
+              ? "border-secondary-mid bg-secondary-super-light/50"
+              : "border-gray-100 bg-white hover:border-gray-200"
+          }`}
+        >
+          <p className="text-sm font-black text-secondary">{option.label}</p>
+          <p className="text-[10px] text-gray-400 font-medium mt-0.5">{option.description}</p>
+        </button>
+      ))}
+    </div>
+  </div>
+);
+
+const extractErrorMessage = (error: unknown, fallback: string) =>
+  error instanceof ApiError ? (error.body?.message ?? error.message) : fallback;
 
 const CreateSellerModal = ({ isOpen, onClose }: Props) => {
-  const [form, setForm] = useState(emptyForm);
-  const [usernameEdited, setUsernameEdited] = useState(false);
+  const [mode, setMode] = useState<Mode>("EMPLOYEE");
   const [isSaving, setIsSaving] = useState(false);
+
+  // Invite-new mode state
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<SalesPersonnelRole>("SELLER");
+
+  // Add-from-employee mode state
+  const [employees, setEmployees] = useState<OrganizationEmployeeResponse[]>([]);
+  const [isLoadingEmployees, setIsLoadingEmployees] = useState(false);
+  const [employeesError, setEmployeesError] = useState<string | null>(null);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
+  const [employeeRole, setEmployeeRole] = useState<SalesPersonnelRole>("SELLER");
 
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
-      setForm(emptyForm);
-      setUsernameEdited(false);
+      setMode("EMPLOYEE");
+      setInviteEmail("");
+      setInviteRole("SELLER");
+      setSelectedEmployeeId("");
+      setEmployeeRole("SELLER");
+      setEmployeesError(null);
     } else {
       document.body.style.overflow = "unset";
     }
     return () => { document.body.style.overflow = "unset"; };
   }, [isOpen]);
 
-  const handleNameChange = (field: "firstName" | "lastName", value: string) => {
-    setForm((prev) => {
-      const next = { ...prev, [field]: value };
-      if (!usernameEdited) {
-        next.username = generateUsername(next.firstName, next.lastName);
-      }
-      return next;
-    });
-  };
+  useEffect(() => {
+    if (!isOpen || mode !== "EMPLOYEE") return;
+    const org = getStoredSeller();
+    if (!org?.organizationId) return;
+    setIsLoadingEmployees(true);
+    setEmployeesError(null);
+    listOrganizationEmployees(org.organizationId)
+      .then(setEmployees)
+      .catch((error) => setEmployeesError(extractErrorMessage(error, "Failed to load employees.")))
+      .finally(() => setIsLoadingEmployees(false));
+  }, [isOpen, mode]);
 
-  const handleSave = async () => {
+  const selectedEmployee = useMemo(
+    () => employees.find((e) => e.id === selectedEmployeeId) ?? null,
+    [employees, selectedEmployeeId]
+  );
+
+  const handleSaveInvite = async () => {
     const seller = getStoredSeller();
     if (!seller?.organizationId) return;
 
     setIsSaving(true);
     try {
       const res = await SellerAdminService.create1({
-        username: form.username,
-        email: form.email,
-        firstName: form.firstName,
-        lastName: form.lastName,
-        role: form.role,
+        email: inviteEmail,
+        role: inviteRole,
         organizationId: seller.organizationId,
         organizationName: seller.organizationName || undefined,
       });
       toast.success(`Sales personnel invited — an email with their login credentials has been sent. POS PIN: ${res.pin}`, { duration: 15000 });
       onClose(true);
     } catch (error) {
-      const message = error instanceof ApiError ? (error.body?.message ?? error.message) : "Failed to create seller. Please try again.";
-      toast.error(message);
+      toast.error(extractErrorMessage(error, "Failed to create seller. Please try again."));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveFromEmployee = async () => {
+    const seller = getStoredSeller();
+    if (!seller?.organizationId || !selectedEmployee) return;
+
+    setIsSaving(true);
+    try {
+      const res = await createSellerFromEmployee({
+        email: selectedEmployee.email || "",
+        firstName: selectedEmployee.firstName || "",
+        lastName: selectedEmployee.lastName || "",
+        role: employeeRole,
+        organizationId: seller.organizationId,
+        organizationName: seller.organizationName || undefined,
+      });
+      toast.success(`${selectedEmployee.firstName} ${selectedEmployee.lastName} added as a seller — active immediately. POS PIN: ${res.pin}`, { duration: 15000 });
+      onClose(true);
+    } catch (error) {
+      toast.error(extractErrorMessage(error, "Failed to add seller. Please try again."));
     } finally {
       setIsSaving(false);
     }
@@ -95,9 +145,8 @@ const CreateSellerModal = ({ isOpen, onClose }: Props) => {
 
   if (!isOpen) return null;
 
-  const inputWrapper = "flex items-center gap-3 bg-gray-50 border border-gray-100 px-4 py-3 rounded-xl focus-within:border-secondary-mid focus-within:bg-white focus-within:ring-4 focus-within:ring-secondary-mid/5 transition-all duration-200";
-  const inputStyle = "bg-transparent border-none outline-none text-gray-700 w-full text-sm placeholder:text-gray-400";
-  const label = "text-[11px] font-black uppercase tracking-widest text-gray-400 ml-1";
+  const canSaveEmployee = !!selectedEmployee && !selectedEmployee.alreadySeller;
+  const canSaveInvite = /\S+@\S+\.\S+/.test(inviteEmail);
 
   return (
     <div className="fixed inset-0 z-[100] flex justify-end items-stretch">
@@ -114,7 +163,7 @@ const CreateSellerModal = ({ isOpen, onClose }: Props) => {
             </div>
             <div>
               <h2 className="text-xl font-black text-secondary uppercase tracking-tight">New Sales Personnel</h2>
-              <p className="text-xs text-gray-400 font-bold">Invite sales personnel to this organization</p>
+              <p className="text-xs text-gray-400 font-bold">Add an existing employee, or invite someone new</p>
             </div>
           </div>
           <button onClick={() => onClose(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
@@ -122,90 +171,90 @@ const CreateSellerModal = ({ isOpen, onClose }: Props) => {
           </button>
         </div>
 
-        {/* BODY */}
-        <div className="flex-1 overflow-y-auto p-8 space-y-5 bg-gray-50/50">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className={label}>First Name</label>
-              <div className={inputWrapper}>
-                <input
-                  type="text"
-                  placeholder="John"
-                  className={inputStyle}
-                  required
-                  value={form.firstName}
-                  onChange={(e) => handleNameChange("firstName", e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className={label}>Last Name</label>
-              <div className={inputWrapper}>
-                <input
-                  type="text"
-                  placeholder="Doe"
-                  className={inputStyle}
-                  required
-                  value={form.lastName}
-                  onChange={(e) => handleNameChange("lastName", e.target.value)}
-                />
-              </div>
-            </div>
+        {/* MODE TABS */}
+        <div className="px-8 pt-5 bg-white shrink-0">
+          <div className="grid grid-cols-2 gap-2 bg-gray-50 border border-gray-100 rounded-xl p-1">
+            <button
+              type="button"
+              onClick={() => setMode("EMPLOYEE")}
+              className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${
+                mode === "EMPLOYEE" ? "bg-white shadow-sm text-secondary-mid" : "text-gray-400 hover:text-gray-600"
+              }`}
+            >
+              <Users size={14} /> Add from Employee
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("INVITE")}
+              className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${
+                mode === "INVITE" ? "bg-white shadow-sm text-secondary-mid" : "text-gray-400 hover:text-gray-600"
+              }`}
+            >
+              <Mail size={14} /> Invite Seller
+            </button>
           </div>
-
-          <div className="space-y-2">
-            <label className={label}>Role</label>
-            <div className="grid grid-cols-3 gap-3">
-              {ROLE_OPTIONS.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => setForm({ ...form, role: option.value })}
-                  className={`text-left p-3 rounded-xl border-2 transition-all ${
-                    form.role === option.value
-                      ? "border-secondary-mid bg-secondary-super-light/50"
-                      : "border-gray-100 bg-white hover:border-gray-200"
-                  }`}
-                >
-                  <p className="text-sm font-black text-secondary">{option.label}</p>
-                  <p className="text-[10px] text-gray-400 font-medium mt-0.5">{option.description}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className={label}>Username <span className="text-gray-300 normal-case font-medium">(auto-generated, editable)</span></label>
-            <div className={inputWrapper}>
-              <input
-                type="text"
-                placeholder="johndoe123"
-                className={inputStyle}
-                required
-                value={form.username}
-                onChange={(e) => { setUsernameEdited(true); setForm({ ...form, username: e.target.value }); }}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className={label}>Email</label>
-            <div className={inputWrapper}>
-              <input
-                type="email"
-                placeholder="seller@example.com"
-                className={inputStyle}
-                required
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <p className="text-xs text-gray-400 font-medium bg-secondary-super-light/50 rounded-xl px-4 py-3">
-            An invitation email with login credentials will be sent to this address.
-          </p>
         </div>
+
+        {/* BODY */}
+        {mode === "EMPLOYEE" ? (
+          <div className="flex-1 overflow-y-auto p-8 space-y-5 bg-gray-50/50">
+            <div className="space-y-2">
+              <label className={label}>Employee</label>
+              <select
+                className={`${inputWrapper} appearance-none cursor-pointer`}
+                value={selectedEmployeeId}
+                onChange={(e) => setSelectedEmployeeId(e.target.value)}
+                disabled={isLoadingEmployees || !!employeesError}
+              >
+                <option value="">{isLoadingEmployees ? "Loading employees…" : "Select an employee…"}</option>
+                {employees.map((emp) => (
+                  <option key={emp.id} value={emp.id} disabled={emp.alreadySeller}>
+                    {emp.firstName} {emp.lastName} — {emp.email}{emp.alreadySeller ? " (already a seller)" : ""}
+                  </option>
+                ))}
+              </select>
+              {employeesError && (
+                <p className="text-xs text-red-500 font-bold bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+                  {employeesError}
+                </p>
+              )}
+              {!isLoadingEmployees && !employeesError && employees.length === 0 && (
+                <p className="text-xs text-gray-400 font-medium px-1">No employees found for this organization.</p>
+              )}
+            </div>
+
+            {selectedEmployee && (
+              <>
+                <RoleGrid role={employeeRole} onChange={setEmployeeRole} />
+                <p className="text-xs text-gray-400 font-medium bg-secondary-super-light/50 rounded-xl px-4 py-3">
+                  This person already has Kernel login credentials — they'll be added as a seller and marked <span className="font-black text-secondary-mid">active</span> immediately. No invitation email is sent.
+                </p>
+              </>
+            )}
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto p-8 space-y-5 bg-gray-50/50">
+            <div className="space-y-2">
+              <label className={label}>Email</label>
+              <div className={inputWrapper}>
+                <input
+                  type="email"
+                  placeholder="seller@yowyob.com"
+                  className={inputStyle}
+                  required
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <RoleGrid role={inviteRole} onChange={setInviteRole} />
+
+            <p className="text-xs text-gray-400 font-medium bg-secondary-super-light/50 rounded-xl px-4 py-3">
+              This person will be invited into the organization and their seller account will be marked <span className="font-black text-secondary-mid">pending</span> until they accept. An invitation email with login credentials will be sent to this address.
+            </p>
+          </div>
+        )}
 
         {/* FOOTER */}
         <div className="p-6 border-t border-gray-100 bg-white flex justify-end items-center gap-4 shrink-0 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
@@ -215,14 +264,25 @@ const CreateSellerModal = ({ isOpen, onClose }: Props) => {
           >
             Discard
           </button>
-          <button
-            onClick={handleSave}
-            disabled={isSaving || !form.username || !form.email || !form.firstName || !form.lastName}
-            className="flex items-center gap-2 bg-secondary-mid hover:bg-secondary text-white px-8 py-3 rounded-xl font-black text-sm shadow-lg disabled:opacity-50 disabled:grayscale transition-all active:scale-95"
-          >
-            <Save size={18} />
-            {isSaving ? "INVITING…" : "INVITE SALES PERSONNEL"}
-          </button>
+          {mode === "EMPLOYEE" ? (
+            <button
+              onClick={handleSaveFromEmployee}
+              disabled={isSaving || !canSaveEmployee}
+              className="flex items-center gap-2 bg-secondary-mid hover:bg-secondary text-white px-8 py-3 rounded-xl font-black text-sm shadow-lg disabled:opacity-50 disabled:grayscale transition-all active:scale-95"
+            >
+              <Save size={18} />
+              {isSaving ? "ADDING…" : "ADD SELLER"}
+            </button>
+          ) : (
+            <button
+              onClick={handleSaveInvite}
+              disabled={isSaving || !canSaveInvite}
+              className="flex items-center gap-2 bg-secondary-mid hover:bg-secondary text-white px-8 py-3 rounded-xl font-black text-sm shadow-lg disabled:opacity-50 disabled:grayscale transition-all active:scale-95"
+            >
+              <Save size={18} />
+              {isSaving ? "INVITING…" : "INVITE SALES PERSONNEL"}
+            </button>
+          )}
         </div>
       </div>
     </div>

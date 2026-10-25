@@ -16,27 +16,6 @@ import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
 export class SellerAdminService {
     /**
-     * Update a seller's sale permissions and permitted sale sizes
-     * @param sellerId
-     * @param requestBody
-     * @returns SellerListItemResponse OK
-     * @throws ApiError
-     */
-    public static updatePermissions(
-        sellerId: string,
-        requestBody: UpdateSellerPermissionsRequest,
-    ): CancelablePromise<SellerListItemResponse> {
-        return __request(OpenAPI, {
-            method: 'PUT',
-            url: '/api/sellers/{sellerId}/permissions',
-            path: {
-                'sellerId': sellerId,
-            },
-            body: requestBody,
-            mediaType: 'application/json',
-        });
-    }
-    /**
      * Update a seller's profile image
      * @param sellerId
      * @param requestBody
@@ -58,19 +37,24 @@ export class SellerAdminService {
         });
     }
     /**
-     * Remove a seller from the organization
+     * Update a seller's sale permissions and permitted sale sizes
      * @param sellerId
+     * @param requestBody
+     * @returns SellerListItemResponse OK
      * @throws ApiError
      */
-    public static deleteSeller(
+    public static updatePermissions(
         sellerId: string,
-    ): CancelablePromise<void> {
+        requestBody: UpdateSellerPermissionsRequest,
+    ): CancelablePromise<SellerListItemResponse> {
         return __request(OpenAPI, {
-            method: 'DELETE',
-            url: '/api/sellers/{sellerId}',
+            method: 'PUT',
+            url: '/api/sellers/{sellerId}/permissions',
             path: {
                 'sellerId': sellerId,
             },
+            body: requestBody,
+            mediaType: 'application/json',
         });
     }
     /**
@@ -145,7 +129,24 @@ export class SellerAdminService {
         });
     }
     /**
-     * Assign a seller to an agency
+     * Get a seller's current agency assignment
+     * @param sellerId
+     * @returns AssignAgencyResponse OK
+     * @throws ApiError
+     */
+    public static getAgencyForSeller(
+        sellerId: string,
+    ): CancelablePromise<AssignAgencyResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/sellers/{sellerId}/agency',
+            path: {
+                'sellerId': sellerId,
+            },
+        });
+    }
+    /**
+     * Assign (or reassign) a seller to an agency
      * @param sellerId
      * @param requestBody
      * @returns AssignAgencyResponse OK
@@ -163,6 +164,79 @@ export class SellerAdminService {
             },
             body: requestBody,
             mediaType: 'application/json',
+        });
+    }
+    /**
+     * Remove a seller's agency assignment
+     * @param sellerId
+     * @returns void
+     * @throws ApiError
+     */
+    public static unassignAgency(
+        sellerId: string,
+    ): CancelablePromise<void> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/sellers/{sellerId}/agency',
+            path: {
+                'sellerId': sellerId,
+            },
+        });
+    }
+    /**
+     * Get the sellers assigned to an agency
+     * @param agencyId
+     * @param organizationId
+     * @returns SellerListItemResponse OK
+     * @throws ApiError
+     */
+    public static getSellersForAgency(
+        agencyId: string,
+        organizationId: string,
+    ): CancelablePromise<Array<SellerListItemResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/sellers/agency/{agencyId}',
+            path: {
+                'agencyId': agencyId,
+            },
+            query: {
+                'organizationId': organizationId,
+            },
+        });
+    }
+    /**
+     * List all seller-agency assignments for an organization
+     * @param organizationId
+     * @returns AssignAgencyResponse OK
+     * @throws ApiError
+     */
+    public static listAgencyAssignments(
+        organizationId: string,
+    ): CancelablePromise<Array<AssignAgencyResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/sellers/agency-assignments/organisation/{organizationId}',
+            path: {
+                'organizationId': organizationId,
+            },
+        });
+    }
+    /**
+     * Remove a seller from the organization
+     * @param sellerId
+     * @returns void
+     * @throws ApiError
+     */
+    public static deleteSeller(
+        sellerId: string,
+    ): CancelablePromise<void> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/sellers/{sellerId}',
+            path: {
+                'sellerId': sellerId,
+            },
         });
     }
 }

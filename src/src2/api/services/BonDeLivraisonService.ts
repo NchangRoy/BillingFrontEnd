@@ -130,12 +130,29 @@ export class BonDeLivraisonService {
         });
     }
     /**
+     * Récupérer les bons de livraison créés par un vendeur
+     * @param sellerId
+     * @returns BonLivraisonResponse OK
+     * @throws ApiError
+     */
+    public static getBySellerId4(
+        sellerId: string,
+    ): CancelablePromise<Array<BonLivraisonResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/bons-livraison/seller/{sellerId}',
+            path: {
+                'sellerId': sellerId,
+            },
+        });
+    }
+    /**
      * Récupérer les bons de livraison par organisation
      * @param organizationId
      * @returns BonLivraisonResponse OK
      * @throws ApiError
      */
-    public static getByOrganizationId4(
+    public static getByOrganizationId5(
         organizationId: string,
     ): CancelablePromise<Array<BonLivraisonResponse>> {
         return __request(OpenAPI, {
@@ -177,23 +194,6 @@ export class BonDeLivraisonService {
             url: '/api/bons-livraison/agence/{agencyId}',
             path: {
                 'agencyId': agencyId,
-            },
-        });
-    }
-    /**
-     * Récupérer les bons de livraison accessibles par un vendeur (via ses permissions)
-     * @param sellerId
-     * @returns BonLivraisonResponse OK
-     * @throws ApiError
-     */
-    public static getBySellerId4(
-        sellerId: string,
-    ): CancelablePromise<Array<BonLivraisonResponse>> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/bons-livraison/seller/{sellerId}',
-            path: {
-                'sellerId': sellerId,
             },
         });
     }

@@ -29,6 +29,22 @@ export class FactureFournisseurControllerService {
         });
     }
     /**
+     * @param id
+     * @returns any OK
+     * @throws ApiError
+     */
+    public static markAccounted(
+        id: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/facture-fournisseurs/{id}/accounted',
+            path: {
+                'id': id,
+            },
+        });
+    }
+    /**
      * @returns FactureFournisseurResponse OK
      * @throws ApiError
      */
@@ -54,11 +70,43 @@ export class FactureFournisseurControllerService {
         });
     }
     /**
+     * @param id
+     * @returns any OK
+     * @throws ApiError
+     */
+    public static sendToPortal2(
+        id: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/facture-fournisseurs/{id}/send-to-portal',
+            path: {
+                'id': id,
+            },
+        });
+    }
+    /**
+     * @param sellerId
+     * @returns FactureFournisseurResponse OK
+     * @throws ApiError
+     */
+    public static getBySellerId3(
+        sellerId: string,
+    ): CancelablePromise<Array<FactureFournisseurResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/facture-fournisseurs/seller/{sellerId}',
+            path: {
+                'sellerId': sellerId,
+            },
+        });
+    }
+    /**
      * @param organizationId
      * @returns FactureFournisseurResponse OK
      * @throws ApiError
      */
-    public static getByOrganizationId3(
+    public static getByOrganizationId4(
         organizationId: string,
     ): CancelablePromise<Array<FactureFournisseurResponse>> {
         return __request(OpenAPI, {
@@ -82,39 +130,6 @@ export class FactureFournisseurControllerService {
             url: '/api/facture-fournisseurs/agence/{agencyId}',
             path: {
                 'agencyId': agencyId,
-            },
-        });
-    }
-    /**
-     * Récupérer les factures fournisseur accessibles par un vendeur (via ses permissions)
-     * @param sellerId
-     * @returns FactureFournisseurResponse OK
-     * @throws ApiError
-     */
-    public static getBySellerId3(
-        sellerId: string,
-    ): CancelablePromise<Array<FactureFournisseurResponse>> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/facture-fournisseurs/seller/{sellerId}',
-            path: {
-                'sellerId': sellerId,
-            },
-        });
-    }
-    /**
-     * Envoyer la facture fournisseur au fournisseur via le portail (login requis)
-     * @param id
-     * @throws ApiError
-     */
-    public static sendToPortal1(
-        id: string,
-    ): CancelablePromise<void> {
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/api/facture-fournisseurs/{id}/send-to-portal',
-            path: {
-                'id': id,
             },
         });
     }

@@ -45,22 +45,6 @@ export class BondeReceptionControllerService {
         });
     }
     /**
-     * Notifier le fournisseur que ce bon de réception a été enregistré (login requis)
-     * @param id
-     * @throws ApiError
-     */
-    public static sendToPortal(
-        id: string,
-    ): CancelablePromise<void> {
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/api/v1/facturation/bon-receptions/{id}/send-to-portal',
-            path: {
-                'id': id,
-            },
-        });
-    }
-    /**
      * @param id
      * @returns any OK
      * @throws ApiError
@@ -102,6 +86,38 @@ export class BondeReceptionControllerService {
         });
     }
     /**
+     * @param id
+     * @returns any OK
+     * @throws ApiError
+     */
+    public static sendToPortal(
+        id: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/facturation/bon-receptions/{id}/send-to-portal',
+            path: {
+                'id': id,
+            },
+        });
+    }
+    /**
+     * @param sellerId
+     * @returns BondeReceptionResponse OK
+     * @throws ApiError
+     */
+    public static getBySellerId1(
+        sellerId: string,
+    ): CancelablePromise<Array<BondeReceptionResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/facturation/bon-receptions/seller/{sellerId}',
+            path: {
+                'sellerId': sellerId,
+            },
+        });
+    }
+    /**
      * @param organizationId
      * @returns BondeReceptionResponse OK
      * @throws ApiError
@@ -130,23 +146,6 @@ export class BondeReceptionControllerService {
             url: '/api/v1/facturation/bon-receptions/agence/{agencyId}',
             path: {
                 'agencyId': agencyId,
-            },
-        });
-    }
-    /**
-     * Récupérer les bons de réception accessibles par un vendeur (via ses permissions)
-     * @param sellerId
-     * @returns BondeReceptionResponse OK
-     * @throws ApiError
-     */
-    public static getBySellerId1(
-        sellerId: string,
-    ): CancelablePromise<Array<BondeReceptionResponse>> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/v1/facturation/bon-receptions/seller/{sellerId}',
-            path: {
-                'sellerId': sellerId,
             },
         });
     }

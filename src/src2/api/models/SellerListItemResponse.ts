@@ -8,7 +8,7 @@ export type SellerListItemResponse = {
     email?: string;
     firstName?: string;
     lastName?: string;
-    role?: 'POS_SELLER' | 'SELLER' | 'AGENCY_MANAGER' | 'OWNER';
+    role?: string;
     agency?: string;
     salePoint?: string;
     profileImageUrl?: string;

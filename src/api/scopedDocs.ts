@@ -86,24 +86,24 @@ export const getVisibleNoteCredits = (): Promise<NoteCreditResponse[]> =>
 
 export const getVisibleBonAchats = (): Promise<BonAchatResponse[]> =>
   pullAndCacheBonAchats(() =>
-    loadScoped(BonDAchatService.getByOrganizationId5, BonDAchatService.getByAgencyId5, BonDAchatService.getBySellerId5)
+    loadScoped(BonDAchatService.getByOrganizationId6, BonDAchatService.getByAgencyId5, BonDAchatService.getBySellerId5)
   );
 
 export const getVisibleBonCommandes = (): Promise<BonCommandeResponse[]> =>
   pullAndCacheBonCommandes(() =>
-    loadScoped(BonCommandeService.getByOrganizationId6, BonCommandeService.getByAgencyId6, BonCommandeService.getBySellerId6)
+    loadScoped(BonCommandeService.getByOrganizationId7, BonCommandeService.getByAgencyId6, BonCommandeService.getBySellerId6)
   );
 
 export const getVisibleBonLivraisons = (): Promise<BonLivraisonResponse[]> =>
   pullAndCacheBonLivraisons(() =>
-    loadScoped(BonDeLivraisonService.getByOrganizationId4, BonDeLivraisonService.getByAgencyId4, BonDeLivraisonService.getBySellerId4)
+    loadScoped(BonDeLivraisonService.getByOrganizationId5, BonDeLivraisonService.getByAgencyId4, BonDeLivraisonService.getBySellerId4)
   );
 
 export const getVisibleBonReceptions = (): Promise<BondeReceptionResponse[]> =>
   loadScoped(BondeReceptionControllerService.getByOrganizationId1, BondeReceptionControllerService.getByAgencyId1, BondeReceptionControllerService.getBySellerId1);
 
 export const getVisibleFacturesFournisseur = (): Promise<FactureFournisseurResponse[]> =>
-  loadScoped(FactureFournisseurControllerService.getByOrganizationId3, FactureFournisseurControllerService.getByAgencyId3, FactureFournisseurControllerService.getBySellerId3);
+  loadScoped(FactureFournisseurControllerService.getByOrganizationId4, FactureFournisseurControllerService.getByAgencyId3, FactureFournisseurControllerService.getBySellerId3);
 
 export const getVisiblePaiements = (): Promise<PaiementResponse[]> => {
   const seller = getStoredSeller();

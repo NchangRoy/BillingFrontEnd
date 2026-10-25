@@ -24,5 +24,6 @@ export type ProductResponse = {
     availableQuantity?: number;
     reservedQuantity?: number;
     organizationId?: string;
+    vatApplicable?: boolean;
 };
 

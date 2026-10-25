@@ -32,7 +32,7 @@ export class AgenciesService {
      * @returns KernelAgencyResponse Created
      * @throws ApiError
      */
-    public static create3(
+    public static create4(
         organizationId: string,
         requestBody: AgencyCreateRequest,
     ): CancelablePromise<KernelAgencyResponse> {
@@ -53,7 +53,7 @@ export class AgenciesService {
      * @returns KernelAgencyResponse OK
      * @throws ApiError
      */
-    public static getById3(
+    public static getById4(
         agencyId: string,
         organizationId: string,
     ): CancelablePromise<KernelAgencyResponse> {

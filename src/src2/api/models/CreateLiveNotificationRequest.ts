@@ -4,5 +4,15 @@
 /* eslint-disable */
 export type CreateLiveNotificationRequest = {
     contactIds?: Array<string>;
-    delayMinutes: number;
+    delayMinutes?: number;
+    channel?: CreateLiveNotificationRequest.channel;
+    active?: boolean;
+    organizationId?: string;
 };
+export namespace CreateLiveNotificationRequest {
+    export enum channel {
+        TELEGRAM = 'TELEGRAM',
+        EMAIL = 'EMAIL',
+    }
+}
+

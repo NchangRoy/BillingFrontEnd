@@ -100,22 +100,6 @@ export class DevisService {
         });
     }
     /**
-     * Envoyer le devis au client via le portail (login requis)
-     * @param devisId
-     * @throws ApiError
-     */
-    public static sendToPortal(
-        devisId: string,
-    ): CancelablePromise<void> {
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/api/devis/{devisId}/send-to-portal',
-            path: {
-                'devisId': devisId,
-            },
-        });
-    }
-    /**
      * Récupérer tous les devis
      * @returns DevisResponse OK
      * @throws ApiError
@@ -143,6 +127,23 @@ export class DevisService {
         });
     }
     /**
+     * Envoyer le devis au client via le portail (login requis)
+     * @param devisId
+     * @returns any OK
+     * @throws ApiError
+     */
+    public static sendToPortal3(
+        devisId: string,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/devis/{devisId}/send-to-portal',
+            path: {
+                'devisId': devisId,
+            },
+        });
+    }
+    /**
      * @param requestBody
      * @returns any OK
      * @throws ApiError
@@ -155,6 +156,23 @@ export class DevisService {
             url: '/api/devis/email',
             body: requestBody,
             mediaType: 'application/json',
+        });
+    }
+    /**
+     * Récupérer les devis créés par un vendeur
+     * @param sellerId
+     * @returns DevisResponse OK
+     * @throws ApiError
+     */
+    public static getDevisBySellerId(
+        sellerId: string,
+    ): CancelablePromise<Array<DevisResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/devis/seller/{sellerId}',
+            path: {
+                'sellerId': sellerId,
+            },
         });
     }
     /**
@@ -222,23 +240,6 @@ export class DevisService {
             url: '/api/devis/agence/{agencyId}',
             path: {
                 'agencyId': agencyId,
-            },
-        });
-    }
-    /**
-     * Récupérer les devis accessibles par un vendeur (via ses permissions)
-     * @param sellerId
-     * @returns DevisResponse OK
-     * @throws ApiError
-     */
-    public static getDevisBySellerId(
-        sellerId: string,
-    ): CancelablePromise<Array<DevisResponse>> {
-        return __request(OpenAPI, {
-            method: 'GET',
-            url: '/api/devis/seller/{sellerId}',
-            path: {
-                'sellerId': sellerId,
             },
         });
     }

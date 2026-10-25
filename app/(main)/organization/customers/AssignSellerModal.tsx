@@ -66,7 +66,7 @@ const AssignSellerModal = ({ isOpen, customer, onClose }: Props) => {
 
     setIsSaving(true);
     try {
-      await CustomerAssignmentsService.assign({
+      await CustomerAssignmentsService.assign1({
         clientId: customer.idClient,
         sellerId: selectedSellerId,
         sellerName: seller?.username,

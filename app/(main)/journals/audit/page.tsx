@@ -37,7 +37,7 @@ const SupplierInvoiceJournalPage = () => {
     }
     setLoading(true);
     Promise.all([
-      FactureFournisseurControllerService.getByOrganizationId3(seller.organizationId),
+      FactureFournisseurControllerService.getByOrganizationId4(seller.organizationId),
       AgenciesService.getAll3(seller.organizationId),
       SellerAdminService.getAll1(seller.organizationId),
     ])
