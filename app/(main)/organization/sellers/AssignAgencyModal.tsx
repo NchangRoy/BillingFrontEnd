@@ -79,7 +79,7 @@ const AssignAgencyModal = ({ isOpen, onClose, seller }: Props) => {
             </div>
             <div>
               <h2 className="text-xl font-black text-secondary uppercase tracking-tight">Assign Agency</h2>
-              <p className="text-xs text-gray-400 font-bold">{seller.username}</p>
+              <p className="text-xs text-gray-400 font-bold">{[seller.firstName, seller.lastName].filter(Boolean).join(" ") || seller.email}</p>
             </div>
           </div>
           <button onClick={() => onClose(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">

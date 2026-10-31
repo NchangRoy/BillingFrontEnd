@@ -34,6 +34,7 @@ import CreateQuotationModal from './CreateQuotationModal'
 import PrintPreviewModal from './PrintPreviewModal'
 import { UpdatedSalesOrderResponse } from '@/src/api/models/UpdatedSalesOrder'
 import { mapBackendArrayToUpdatedDevisArray } from '@/src/Mappers/DevisMapper'
+import { sortByDateDesc } from '@/src/utils/sortByDate'
 import { generateQuotationHTML } from '@/src/api/printGenerators/quotationPrint'
 import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse'
 import TableSkeleton from '@/components/TableSkeleton'
@@ -92,7 +93,7 @@ const Quotation = () => {
     try {
       const data = await getVisibleDevis();
       const transformed = mapBackendArrayToUpdatedDevisArray(data);
-      setQuotations(transformed);
+      setQuotations(sortByDateDesc(transformed));
     } catch (error) {
       console.error("Erreur lors du chargement des devis:", error);
       toast.error("Failed to load quotations. Please try again.")

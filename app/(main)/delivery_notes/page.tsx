@@ -28,9 +28,11 @@ import { UpdatedClientResponse } from '@/src/api/models/UpdatedClientResponse'
 // Logic Components
 import CreateDeliveryNoteModal from './CreateDeliveryNoteModal'
 import DeliveryNotePrintPreviewModal from './DeliveryNotePrintPreviewModal'
-import { BonDeLivraisonService, ClientsService } from '@/src/src2/api'
+import { BonDeLivraisonService } from '@/src/src2/api'
 import { getVisibleBonLivraisons } from '@/src/api/scopedDocs'
+import { getVisibleClients } from '@/src/api/scopedTiers'
 import { mapBackendArrayToDeliveryNoteList } from '@/src/Mappers/DeliveryNoteMapper'
+import { sortByDateDesc } from '@/src/utils/sortByDate'
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
 import EmptyState from '@/components/EmptyState'
@@ -75,7 +77,7 @@ const DeliveryNotes = () => {
   const { showLoader, hideLoader, showError } = useLoading()
 
   useEffect(() => {
-    ClientsService.getAllClients()
+    getVisibleClients()
       .then((data) => setClients(data as unknown as UpdatedClientResponse[]))
       .catch(() => toast.error("Failed to load clients."));
   }, []);
@@ -87,7 +89,7 @@ const DeliveryNotes = () => {
       try {
         const data = await getVisibleBonLivraisons()
         const transformed = mapBackendArrayToDeliveryNoteList(data)
-        setDeliveryNotes(transformed);
+        setDeliveryNotes(sortByDateDesc(transformed));
       } catch (error) {
         console.error("Erreur lors du chargement des devis:", error);
         toast.error("Failed to load delivery notes. Please try again.")

@@ -33,6 +33,7 @@ import { convertPurchaseOrderToGRN } from '@/src/api/transformation/purchaseOrde
 import { BonDAchatService } from '@/src/src2/api'
 import { getVisibleBonAchats } from '@/src/api/scopedDocs'
 import { mapBackendBAArrayToUIArray } from '@/src/Mappers/BonAchatMapper'
+import { sortByDateDesc } from '@/src/utils/sortByDate'
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
 import EmptyState from '@/components/EmptyState'
@@ -83,7 +84,7 @@ const PurchaseOrders = () => {
       try {
         const data = await getVisibleBonAchats()
         const transformed = mapBackendBAArrayToUIArray(data);
-        setOrders(transformed);
+        setOrders(sortByDateDesc(transformed));
       } catch (error) {
         console.error("Erreur lors du chargement des factures:", error);
         toast.error("Failed to load purchase orders. Please try again.")

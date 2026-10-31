@@ -8,6 +8,7 @@ import { Toaster } from 'sonner';
 import ClientProviders from '@/components/ClientProviders';
 import AuthGuard from '@/components/AuthGuard';
 import OutboxPanel from '@/components/OutboxPanel';
+import SessionAutoStart from '@/components/SessionAutoStart';
 
 export const metadata: Metadata = {
   title: 'Billing Enterprise ERP',
@@ -39,6 +40,7 @@ export default function RootLayout({
 
         <ClientProviders>
           <AuthGuard>
+            <SessionAutoStart />
             <div className='flex overflow-hidden' style={{ flex: '1 1 0', minHeight: 0 }}>
               <aside className='shrink-0 z-50 flex flex-col' style={{ alignSelf: 'stretch' }}>
                 <Sidebar/>

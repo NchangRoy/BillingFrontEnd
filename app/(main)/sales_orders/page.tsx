@@ -28,9 +28,11 @@ import { MOCK_SALES_ORDERS } from '@/src/api/models/UpdatedSalesOrder'
 import CreateSalesOrderModal from './CreateSalesOrderModal'
 import SalesOrderPrintPreviewModal from './SalesOrderPrintPreviewModal'
 import { mapSalesOrderToDeliveryNote, mapSalesOrderToFacture } from '@/src/api/transformation/saleorderTranformation'
-import { BonCommandeService, ClientsService } from '@/src/src2/api'
+import { BonCommandeService } from '@/src/src2/api'
 import { getVisibleBonCommandes } from '@/src/api/scopedDocs'
+import { getVisibleClients } from '@/src/api/scopedTiers'
 import { mapBonCommandeListToSalesOrderList } from '@/src/Mappers/BonCommandeMapper'
+import { sortByDateDesc } from '@/src/utils/sortByDate'
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
 import EmptyState from '@/components/EmptyState'
@@ -76,7 +78,7 @@ const SalesOrders = () => {
   const { showLoader, hideLoader, showError } = useLoading()
 
   useEffect(() => {
-    ClientsService.getAllClients()
+    getVisibleClients()
       .then((data) => setClients(data as unknown as UpdatedClientResponse[]))
       .catch(() => toast.error("Failed to load clients."));
   }, []);
@@ -88,7 +90,7 @@ const SalesOrders = () => {
       try {
         const data = await getVisibleBonCommandes()
         const transformed = mapBonCommandeListToSalesOrderList(data)
-        setOrders(transformed)
+        setOrders(sortByDateDesc(transformed))
       } catch (error) {
         console.error("Erreur lors du chargement des devis:", error);
         toast.error("Failed to load sales orders. Please try again.")

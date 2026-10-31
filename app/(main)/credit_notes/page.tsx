@@ -17,9 +17,11 @@ import PrintPreviewModal from './CreditNotePrintPreviewModal'
 import ShareDocModal from '@/components/ShareDocModal'
 import { useCanEditDocuments } from '@/src/hooks/useCanEditDocuments'
 import SyncStatusIndicator from '@/components/SyncStatusIndicator'
-import { NoteCreditControllerService, ClientsService } from '@/src/src2/api'
+import { NoteCreditControllerService } from '@/src/src2/api'
 import { getVisibleNoteCredits } from '@/src/api/scopedDocs'
+import { getVisibleClients } from '@/src/api/scopedTiers'
 import { mapCreditNoteArrayToInternalArray } from '@/src/Mappers/CreditNoteMapper'
+import { sortByDateDesc } from '@/src/utils/sortByDate'
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
 import EmptyState from '@/components/EmptyState'
@@ -61,7 +63,7 @@ const CreditNote = () => {
   const { showLoader, hideLoader, showError } = useLoading()
 
   useEffect(() => {
-    ClientsService.getAllClients()
+    getVisibleClients()
       .then((data) => setClients(data as unknown as UpdatedClientResponse[]))
       .catch(() => toast.error("Failed to load clients."));
   }, []);
@@ -74,7 +76,7 @@ const CreditNote = () => {
       try {
         const data = await getVisibleNoteCredits()
         const transformed = mapCreditNoteArrayToInternalArray(data)
-        setCreditNotes(transformed);
+        setCreditNotes(sortByDateDesc(transformed));
       } catch (error) {
         console.error("Erreur lors du chargement des factures:", error);
         toast.error("Failed to load credit notes. Please try again.")

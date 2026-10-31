@@ -13,6 +13,7 @@ import EmptyState from "@/components/EmptyState";
 import ActionButton from "@/components/ActionButton";
 import SaleConfigModal from "./SaleConfigModal";
 import AssignSellerModal from "./AssignSellerModal";
+import { sortByDateDesc } from "@/src/utils/sortByDate";
 
 const COLUMNS = ["Customer", "Contact", "Type", "Sale Sizes", "Assigned Seller", "Status", ""];
 
@@ -47,7 +48,7 @@ const CustomersAdminPage = () => {
     setLoading(true);
     try {
       const res = await ClientsService.getAllClients();
-      setCustomers(res);
+      setCustomers(sortByDateDesc(res));
     } catch (error) {
       console.error("Error fetching customers:", error);
       toast.error("Failed to load customers. Please try again.");

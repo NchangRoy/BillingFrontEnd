@@ -19,6 +19,7 @@ import { mapBackOrderArrayToUI } from '@/src/Mappers/BackOrderMapper'
 import { getVisibleClients } from '@/src/api/scopedTiers'
 import { getVisibleBackOrders } from '@/src/api/scopedDocs'
 import { mapBackOrderToDeliveryNote } from '@/src/api/transformation/backOrderTransformation'
+import { sortByDateDesc } from '@/src/utils/sortByDate'
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
 import EmptyState from '@/components/EmptyState'
@@ -69,7 +70,7 @@ const BackOrdersPage = () => {
       try {
         const data = await getVisibleBackOrders()
         const transformed = mapBackOrderArrayToUI(data)
-        setBackOrders(transformed)
+        setBackOrders(sortByDateDesc(transformed))
       } catch {
         toast.error("Failed to load back orders. Please try again.")
         showError('Failed to load back orders')

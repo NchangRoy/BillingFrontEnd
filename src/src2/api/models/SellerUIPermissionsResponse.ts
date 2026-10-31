@@ -9,6 +9,7 @@ export type SellerUIPermissionsResponse = {
     sellerId?: string;
     sectionSalesManagement?: boolean;
     salesQuotations?: boolean;
+    salesQuotationProposals?: boolean;
     salesProformaInvoice?: boolean;
     salesSalesOrders?: boolean;
     salesInvoices?: boolean;
@@ -35,6 +36,10 @@ export type SellerUIPermissionsResponse = {
     organizationProducts?: boolean;
     sectionSettings?: boolean;
     settingsPreferences?: boolean;
+    sectionProductSettings?: boolean;
+    productSettingsUom?: boolean;
+    productSettingsCategories?: boolean;
+    productSettingsProducts?: boolean;
     createdAt?: string;
     updatedAt?: string;
 };

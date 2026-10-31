@@ -18,6 +18,7 @@ import SupplierInvoicePrintPreviewModal from './SupplierInvoicePrintPreviewModal
 import { FactureFournisseurControllerService, FournisseursService } from '@/src/src2/api'
 import { getVisibleFacturesFournisseur } from '@/src/api/scopedDocs'
 import { mapBackendFactureFournisseurArrayToInternal } from '@/src/Mappers/SupplierFactureMapper'
+import { sortByDateDesc } from '@/src/utils/sortByDate'
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
 import EmptyState from '@/components/EmptyState'
@@ -89,7 +90,7 @@ const SupplierFactures = () => {
       try {
         const data = await getVisibleFacturesFournisseur()
         const transformed = mapBackendFactureFournisseurArrayToInternal(data)
-        setFactures(transformed);
+        setFactures(sortByDateDesc(transformed));
       } catch (error) {
         console.error("Erreur lors du chargement des devis:", error);
         toast.error("Failed to load supplier invoices. Please try again.")

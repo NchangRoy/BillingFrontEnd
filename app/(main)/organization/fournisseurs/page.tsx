@@ -13,6 +13,7 @@ import EmptyState from "@/components/EmptyState";
 import ActionButton from "@/components/ActionButton";
 import SaleConfigModal from "./SaleConfigModal";
 import AssignSellerModal from "./AssignSellerModal";
+import { sortByDateDesc } from "@/src/utils/sortByDate";
 
 const COLUMNS = ["Supplier", "Contact", "Type", "Sale Sizes", "Assigned Seller", "Status", ""];
 
@@ -46,7 +47,7 @@ const FournisseursAdminPage = () => {
     setLoading(true);
     try {
       const res = await FournisseursService.getAllFournisseurs();
-      setFournisseurs(res);
+      setFournisseurs(sortByDateDesc(res));
     } catch (error) {
       console.error("Error fetching fournisseurs:", error);
       toast.error("Failed to load suppliers. Please try again.");

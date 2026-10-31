@@ -51,14 +51,24 @@ export class QuotationProposalsService {
         });
     }
     /**
-     * Lister toutes les propositions de devis
+     * Lister les propositions de devis visibles par ce vendeur
+     * Scopé par rôle : un vendeur ne voit que ses propres clients assignés, un responsable d'agence voit ceux de toute son agence, un propriétaire voit tout.
+     * @param organizationId
+     * @param sellerId
      * @returns QuotationProposalResponse OK
      * @throws ApiError
      */
-    public static getAll5(): CancelablePromise<Array<QuotationProposalResponse>> {
+    public static getAll5(
+        organizationId: string,
+        sellerId: string,
+    ): CancelablePromise<Array<QuotationProposalResponse>> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/quotation-proposals',
+            query: {
+                'organizationId': organizationId,
+                'sellerId': sellerId,
+            },
         });
     }
     /**

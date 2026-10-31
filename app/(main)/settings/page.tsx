@@ -5,6 +5,13 @@ import { Image as ImageIcon, Hash, Save, ChevronRight, ChevronDown } from "lucid
 import { MediaService, SettingsService, SettingResponse } from "@/src/src2/api";
 import { getStoredSeller } from "@/src/api/session";
 import { toast } from "sonner";
+import AuthenticatedImage from "@/components/AuthenticatedImage";
+import {
+  getProductNumberingSettings,
+  updateProductNumberingSettings,
+  composeProductNumber,
+  ProductNumberingSettings,
+} from "@/src/api/productNumbering";
 
 const MEDIA_FILE_URL = (fileId: string) => `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/api/media/files/${fileId}`;
 
@@ -25,6 +32,22 @@ const toEditable = (s: SettingResponse): EditableRow => ({
   branchCode: s.branchCode ?? "",
   includeTva: s.includeTva ?? false,
   includeDate: s.includeDate ?? true,
+  randomSeq4: s.randomSeq4 ?? true,
+});
+
+type ProductNumberingDraft = {
+  includeCategory: boolean;
+  includeFamily: boolean;
+  includeUnit: boolean;
+  includeTva: boolean;
+  randomSeq4: boolean;
+};
+
+const toProductNumberingDraft = (s: ProductNumberingSettings): ProductNumberingDraft => ({
+  includeCategory: s.includeCategory ?? false,
+  includeFamily: s.includeFamily ?? false,
+  includeUnit: s.includeUnit ?? false,
+  includeTva: s.includeTva ?? false,
   randomSeq4: s.randomSeq4 ?? true,
 });
 
@@ -74,6 +97,9 @@ const SettingsPage = () => {
   const [drafts, setDrafts] = useState<Record<string, EditableRow>>({});
   const [expanded, setExpanded] = useState<string | null>(null);
   const [savingType, setSavingType] = useState<string | null>(null);
+  const [productNumbering, setProductNumbering] = useState<ProductNumberingSettings | null>(null);
+  const [productNumberingDraft, setProductNumberingDraft] = useState<ProductNumberingDraft | null>(null);
+  const [savingProductNumbering, setSavingProductNumbering] = useState(false);
   const organizationId = getStoredSeller()?.organizationId;
   const organizationName = getStoredSeller()?.organizationName;
 
@@ -84,15 +110,18 @@ const SettingsPage = () => {
     }
     setLoading(true);
     try {
-      const [orgSettings, seq] = await Promise.all([
+      const [orgSettings, seq, productNum] = await Promise.all([
         SettingsService.getOrganizationSettings(organizationId),
         SettingsService.listSequenceSettings(organizationId),
+        getProductNumberingSettings(organizationId),
       ]);
       setLogoUrl(orgSettings.uri);
       setSequences(seq);
       const initialDrafts: Record<string, EditableRow> = {};
       seq.forEach((s) => { if (s.typeNumerotation) initialDrafts[s.typeNumerotation] = toEditable(s); });
       setDrafts(initialDrafts);
+      setProductNumbering(productNum);
+      setProductNumberingDraft(toProductNumberingDraft(productNum));
     } catch (error) {
       console.error("Error fetching settings:", error);
       toast.error("Failed to load settings. Please try again.");
@@ -145,6 +174,25 @@ const SettingsPage = () => {
     }
   };
 
+  const updateProductNumberingDraft = (patch: Partial<ProductNumberingDraft>) => {
+    setProductNumberingDraft((prev) => (prev ? { ...prev, ...patch } : prev));
+  };
+
+  const handleSaveProductNumbering = async () => {
+    if (!organizationId || !productNumberingDraft) return;
+    setSavingProductNumbering(true);
+    try {
+      const updated = await updateProductNumberingSettings(organizationId, productNumberingDraft);
+      setProductNumbering(updated);
+      setProductNumberingDraft(toProductNumberingDraft(updated));
+      toast.success("Product numbering configuration saved successfully.");
+    } catch (error) {
+      toast.error("Failed to save product numbering configuration. Please try again.");
+    } finally {
+      setSavingProductNumbering(false);
+    }
+  };
+
   const checkboxStyle = "w-4 h-4 rounded border-gray-300 text-secondary-mid focus:ring-secondary-mid cursor-pointer";
   const inputStyle = "bg-gray-50 border border-gray-100 px-3 py-1.5 rounded-lg text-sm text-gray-700 outline-none focus:border-secondary-mid focus:bg-white transition-all w-28";
 
@@ -184,8 +232,16 @@ const SettingsPage = () => {
               className="flex items-center gap-6 cursor-pointer w-fit"
             >
               {logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={logoUrl} alt="Company logo" className="w-24 h-24 rounded-2xl object-cover border border-secondary-light bg-white" />
+                <AuthenticatedImage
+                  src={logoUrl}
+                  alt="Company logo"
+                  className="w-24 h-24 rounded-2xl object-cover border border-secondary-light bg-white"
+                  fallback={
+                    <div className="w-24 h-24 rounded-2xl bg-secondary-super-light flex items-center justify-center border-2 border-dashed border-secondary-light">
+                      <ImageIcon size={28} className="text-secondary-mid" />
+                    </div>
+                  }
+                />
               ) : (
                 <div className="w-24 h-24 rounded-2xl bg-secondary-super-light flex items-center justify-center border-2 border-dashed border-secondary-light">
                   <ImageIcon size={28} className="text-secondary-mid" />
@@ -298,6 +354,67 @@ const SettingsPage = () => {
               })}
             </div>
           </div>
+
+          {/* PRODUCT NUMBERING */}
+          {productNumberingDraft && (
+            <div className="bg-white rounded-[2rem] shadow-sm border border-secondary-light overflow-hidden">
+              <div className="flex items-center gap-3 p-8 pb-4">
+                <div className="p-2 bg-secondary-super-light rounded-lg text-secondary-mid">
+                  <Hash size={20} />
+                </div>
+                <div>
+                  <h2 className="text-lg font-black text-primary">Product Numbering</h2>
+                  <p className="text-xs text-secondary-gray font-medium">
+                    Choose which segments compose a new sellable product&apos;s generated number.
+                    Format: PROD-category-family-VAT-unit-sequence. Category, family, and unit come from what you pick when creating the product; VAT comes from its VAT Applicable toggle.
+                  </p>
+                </div>
+              </div>
+
+              <div className="px-8 pb-6 pt-2">
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <label className="flex items-center gap-2.5 cursor-pointer">
+                    <input type="checkbox" className={checkboxStyle} checked={productNumberingDraft.includeCategory} onChange={(e) => updateProductNumberingDraft({ includeCategory: e.target.checked })} />
+                    <span className="text-sm text-gray-600 font-medium">Include category code</span>
+                  </label>
+
+                  <label className="flex items-center gap-2.5 cursor-pointer">
+                    <input type="checkbox" className={checkboxStyle} checked={productNumberingDraft.includeFamily} onChange={(e) => updateProductNumberingDraft({ includeFamily: e.target.checked })} />
+                    <span className="text-sm text-gray-600 font-medium">Include family code</span>
+                  </label>
+
+                  <label className="flex items-center gap-2.5 cursor-pointer">
+                    <input type="checkbox" className={checkboxStyle} checked={productNumberingDraft.includeTva} onChange={(e) => updateProductNumberingDraft({ includeTva: e.target.checked })} />
+                    <span className="text-sm text-gray-600 font-medium">Include VAT status (NT / T)</span>
+                  </label>
+
+                  <label className="flex items-center gap-2.5 cursor-pointer">
+                    <input type="checkbox" className={checkboxStyle} checked={productNumberingDraft.includeUnit} onChange={(e) => updateProductNumberingDraft({ includeUnit: e.target.checked })} />
+                    <span className="text-sm text-gray-600 font-medium">Include unit of measure code</span>
+                  </label>
+
+                  <label className="flex items-center gap-2.5 cursor-pointer">
+                    <input type="checkbox" className={checkboxStyle} checked={productNumberingDraft.randomSeq4} onChange={(e) => updateProductNumberingDraft({ randomSeq4: e.target.checked })} />
+                    <span className="text-sm text-gray-600 font-medium">Include 4-digit sequence</span>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="text-xs text-secondary-gray font-bold">
+                    Preview: <span className="font-mono text-primary">{composeProductNumber(productNumberingDraft, "CAT", "FAM", "PCS", false)}</span>
+                  </div>
+                  <button
+                    onClick={handleSaveProductNumbering}
+                    disabled={savingProductNumbering}
+                    className="flex items-center gap-2 bg-secondary-mid hover:bg-secondary text-white px-5 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm disabled:opacity-50 transition-all active:scale-95"
+                  >
+                    <Save size={13} />
+                    {savingProductNumbering ? "Saving…" : "Save"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

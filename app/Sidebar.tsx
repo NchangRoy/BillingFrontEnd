@@ -31,7 +31,10 @@ import {
   PlayCircleOutline as SessionsIcon,
   Inventory2 as ProductsIcon,
   Settings as SettingsIcon,
-  NotificationsActive as NotificationContactsIcon
+  NotificationsActive as NotificationContactsIcon,
+  Straighten as UomIcon,
+  Category as CategoryIcon,
+  Tune as ProductSettingsSectionIcon
 } from "@mui/icons-material";
 
 const iconMap: Record<string, React.ElementType> = {
@@ -60,7 +63,10 @@ const iconMap: Record<string, React.ElementType> = {
   SessionsIcon,
   ProductsIcon,
   SettingsIcon,
-  NotificationContactsIcon
+  NotificationContactsIcon,
+  UomIcon,
+  CategoryIcon,
+  ProductSettingsSectionIcon
 };
 
 const MENU_SECTIONS = [
@@ -113,6 +119,16 @@ const MENU_SECTIONS = [
       { content: "Sale Points", Icon: "SalesPointsIcon", path: "/organization/salespoints" },
       { content: "Sessions", Icon: "SessionsIcon", path: "/organization/sessions" },
       { content: "Products", Icon: "ProductsIcon", path: "/organization/products" },
+    ],
+  },
+  {
+    id: "product-settings",
+    label: "Product Settings",
+    icon: "ProductSettingsSectionIcon",
+    items: [
+      { content: "Units of Measure", Icon: "UomIcon", path: "/product-settings/uom" },
+      { content: "Categories", Icon: "CategoryIcon", path: "/product-settings/categories" },
+      { content: "Products", Icon: "ProductsIcon", path: "/product-settings/products" },
     ],
   },
   {

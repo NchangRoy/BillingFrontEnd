@@ -145,7 +145,8 @@ const CreateSellerModal = ({ isOpen, onClose }: Props) => {
 
   if (!isOpen) return null;
 
-  const canSaveEmployee = !!selectedEmployee && !selectedEmployee.alreadySeller;
+  const canSaveEmployee = !!selectedEmployee && !selectedEmployee.alreadySeller
+    && (selectedEmployee.status == null || selectedEmployee.status === "ACTIVE");
   const canSaveInvite = /\S+@\S+\.\S+/.test(inviteEmail);
 
   return (
@@ -207,11 +208,16 @@ const CreateSellerModal = ({ isOpen, onClose }: Props) => {
                 disabled={isLoadingEmployees || !!employeesError}
               >
                 <option value="">{isLoadingEmployees ? "Loading employees…" : "Select an employee…"}</option>
-                {employees.map((emp) => (
-                  <option key={emp.id} value={emp.id} disabled={emp.alreadySeller}>
-                    {emp.firstName} {emp.lastName} — {emp.email}{emp.alreadySeller ? " (already a seller)" : ""}
-                  </option>
-                ))}
+                {employees.map((emp) => {
+                  const isRemoved = emp.status != null && emp.status !== "ACTIVE";
+                  const isUnselectable = emp.alreadySeller || isRemoved;
+                  return (
+                    <option key={emp.id} value={emp.id} disabled={isUnselectable}>
+                      {emp.firstName} {emp.lastName} — {emp.email}
+                      {emp.alreadySeller ? " (already a seller)" : isRemoved ? ` (${emp.status?.toLowerCase()})` : ""}
+                    </option>
+                  );
+                })}
               </select>
               {employeesError && (
                 <p className="text-xs text-red-500 font-bold bg-red-50 border border-red-100 rounded-xl px-4 py-3">

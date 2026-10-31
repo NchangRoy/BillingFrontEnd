@@ -55,7 +55,7 @@ const AssignSellerModal = ({ isOpen, customer, onClose }: Props) => {
     const term = search.trim().toLowerCase();
     if (!term) return sellers;
     return sellers.filter((s) =>
-      [s.username, s.role].some((v) => v?.toLowerCase().includes(term))
+      [s.firstName, s.lastName, s.role].some((v) => v?.toLowerCase().includes(term))
     );
   }, [sellers, search]);
 
@@ -66,13 +66,14 @@ const AssignSellerModal = ({ isOpen, customer, onClose }: Props) => {
 
     setIsSaving(true);
     try {
+      const sellerName = [seller?.firstName, seller?.lastName].filter(Boolean).join(" ") || seller?.email;
       await CustomerAssignmentsService.assign1({
         clientId: customer.idClient,
         sellerId: selectedSellerId,
-        sellerName: seller?.username,
+        sellerName,
         organizationId: org.organizationId,
       });
-      toast.success(`${customer.raisonSociale || customer.username} assigned to ${seller?.username}.`);
+      toast.success(`${customer.raisonSociale || customer.username} assigned to ${sellerName}.`);
       onClose(true);
     } catch (error) {
       toast.error("Failed to assign seller. Please try again.");
@@ -137,7 +138,7 @@ const AssignSellerModal = ({ isOpen, customer, onClose }: Props) => {
                       }`}
                     >
                       <div className="min-w-0">
-                        <span className="text-sm font-bold text-gray-700 truncate block">{seller.username}</span>
+                        <span className="text-sm font-bold text-gray-700 truncate block">{[seller.firstName, seller.lastName].filter(Boolean).join(" ") || seller.email}</span>
                         {seller.role && (
                           <span className="text-[11px] text-gray-400 font-medium">
                             {ROLE_LABELS[seller.role] || seller.role.replace(/_/g, " ")}

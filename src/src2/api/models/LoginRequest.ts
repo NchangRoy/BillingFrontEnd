@@ -7,5 +7,6 @@ export type LoginRequest = {
     password?: string;
     organizationId?: string;
     tenantId?: string;
+    planType?: string;
 };
 

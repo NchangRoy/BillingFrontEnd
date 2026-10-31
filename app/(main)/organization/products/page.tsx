@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Search, Package, Tag, Barcode, Ruler,
+  Search, Package, Tag, Barcode, Ruler, PackagePlus,
   CheckCircle2, XCircle, ChevronRight, MoreVertical, ImagePlus, SlidersHorizontal
 } from "lucide-react";
 import { MediaService, ProductsService, ProductResponse } from "@/src/src2/api";
@@ -13,18 +13,23 @@ import EmptyState from "@/components/EmptyState";
 import ActionButton from "@/components/ActionButton";
 import UploadProductPhotoModal from "./UploadProductPhotoModal";
 import SaleSizeConfigModal from "./SaleSizeConfigModal";
+import CreateProductModal from "./CreateProductModal";
+import { ProductResponseWithNumber } from "@/src/api/productDefinitions";
+import AuthenticatedImage from "@/components/AuthenticatedImage";
+import { sortByDateDesc } from "@/src/utils/sortByDate";
 
-const COLUMNS = ["Product", "Category", "Reference", "Unit Price", "Stock", "Status", ""];
+const COLUMNS = ["Product", "Category", "Product Number", "Cost", "Stock", ""];
 const MEDIA_FILE_URL = (fileId: string) => `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/api/media/files/${fileId}`;
 
 const ProductsAdminPage = () => {
-  const [products, setProducts] = useState<ProductResponse[]>([]);
+  const [products, setProducts] = useState<ProductResponseWithNumber[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [photoByProductId, setPhotoByProductId] = useState<Record<string, string>>({});
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [photoProduct, setPhotoProduct] = useState<ProductResponse | null>(null);
   const [saleSizeProduct, setSaleSizeProduct] = useState<ProductResponse | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -62,8 +67,9 @@ const ProductsAdminPage = () => {
     setLoading(true);
     try {
       const res = await ProductsService.getProductsByOrganization(seller.organizationId);
-      setProducts(res);
-      fetchProductPhotos(res);
+      const sorted = sortByDateDesc(res);
+      setProducts(sorted);
+      fetchProductPhotos(sorted);
     } catch (error) {
       console.error("Error fetching products:", error);
       toast.error("Failed to load products. Please try again.");
@@ -90,6 +96,13 @@ const ProductsAdminPage = () => {
     setSaleSizeProduct(null);
     if (updated && productId && saleSizes) {
       setProducts((prev) => prev.map((p) => (p.idProduit === productId ? { ...p, allowedSaleSizes: saleSizes } : p)));
+    }
+  };
+
+  const handleCreateModalClose = (created: boolean, product?: ProductResponseWithNumber) => {
+    setIsCreateModalOpen(false);
+    if (created && product) {
+      setProducts((prev) => [product, ...prev]);
     }
   };
 
@@ -136,6 +149,12 @@ const ProductsAdminPage = () => {
             <span className="text-xs font-black text-primary">{outOfStockCount}</span>
             <span className="text-[10px] font-bold text-secondary-gray uppercase tracking-widest">Out of Stock</span>
           </div>
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="flex items-center gap-2 bg-white border-2 border-secondary-mid text-secondary-mid px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-secondary-mid hover:text-white transition-all duration-300 shadow-sm"
+          >
+            <PackagePlus size={16} /> Add Product
+          </button>
         </div>
       </div>
 
@@ -180,8 +199,16 @@ const ProductsAdminPage = () => {
                     <td className="px-8 py-5">
                       <div className="flex items-center gap-3">
                         {photoUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={photoUrl} alt={product.nomProduit ?? ""} className="w-9 h-9 rounded-lg object-cover shrink-0 border border-secondary-light" />
+                          <AuthenticatedImage
+                            src={photoUrl}
+                            alt={product.nomProduit ?? ""}
+                            className="w-9 h-9 rounded-lg object-cover shrink-0 border border-secondary-light"
+                            fallback={
+                              <div className="w-9 h-9 rounded-lg bg-secondary-super-light flex items-center justify-center shrink-0">
+                                <Package size={16} className="text-secondary-mid" />
+                              </div>
+                            }
+                          />
                         ) : (
                           <div className="w-9 h-9 rounded-lg bg-secondary-super-light flex items-center justify-center shrink-0">
                             <Package size={16} className="text-secondary-mid" />
@@ -204,33 +231,24 @@ const ProductsAdminPage = () => {
                     </td>
                     <td className="px-8 py-5">
                       <div className="flex flex-col gap-1 text-[11px] font-bold text-secondary-gray">
-                        {product.reference && <span>{product.reference}</span>}
+                        {(product.productNumber || product.reference) && (
+                          <span className="font-mono">{product.productNumber || product.reference}</span>
+                        )}
                         {product.codeBarre && (
                           <span className="flex items-center gap-1"><Barcode size={10} /> {product.codeBarre}</span>
                         )}
-                        {!product.reference && !product.codeBarre && "-"}
+                        {!product.productNumber && !product.reference && !product.codeBarre && "-"}
                       </div>
                     </td>
                     <td className="px-8 py-5">
                       <span className="font-black text-primary">
-                        {product.prixVente?.toLocaleString() ?? "0"} <span className="text-[10px] text-secondary-gray uppercase">XAF</span>
+                        {product.cout?.toLocaleString() ?? "0"} <span className="text-[10px] text-secondary-gray uppercase">XAF</span>
                       </span>
                     </td>
                     <td className="px-8 py-5">
                       <span className={`text-sm font-bold ${(product.stockQuantity ?? 0) <= 0 ? "text-red-500" : "text-primary"}`}>
                         {product.stockQuantity ?? "-"}
                       </span>
-                    </td>
-                    <td className="px-8 py-5">
-                      {product.active ? (
-                        <span className="flex items-center gap-1.5 px-3 py-1 w-fit bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-lg text-[10px] font-black uppercase tracking-widest">
-                          <CheckCircle2 size={11} /> Active
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1.5 px-3 py-1 w-fit bg-red-50 text-red-500 border border-red-200 rounded-lg text-[10px] font-black uppercase tracking-widest">
-                          <XCircle size={11} /> Inactive
-                        </span>
-                      )}
                     </td>
                     <td className="px-6 py-4 text-right relative">
                       <button
@@ -276,6 +294,7 @@ const ProductsAdminPage = () => {
 
       <UploadProductPhotoModal isOpen={!!photoProduct} product={photoProduct} onClose={handlePhotoModalClose} />
       <SaleSizeConfigModal isOpen={!!saleSizeProduct} product={saleSizeProduct} onClose={handleSaleSizeModalClose} />
+      <CreateProductModal isOpen={isCreateModalOpen} onClose={handleCreateModalClose} />
     </div>
   );
 };

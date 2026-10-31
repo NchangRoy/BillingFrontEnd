@@ -158,6 +158,11 @@ const ShareDocModal = ({ isOpen, docId, docType, docLabel, onClose }: Props) => 
     return allSellers.find((s) => s.id === sellerId);
   };
 
+  const displayName = (s?: { firstName?: string; lastName?: string; email?: string; username?: string }) => {
+    if (!s) return undefined;
+    return [s.firstName, s.lastName].filter(Boolean).join(" ") || s.email || s.username;
+  };
+
   const sortedAccessList = useMemo(() => {
     return [...accessList].sort((a, b) =>
       (PERMISSION_RANK[a.permission ?? "VIEWER"] ?? 3) - (PERMISSION_RANK[b.permission ?? "VIEWER"] ?? 3)
@@ -172,7 +177,7 @@ const ShareDocModal = ({ isOpen, docId, docType, docLabel, onClose }: Props) => 
     const term = search.trim().toLowerCase();
     if (!term) return shareCandidates;
     return shareCandidates.filter((s) =>
-      [s.username, s.role, s.email].some((v) => v?.toLowerCase().includes(term))
+      [s.firstName, s.lastName, s.role, s.email].some((v) => v?.toLowerCase().includes(term))
     );
   }, [shareCandidates, search]);
 
@@ -188,9 +193,9 @@ const ShareDocModal = ({ isOpen, docId, docType, docLabel, onClose }: Props) => 
         docType: docType as unknown as AssignDocPermissionRequest.docType,
         permission: newPermission as unknown as AssignDocPermissionRequest.permission,
         recipientEmail: seller?.email,
-        recipientName: seller?.username,
+        recipientName: displayName(seller),
       });
-      toast.success(`Updated ${seller?.username || "seller"} to ${newPermission.toLowerCase()}.`);
+      toast.success(`Updated ${displayName(seller) || "seller"} to ${newPermission.toLowerCase()}.`);
       loadAccessList();
     } catch {
       toast.error("Failed to update permission. Please try again.");
@@ -206,7 +211,7 @@ const ShareDocModal = ({ isOpen, docId, docType, docLabel, onClose }: Props) => 
     setOpenMenuForSellerId(null);
     try {
       await DocumentPermissionsService.revoke(sellerId, docId, docType);
-      toast.success(`Removed ${seller?.username || "seller"}'s access.`);
+      toast.success(`Removed ${displayName(seller) || "seller"}'s access.`);
       setAccessList((prev) => prev.filter((p) => p.sellerId !== sellerId));
     } catch {
       toast.error("Failed to remove access. Please try again.");
@@ -234,11 +239,11 @@ const ShareDocModal = ({ isOpen, docId, docType, docLabel, onClose }: Props) => 
         docType: docType as unknown as AssignDocPermissionRequest.docType,
         permission: permission as unknown as AssignDocPermissionRequest.permission,
         recipientEmail: seller?.email,
-        recipientName: seller?.username,
+        recipientName: displayName(seller),
         sharedByName: currentSeller?.username,
         docLabel,
       });
-      toast.success(`${docLabel || "Document"} shared with ${seller?.username} as ${permission.toLowerCase()}.`);
+      toast.success(`${docLabel || "Document"} shared with ${displayName(seller)} as ${permission.toLowerCase()}.`);
       setSelectedSellerId(undefined);
       setSearch("");
       loadAccessList();
@@ -296,11 +301,11 @@ const ShareDocModal = ({ isOpen, docId, docType, docLabel, onClose }: Props) => 
                       <div key={entry.sellerId} className="px-4 py-3 flex items-center justify-between gap-3">
                         <div className="min-w-0 flex items-center gap-2.5">
                           <span className="w-7 h-7 rounded-full bg-secondary-super-light text-secondary-mid flex items-center justify-center text-xs font-black shrink-0">
-                            {(seller?.username || seller?.email || "?").charAt(0).toUpperCase()}
+                            {(displayName(seller) || "?").charAt(0).toUpperCase()}
                           </span>
                           <div className="min-w-0">
-                            <span className="text-sm font-bold text-gray-700 truncate block">{seller?.username || seller?.email || entry.sellerId}</span>
-                            {seller?.username && seller?.email && (
+                            <span className="text-sm font-bold text-gray-700 truncate block">{displayName(seller) || entry.sellerId}</span>
+                            {displayName(seller) && seller?.email && (seller.firstName || seller.lastName) && (
                               <span className="text-[11px] text-gray-400 font-medium truncate block">{seller.email}</span>
                             )}
                           </div>
@@ -406,7 +411,7 @@ const ShareDocModal = ({ isOpen, docId, docType, docLabel, onClose }: Props) => 
                         }`}
                       >
                         <div className="min-w-0">
-                          <span className="text-sm font-bold text-gray-700 truncate block">{seller.username}</span>
+                          <span className="text-sm font-bold text-gray-700 truncate block">{displayName(seller)}</span>
                           <span className="text-[11px] text-gray-400 font-medium">
                             {seller.role ? (ROLE_LABELS[seller.role] || seller.role.replace(/_/g, " ")) : ""}
                             {seller.email ? ` · ${seller.email}` : ""}

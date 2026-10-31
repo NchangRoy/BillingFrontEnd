@@ -13,17 +13,18 @@ interface Props {
 }
 
 type PageKey =
-  | "salesQuotations" | "salesProformaInvoice" | "salesSalesOrders" | "salesInvoices"
+  | "salesQuotations" | "salesQuotationProposals" | "salesProformaInvoice" | "salesSalesOrders" | "salesInvoices"
   | "salesDeliveryNote" | "salesCreditNotes" | "salesBackOrders"
   | "purchasingPurchaseOrder" | "purchasingGoodsReceiptNote" | "purchasingSupplierInvoice"
   | "journalsQuotation" | "journalsSaleOrder" | "journalsPurchaseOrder" | "journalsClientInvoice" | "journalsSupplierInvoice"
   | "organizationAgencies" | "organizationSellers" | "organizationCustomers" | "organizationSuppliers"
   | "organizationSalePoints" | "organizationSessions" | "organizationProducts"
-  | "settingsPreferences";
+  | "settingsPreferences"
+  | "productSettingsUom" | "productSettingsCategories" | "productSettingsProducts";
 
 type SectionKey =
   | "sectionSalesManagement" | "sectionPurchasingLogistics" | "sectionAccountingJournals"
-  | "sectionOrganization" | "sectionSettings";
+  | "sectionOrganization" | "sectionSettings" | "sectionProductSettings";
 
 type UiPermissionsState = Record<PageKey, boolean> & Record<SectionKey, boolean>;
 
@@ -33,6 +34,7 @@ const UI_PERMISSION_GROUPS: { sectionKey: SectionKey; label: string; items: { ke
     label: "Sales Management",
     items: [
       { key: "salesQuotations", label: "Quotations" },
+      { key: "salesQuotationProposals", label: "Quotation Proposals" },
       { key: "salesProformaInvoice", label: "Proforma Invoice" },
       { key: "salesSalesOrders", label: "Sales Orders" },
       { key: "salesInvoices", label: "Invoices" },
@@ -75,6 +77,15 @@ const UI_PERMISSION_GROUPS: { sectionKey: SectionKey; label: string; items: { ke
     ],
   },
   {
+    sectionKey: "sectionProductSettings",
+    label: "Product Settings",
+    items: [
+      { key: "productSettingsUom", label: "Units of Measure" },
+      { key: "productSettingsCategories", label: "Categories" },
+      { key: "productSettingsProducts", label: "Products" },
+    ],
+  },
+  {
     sectionKey: "sectionSettings",
     label: "Settings",
     items: [
@@ -86,6 +97,7 @@ const UI_PERMISSION_GROUPS: { sectionKey: SectionKey; label: string; items: { ke
 const emptyUiPermissions: UiPermissionsState = {
   sectionSalesManagement: false,
   salesQuotations: false,
+  salesQuotationProposals: false,
   salesProformaInvoice: false,
   salesSalesOrders: false,
   salesInvoices: false,
@@ -112,6 +124,10 @@ const emptyUiPermissions: UiPermissionsState = {
   organizationProducts: false,
   sectionSettings: false,
   settingsPreferences: false,
+  sectionProductSettings: false,
+  productSettingsUom: false,
+  productSettingsCategories: false,
+  productSettingsProducts: false,
 };
 
 // Defensively fixes any stale/inconsistent data (a page flag true while its section flag is false).
@@ -221,7 +237,7 @@ const PermissionsModal = ({ isOpen, onClose, seller }: Props) => {
             </div>
             <div>
               <h2 className="text-xl font-black text-secondary uppercase tracking-tight">Permissions</h2>
-              <p className="text-xs text-gray-400 font-bold">{seller.username}</p>
+              <p className="text-xs text-gray-400 font-bold">{[seller.firstName, seller.lastName].filter(Boolean).join(" ") || seller.email}</p>
             </div>
           </div>
           <button onClick={() => onClose(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">

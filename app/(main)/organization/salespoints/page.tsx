@@ -12,6 +12,7 @@ import TableSkeleton from "@/components/TableSkeleton";
 import EmptyState from "@/components/EmptyState";
 import ActionButton from "@/components/ActionButton";
 import CreateSalesPointModal from "./CreateSalesPointModal";
+import { sortByDateDesc } from "@/src/utils/sortByDate";
 
 const COLUMNS = ["Sale Point", "Agency", "Currency", "Status", ""];
 
@@ -48,7 +49,7 @@ const SalesPointsAdminPage = () => {
         SalesPointsService.getAll2(seller.organizationId),
         AgenciesService.getAll3(seller.organizationId),
       ]);
-      setSalesPoints(pointsRes);
+      setSalesPoints(sortByDateDesc(pointsRes));
       setAgencies(agenciesRes);
     } catch (error) {
       console.error("Error fetching sale points:", error);

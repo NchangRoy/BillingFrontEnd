@@ -11,6 +11,7 @@ import { getStoredSeller } from '@/src/api/session';
 import { toast } from 'sonner';
 import StackableMultiSelect from '@/components/StackableMultiSelect';
 import { exportRowsToCsv } from '@/src/api/Utils/exportCsv';
+import { sortByDateDesc } from '@/src/utils/sortByDate';
 
 const PurchaseOrderJournalPage = () => {
   const [data, setData] = useState<BonAchatResponse[]>([]);
@@ -42,7 +43,7 @@ const PurchaseOrderJournalPage = () => {
       SellerAdminService.getAll1(seller.organizationId),
     ])
       .then(([res, agenciesRes, sellersRes]) => {
-        setData(res);
+        setData(sortByDateDesc(res));
         setAgencies(agenciesRes);
         setSellers(sellersRes);
       })
@@ -295,8 +296,8 @@ const PurchaseOrderJournalPage = () => {
                         <div className="flex items-center gap-2 text-sm font-bold text-primary uppercase tracking-tight"><User size={14} className="text-secondary-mid" /> {item.supplierName}</div>
                         <div className="flex items-center gap-3">
                           <span className="flex items-center gap-1 text-[10px] font-bold text-secondary-gray bg-slate-100 px-2 py-0.5 rounded-md"><Building2 size={10} /> {agency?.name || "-"}</span>
-                          {creator?.username && (
-                            <span className="text-[10px] font-bold text-secondary-gray">by {creator.username}</span>
+                          {(creator?.firstName || creator?.lastName || creator?.email) && (
+                            <span className="text-[10px] font-bold text-secondary-gray">by {[creator?.firstName, creator?.lastName].filter(Boolean).join(" ") || creator?.email}</span>
                           )}
                         </div>
                       </div>

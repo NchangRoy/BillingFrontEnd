@@ -19,6 +19,7 @@ import TableSkeleton from "@/components/TableSkeleton";
 import EmptyState from "@/components/EmptyState";
 import ActionButton from "@/components/ActionButton";
 import CreateSessionModal from "./CreateSessionModal";
+import { sortByDateDesc } from "@/src/utils/sortByDate";
 
 const COLUMNS = ["Seller", "Agency", "Type", "Sale Point", "Opening / Closing", "Start / End Time", "Status", ""];
 
@@ -88,19 +89,19 @@ const SessionsAdminPage = () => {
 
   const fetchData = useCallback(async () => {
     const seller = getStoredSeller();
-    if (!seller?.organizationId) {
+    if (!seller?.organizationId || !seller?.Id) {
       setLoading(false);
       return;
     }
     setLoading(true);
     try {
       const [sessionsRes, agenciesRes, sellersRes, salesPointsRes] = await Promise.all([
-        SessionsService.getAll(undefined, undefined, seller.organizationId),
+        SessionsService.getAllScoped(seller.organizationId, seller.Id),
         AgenciesService.getAll3(seller.organizationId),
         SellerAdminService.getAll1(seller.organizationId),
         SalesPointsService.getAll2(seller.organizationId),
       ]);
-      setSessions(sessionsRes);
+      setSessions(sortByDateDesc(sessionsRes));
       setAgencies(agenciesRes);
       setSellers(sellersRes);
       setSalesPoints(salesPointsRes);
@@ -143,7 +144,8 @@ const SessionsAdminPage = () => {
     const term = search.trim().toLowerCase();
     if (!term) return sessions;
     return sessions.filter((s) => {
-      const sellerName = s.sellerId ? sellerById.get(s.sellerId)?.username : undefined;
+      const sellerEntry = s.sellerId ? sellerById.get(s.sellerId) : undefined;
+      const sellerName = sellerEntry ? [sellerEntry.firstName, sellerEntry.lastName].filter(Boolean).join(" ") || sellerEntry.email : undefined;
       const agencyName = s.agencyId ? agencyById.get(s.agencyId)?.name : undefined;
       const salesPointName = s.salesPointId ? salesPointById.get(s.salesPointId)?.salesPointName : undefined;
       return [sellerName, agencyName, salesPointName].some((v) => v?.toLowerCase().includes(term));
@@ -265,7 +267,7 @@ const SessionsAdminPage = () => {
                       <td className="px-8 py-5">
                         <div className="flex items-center gap-2 text-sm text-primary font-black">
                           <User size={14} className="text-secondary-mid shrink-0" />
-                          <span>{seller?.username || "-"}</span>
+                          <span>{(seller && ([seller.firstName, seller.lastName].filter(Boolean).join(" ") || seller.email)) || "-"}</span>
                         </div>
                         {seller?.role && (
                           <span className={`mt-1 ml-6 inline-block px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border ${ROLE_STYLES[seller.role] || "bg-gray-50 text-gray-500 border-gray-200"}`}>

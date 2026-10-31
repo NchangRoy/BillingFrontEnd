@@ -5,6 +5,7 @@
 export type SellerUIPermissionsRequest = {
     sectionSalesManagement?: boolean;
     salesQuotations?: boolean;
+    salesQuotationProposals?: boolean;
     salesProformaInvoice?: boolean;
     salesSalesOrders?: boolean;
     salesInvoices?: boolean;
@@ -31,5 +32,9 @@ export type SellerUIPermissionsRequest = {
     organizationProducts?: boolean;
     sectionSettings?: boolean;
     settingsPreferences?: boolean;
+    sectionProductSettings?: boolean;
+    productSettingsUom?: boolean;
+    productSettingsCategories?: boolean;
+    productSettingsProducts?: boolean;
 };
 

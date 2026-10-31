@@ -11,6 +11,7 @@ import { DevisService } from '@/src/src2/api';
 import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
 import { toast } from 'sonner';
 import { exportRowsToCsv } from '@/src/api/Utils/exportCsv';
+import { sortByDateDesc } from '@/src/utils/sortByDate';
 
 const SalesJournalPage = () => {
   const [data, setData] = useState<EnrichedDevisResponse[]>([]);
@@ -52,7 +53,7 @@ const SalesJournalPage = () => {
         setLoading(true);
         try {
           const res = await DevisService.getEnrichedDevis(seller.organizationId);
-          setData(res);
+          setData(sortByDateDesc(res));
         } catch (error) {
           console.error("Error fetching journal:", error);
           toast.error("Failed to load journal data. Please try again.")

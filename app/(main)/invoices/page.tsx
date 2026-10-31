@@ -9,7 +9,6 @@ import { Pencil, Trash2, MoreVertical, Printer, FileText, ReceiptText, Eye, Shar
 import CreateInvoiceModal from './CreateInvoiceModal'
 import CreateInvoicePrintModal from './InvoicePrintPreviewModal'
 import RegisterPaymentModal from './RegisterPaymentModal'
-import { ClientsService } from '@/src/src2/api'
 // Updated Imports
 
 import { UpdatedClientResponse } from '@/src/api/models/UpdatedClientResponse'
@@ -18,6 +17,8 @@ import { MOCK_FACTURE } from '@/src/api/models/UpdatedFactureResponse'
 import { mapBackendFactureArrayToUpdatedArray } from '@/src/Mappers/FactureMapper'
 import { FactureService } from '@/src/src2/api/services/FactureService'
 import { getVisibleFactures } from '@/src/api/scopedDocs'
+import { getVisibleClients } from '@/src/api/scopedTiers'
+import { sortByDateDesc } from '@/src/utils/sortByDate'
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
 import EmptyState from '@/components/EmptyState'
@@ -64,7 +65,7 @@ const Factures = () => {
   const { showLoader, hideLoader, showError } = useLoading()
 
   useEffect(() => {
-    ClientsService.getAllClients()
+    getVisibleClients()
       .then((data) => setClients(data as unknown as UpdatedClientResponse[]))
       .catch(() => toast.error("Failed to load clients."));
   }, []);
@@ -77,7 +78,7 @@ const Factures = () => {
       try {
         const data = await getVisibleFactures();
         const transformed = mapBackendFactureArrayToUpdatedArray(data);
-        setFactures(transformed);
+        setFactures(sortByDateDesc(transformed));
       } catch (error) {
         console.error("Erreur lors du chargement des factures:", error);
         toast.error("Failed to load invoices. Please try again.")
@@ -401,7 +402,7 @@ handleAccountingSync(f)
           onClose={() => setIsPaymentModalOpen(false)}
           onSuccess={() => {
             getVisibleFactures()
-              .then((data) => setFactures(mapBackendFactureArrayToUpdatedArray(data)))
+              .then((data) => setFactures(sortByDateDesc(mapBackendFactureArrayToUpdatedArray(data))))
               .catch(() => {});
           }}
         />

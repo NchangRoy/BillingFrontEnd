@@ -229,4 +229,25 @@ export class SessionsService {
             mediaType: 'application/json',
         });
     }
+    /**
+     * List sessions visible to this caller
+     * Scopé par rôle : un propriétaire voit tout, un responsable d'agence voit son agence, les autres ne voient que leurs propres sessions.
+     * @param organizationId
+     * @param sellerId
+     * @returns SessionResponse OK
+     * @throws ApiError
+     */
+    public static getAllScoped(
+        organizationId: string,
+        sellerId: string,
+    ): CancelablePromise<Array<SessionResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/sessions/scoped',
+            query: {
+                'organizationId': organizationId,
+                'sellerId': sellerId,
+            },
+        });
+    }
 }

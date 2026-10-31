@@ -4,10 +4,11 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import AddIcon from "@mui/icons-material/Add";
 import {
   Search, Users, MapPin, Mail, Building2,
-  CheckCircle2, KeyRound, ChevronRight, MoreVertical, ShieldCheck, Trash2
+  CheckCircle2, KeyRound, ChevronRight, MoreVertical, ShieldCheck, Trash2, UserCog
 } from "lucide-react";
 import { SellerAdminService, SellerListItemResponse } from "@/src/src2/api";
 import { getStoredSeller } from "@/src/api/session";
+import { SellerRole } from "@/src/api/models/UpdatedSellerResponse";
 import { toast } from "sonner";
 import TableSkeleton from "@/components/TableSkeleton";
 import EmptyState from "@/components/EmptyState";
@@ -16,6 +17,8 @@ import SellerAvatar from "@/components/SellerAvatar";
 import CreateSellerModal from "./CreateSellerModal";
 import PermissionsModal from "./PermissionsModal";
 import AssignAgencyModal from "./AssignAgencyModal";
+import UpdateInfoModal from "./UpdateInfoModal";
+import { sortByDateDesc } from "@/src/utils/sortByDate";
 
 const COLUMNS = ["Seller", "Role", "Agency / Sale Point", "Permissions", "POS PIN", "Status", ""];
 
@@ -41,9 +44,14 @@ const SellersAdminPage = () => {
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [permissionsSeller, setPermissionsSeller] = useState<SellerListItemResponse | null>(null);
   const [agencySeller, setAgencySeller] = useState<SellerListItemResponse | null>(null);
+  const [updateInfoSeller, setUpdateInfoSeller] = useState<SellerListItemResponse | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const organizationName = getStoredSeller()?.organizationName;
+  const currentSeller = getStoredSeller();
+  const organizationName = currentSeller?.organizationName;
+  // Agency managers only manage their own agency's roster; owners see every
+  // seller in the organization.
+  const isAgencyScoped = currentSeller?.role === SellerRole.AGENCY_MANAGER;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -64,7 +72,7 @@ const SellersAdminPage = () => {
     setLoading(true);
     try {
       const res = await SellerAdminService.getAll1(seller.organizationId);
-      setSellers(res);
+      setSellers(sortByDateDesc(res));
     } catch (error) {
       console.error("Error fetching sellers:", error);
       toast.error("Failed to load sellers. Please try again.");
@@ -92,16 +100,29 @@ const SellersAdminPage = () => {
     if (assigned) fetchSellers();
   };
 
+  const handleUpdateInfoModalClose = (updated: boolean) => {
+    setUpdateInfoSeller(null);
+    if (updated) fetchSellers();
+  };
+
+  const visibleSellers = useMemo(() => {
+    if (!isAgencyScoped) return sellers;
+    return sellers.filter((s) => s.agencyId === currentSeller?.agencyId);
+  }, [sellers, isAgencyScoped, currentSeller?.agencyId]);
+
   const filteredSellers = useMemo(() => {
     const term = search.trim().toLowerCase();
-    if (!term) return sellers;
-    return sellers.filter((s) =>
-      [s.username, s.email, s.agency, s.salePoint].some((v) => v?.toLowerCase().includes(term))
+    if (!term) return visibleSellers;
+    return visibleSellers.filter((s) =>
+      [s.firstName, s.lastName, s.email, s.agency, s.salePoint].some((v) => v?.toLowerCase().includes(term))
     );
-  }, [sellers, search]);
+  }, [visibleSellers, search]);
 
-  const activeCount = useMemo(() => sellers.filter((s) => !s.mustChangePassword).length, [sellers]);
-  const pendingCount = useMemo(() => sellers.filter((s) => s.mustChangePassword).length, [sellers]);
+  const activeCount = useMemo(() => visibleSellers.filter((s) => !s.mustChangePassword).length, [visibleSellers]);
+
+  const displayName = (seller: SellerListItemResponse) =>
+    [seller.firstName, seller.lastName].filter(Boolean).join(" ") || seller.email || "Seller";
+  const pendingCount = useMemo(() => visibleSellers.filter((s) => s.mustChangePassword).length, [visibleSellers]);
 
   return (
     <div className="p-8 bg-secondary-background min-h-screen font-sans">
@@ -122,7 +143,7 @@ const SellersAdminPage = () => {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 px-4 py-2 bg-white border border-secondary-light rounded-xl shadow-sm">
             <Users size={16} className="text-secondary-mid" />
-            <span className="text-xs font-black text-primary">{sellers.length}</span>
+            <span className="text-xs font-black text-primary">{visibleSellers.length}</span>
             <span className="text-[10px] font-bold text-secondary-gray uppercase tracking-widest">Sellers</span>
           </div>
           <div className="flex items-center gap-2 px-4 py-2 bg-white border border-secondary-light rounded-xl shadow-sm">
@@ -182,9 +203,9 @@ const SellersAdminPage = () => {
                   <tr key={seller.id} className="hover:bg-secondary-super-light/40 transition-all group border-l-4 border-l-transparent hover:border-l-secondary-mid">
                     <td className="px-8 py-5">
                       <div className="flex items-center gap-3">
-                        <SellerAvatar name={seller.username} imageUrl={seller.profileImageUrl} size={36} />
+                        <SellerAvatar name={displayName(seller)} imageUrl={seller.profileImageUrl} size={36} />
                         <div className="flex flex-col">
-                          <span className="font-black text-primary group-hover:text-secondary-mid transition-colors">{seller.username}</span>
+                          <span className="font-black text-primary group-hover:text-secondary-mid transition-colors">{displayName(seller)}</span>
                           {seller.email && (
                             <span className="flex items-center gap-1.5 text-[11px] font-bold text-secondary-gray">
                               <Mail size={11} className="text-secondary-mid" /> {seller.email}
@@ -269,6 +290,17 @@ const SellersAdminPage = () => {
                           >
                             <Building2 size={14} />
                           </ActionButton>
+
+                          <ActionButton
+                            label="Update Info"
+                            onClick={() => {
+                              setUpdateInfoSeller(seller);
+                              setActiveMenuId(null);
+                            }}
+                            className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 transition-all text-amber-600"
+                          >
+                            <UserCog size={14} />
+                          </ActionButton>
                         </div>
                       )}
                     </td>
@@ -283,6 +315,7 @@ const SellersAdminPage = () => {
       <CreateSellerModal isOpen={isModalOpen} onClose={handleModalClose} />
       <PermissionsModal isOpen={!!permissionsSeller} seller={permissionsSeller} onClose={handlePermissionsModalClose} />
       <AssignAgencyModal isOpen={!!agencySeller} seller={agencySeller} onClose={handleAgencyModalClose} />
+      <UpdateInfoModal isOpen={!!updateInfoSeller} seller={updateInfoSeller} onClose={handleUpdateInfoModalClose} />
     </div>
   );
 };

@@ -11,10 +11,49 @@ import type { SellerUIPermissionsRequest } from '../models/SellerUIPermissionsRe
 import type { SellerUIPermissionsResponse } from '../models/SellerUIPermissionsResponse';
 import type { UpdateSellerPermissionsRequest } from '../models/UpdateSellerPermissionsRequest';
 import type { UpdateSellerPhotoRequest } from '../models/UpdateSellerPhotoRequest';
+import type { UpdateSellerRoleRequest } from '../models/UpdateSellerRoleRequest';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
 export class SellerAdminService {
+    /**
+     * Update a seller's role
+     * @param sellerId
+     * @param requestBody
+     * @returns SellerListItemResponse OK
+     * @throws ApiError
+     */
+    public static updateRole(
+        sellerId: string,
+        requestBody: UpdateSellerRoleRequest,
+    ): CancelablePromise<SellerListItemResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/sellers/{sellerId}/role',
+            path: {
+                'sellerId': sellerId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+    /**
+     * Regenerate a seller's POS quick-login PIN
+     * @param sellerId
+     * @returns SellerListItemResponse OK
+     * @throws ApiError
+     */
+    public static regeneratePin(
+        sellerId: string,
+    ): CancelablePromise<SellerListItemResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/sellers/{sellerId}/pin/regenerate',
+            path: {
+                'sellerId': sellerId,
+            },
+        });
+    }
     /**
      * Update a seller's profile image
      * @param sellerId

@@ -112,13 +112,25 @@ const CreateSessionModal = ({ isOpen, onClose }: Props) => {
 
   const handleSave = async () => {
     if (!canSave) return;
+    // A stray click on the native datetime-local picker (easy to mis-hit
+    // AM/PM) can leave End Time set to a moment before Start Time — the
+    // session would open already looking "ended" to the seller with no
+    // obvious reason why. Catch it here rather than silently sending it.
+    if (form.startTime && form.endTime && new Date(form.endTime) <= new Date(form.startTime)) {
+      toast.error("End Time must be after Start Time.");
+      return;
+    }
     setIsSaving(true);
     try {
       const payload: CreateSessionRequest = {
         type: form.type,
         salesPointId: isPos ? form.salesPointId : undefined,
         organizationId: isPos ? undefined : getStoredSeller()?.organizationId,
-        agencyId: isPos ? undefined : form.agencyId,
+        // Always sent regardless of type — canSave already requires it for
+        // both POS and SALES sessions, but it was previously withheld for
+        // POS, leaving those sessions with no agencyId at all and invisible
+        // to anything that scopes by agency (e.g. an agency manager's view).
+        agencyId: form.agencyId,
         sellerId: form.sellerId,
         openingAmount: Number(form.openingAmount),
         startTime: form.startTime ? toServerUtcNaive(form.startTime) : undefined,
@@ -260,7 +272,7 @@ const CreateSessionModal = ({ isOpen, onClose }: Props) => {
                   >
                     <option value="">{form.agencyId ? "Select a seller" : "Select an agency first"}</option>
                     {sellersInAgency.map((seller) => (
-                      <option key={seller.id} value={seller.id}>{seller.username}</option>
+                      <option key={seller.id} value={seller.id}>{[seller.firstName, seller.lastName].filter(Boolean).join(" ") || seller.email}</option>
                     ))}
                   </select>
                 </div>

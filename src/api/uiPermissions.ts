@@ -2,7 +2,7 @@ import { SellerUIPermissionsResponse } from "../src2/api/models/SellerUIPermissi
 
 type SectionKey = keyof Pick<SellerUIPermissionsResponse,
   | "sectionSalesManagement" | "sectionPurchasingLogistics" | "sectionAccountingJournals"
-  | "sectionOrganization" | "sectionSettings">;
+  | "sectionOrganization" | "sectionSettings" | "sectionProductSettings">;
 
 type PageKey = keyof Omit<SellerUIPermissionsResponse,
   | SectionKey | "id" | "organizationId" | "agencyId" | "sellerId" | "createdAt" | "updatedAt">;
@@ -24,6 +24,7 @@ export const PERMISSION_MENU: PermissionMenuSection[] = [
     sectionKey: "sectionSalesManagement",
     items: [
       { path: "/quotations", key: "salesQuotations" },
+      { path: "/quotation_proposals", key: "salesQuotationProposals" },
       { path: "/proforma_invoices", key: "salesProformaInvoice" },
       { path: "/sales_orders", key: "salesSalesOrders" },
       { path: "/invoices", key: "salesInvoices" },
@@ -60,6 +61,14 @@ export const PERMISSION_MENU: PermissionMenuSection[] = [
       { path: "/organization/salespoints", key: "organizationSalePoints" },
       { path: "/organization/sessions", key: "organizationSessions" },
       { path: "/organization/products", key: "organizationProducts" },
+    ],
+  },
+  {
+    sectionKey: "sectionProductSettings",
+    items: [
+      { path: "/product-settings/uom", key: "productSettingsUom" },
+      { path: "/product-settings/categories", key: "productSettingsCategories" },
+      { path: "/product-settings/products", key: "productSettingsProducts" },
     ],
   },
   {

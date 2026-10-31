@@ -2,15 +2,29 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Search, MessageCircle, Mail, ChevronRight, MoreVertical,
-  UserPlus, Ban, Trash2, CheckCircle2, Clock, ShieldOff,
+  Search, MessageCircle, Mail, ChevronRight, ChevronDown, MoreVertical,
+  UserPlus, Ban, Trash2, CheckCircle2, Clock, ShieldOff, Pencil,
 } from "lucide-react";
-import { NotificationContactsService, ContactResponse } from "@/src/src2/api";
+import { NotificationContactsService, ContactResponse, LiveNotificationsService, LiveNotificationResponse } from "@/src/src2/api";
+import { listLiveNotifications } from "@/src/api/liveNotifications";
 import { toast } from "sonner";
 import TableSkeleton from "@/components/TableSkeleton";
 import EmptyState from "@/components/EmptyState";
 import ActionButton from "@/components/ActionButton";
 import AddContactModal from "./AddContactModal";
+import LiveNotificationRuleModal from "./LiveNotificationRuleModal";
+
+const CHANNELS = [LiveNotificationResponse.channel.EMAIL, LiveNotificationResponse.channel.TELEGRAM];
+
+const CHANNEL_ICON: Record<LiveNotificationResponse.channel, React.ElementType> = {
+  [LiveNotificationResponse.channel.EMAIL]: Mail,
+  [LiveNotificationResponse.channel.TELEGRAM]: MessageCircle,
+};
+
+const CHANNEL_LABEL: Record<LiveNotificationResponse.channel, string> = {
+  [LiveNotificationResponse.channel.EMAIL]: "Email",
+  [LiveNotificationResponse.channel.TELEGRAM]: "Telegram",
+};
 
 const COLUMNS = ["Contact", "Status", "Telegram", "Added", ""];
 
@@ -29,6 +43,12 @@ const NotificationContactsPage = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [mutatingId, setMutatingId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const [rules, setRules] = useState<LiveNotificationResponse[]>([]);
+  const [rulesLoading, setRulesLoading] = useState(true);
+  const [togglingChannel, setTogglingChannel] = useState<LiveNotificationResponse.channel | null>(null);
+  const [ruleModalChannel, setRuleModalChannel] = useState<LiveNotificationResponse.channel | null>(null);
+  const [selectedChannel, setSelectedChannel] = useState<LiveNotificationResponse.channel>(LiveNotificationResponse.channel.EMAIL);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -53,13 +73,57 @@ const NotificationContactsPage = () => {
     }
   }, []);
 
+  const fetchRules = useCallback(async () => {
+    setRulesLoading(true);
+    try {
+      const res = await listLiveNotifications();
+      setRules(res);
+    } catch (error) {
+      console.error("Error fetching notification rules:", error);
+      toast.error("Failed to load notification channels. Please try again.");
+    } finally {
+      setRulesLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchContacts();
-  }, [fetchContacts]);
+    fetchRules();
+  }, [fetchContacts, fetchRules]);
 
   const handleAddModalClose = (added: boolean) => {
     setIsAddModalOpen(false);
     if (added) fetchContacts();
+  };
+
+  const ruleForChannel = (channel: LiveNotificationResponse.channel) =>
+    rules.find((r) => r.channel === channel) ?? null;
+
+  const handleToggleChannel = async (channel: LiveNotificationResponse.channel) => {
+    const rule = ruleForChannel(channel);
+
+    // No rule yet — need contacts + delay first, so open the setup modal
+    // instead of trying to activate something that doesn't exist.
+    if (!rule) {
+      setRuleModalChannel(channel);
+      return;
+    }
+
+    setTogglingChannel(channel);
+    try {
+      const updated = await LiveNotificationsService.setActive(rule.id!, { active: !rule.active });
+      setRules((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+      toast.success(`${CHANNEL_LABEL[channel]} notifications turned ${updated.active ? "on" : "off"}.`);
+    } catch (error: any) {
+      toast.error(error?.body?.message || "Failed to update notification channel. Please try again.");
+    } finally {
+      setTogglingChannel(null);
+    }
+  };
+
+  const handleRuleModalClose = (saved: boolean) => {
+    setRuleModalChannel(null);
+    if (saved) fetchRules();
   };
 
   const handleBlock = async (contact: ContactResponse) => {
@@ -144,6 +208,77 @@ const NotificationContactsPage = () => {
             <UserPlus size={16} /> Add Contact
           </button>
         </div>
+      </div>
+
+      {/* NOTIFICATION CHANNELS */}
+      <div className="bg-white rounded-[2rem] shadow-sm border border-secondary-light p-8 mb-6">
+        <h2 className="text-lg font-black text-primary mb-1">Notification Channels</h2>
+        <p className="text-xs text-secondary-gray font-medium mb-5">
+          Turn on a channel to start batching new invoices to your contacts.
+        </p>
+
+        <div className="space-y-2 mb-4">
+          <label className="text-[10px] font-black uppercase tracking-widest text-secondary-gray ml-1">Channel</label>
+          <div className="relative max-w-xs">
+            <select
+              value={selectedChannel}
+              onChange={(e) => setSelectedChannel(e.target.value as LiveNotificationResponse.channel)}
+              className="w-full appearance-none bg-secondary-super-light/30 border border-secondary-light rounded-xl pl-4 pr-10 py-3 text-sm font-bold text-primary outline-none focus:border-secondary-mid focus:bg-white transition-all cursor-pointer"
+            >
+              {CHANNELS.map((channel) => (
+                <option key={channel} value={channel}>{CHANNEL_LABEL[channel]}</option>
+              ))}
+            </select>
+            <ChevronDown size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-secondary-gray pointer-events-none" />
+          </div>
+        </div>
+
+        {(() => {
+          const ChannelIcon = CHANNEL_ICON[selectedChannel];
+          const rule = ruleForChannel(selectedChannel);
+          const isOn = !!rule?.active;
+          const isToggling = togglingChannel === selectedChannel;
+          return (
+            <div className="flex items-center justify-between gap-3 bg-secondary-super-light/30 border border-secondary-light rounded-2xl p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white rounded-xl text-secondary-mid shadow-sm">
+                  <ChannelIcon size={18} />
+                </div>
+                <div>
+                  <p className="font-black text-sm text-primary">{CHANNEL_LABEL[selectedChannel]}</p>
+                  <p className="text-[11px] text-secondary-gray font-bold">
+                    {rulesLoading
+                      ? "Loading…"
+                      : rule
+                      ? `${isOn ? "On" : "Off"} · every ${rule.delayMinutes} min · ${rule.contactIds?.length ?? 0} contact${(rule.contactIds?.length ?? 0) === 1 ? "" : "s"}`
+                      : "Not set up"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {rule && (
+                  <button
+                    onClick={() => setRuleModalChannel(selectedChannel)}
+                    className="p-2 text-secondary-gray hover:text-secondary-mid hover:bg-white rounded-lg transition-all"
+                    title={`Edit ${CHANNEL_LABEL[selectedChannel]} notifications`}
+                  >
+                    <Pencil size={14} />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  disabled={isToggling || rulesLoading}
+                  onClick={() => handleToggleChannel(selectedChannel)}
+                  className="relative inline-flex items-center disabled:opacity-50"
+                >
+                  <input type="checkbox" className="sr-only peer" checked={isOn} readOnly />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary-mid" />
+                </button>
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* SEARCH */}
@@ -257,6 +392,15 @@ const NotificationContactsPage = () => {
       </div>
 
       <AddContactModal isOpen={isAddModalOpen} onClose={handleAddModalClose} />
+      {ruleModalChannel && (
+        <LiveNotificationRuleModal
+          isOpen={!!ruleModalChannel}
+          channel={ruleModalChannel}
+          existingRule={ruleForChannel(ruleModalChannel)}
+          contacts={contacts}
+          onClose={handleRuleModalClose}
+        />
+      )}
     </div>
   );
 };

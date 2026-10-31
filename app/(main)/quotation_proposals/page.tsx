@@ -6,11 +6,13 @@ import SearchIcon from "@mui/icons-material/Search"
 import { MoreVertical, Eye, ReceiptText } from 'lucide-react'
 import { toast } from 'sonner'
 import { QuotationProposalsService } from '@/src/src2/api'
+import { getStoredSeller } from '@/src/api/session'
 import { UpdatedDevisResponse } from '@/src/api/models/UpdatedDevisResponse'
 import TableSkeleton from '@/components/TableSkeleton'
 import EmptyState from '@/components/EmptyState'
 import ActionButton from '@/components/ActionButton'
 import ProposalReviewModal from './ProposalReviewModal'
+import { sortByDateDesc } from '@/src/utils/sortByDate'
 
 const COLUMNS = ["Proposal #", "Client", "Date", "Status", "Total"];
 
@@ -31,9 +33,14 @@ const QuotationProposalsPage = () => {
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
   useEffect(() => {
+    const seller = getStoredSeller();
+    if (!seller?.organizationId || !seller?.Id) {
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
-    QuotationProposalsService.getAll5()
-      .then(setProposals)
+    QuotationProposalsService.getAll5(seller.organizationId, seller.Id)
+      .then((data) => setProposals(sortByDateDesc(data)))
       .catch(() => toast.error("Failed to load quotation proposals."))
       .finally(() => setIsLoading(false));
   }, []);

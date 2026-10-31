@@ -130,6 +130,7 @@ export type { UpdateSaleSizesRequest } from './models/UpdateSaleSizesRequest';
 export { UpdateSalesPointRequest } from './models/UpdateSalesPointRequest';
 export type { UpdateSellerPermissionsRequest } from './models/UpdateSellerPermissionsRequest';
 export type { UpdateSellerPhotoRequest } from './models/UpdateSellerPhotoRequest';
+export type { UpdateSellerRoleRequest } from './models/UpdateSellerRoleRequest';
 export type { UpdateSequenceSettingRequest } from './models/UpdateSequenceSettingRequest';
 export type { UpdateSessionRequest } from './models/UpdateSessionRequest';
 

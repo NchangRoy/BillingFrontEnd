@@ -35,6 +35,7 @@ import { BonDAchatService, BondeReceptionControllerService, FournisseursService 
 import { getVisibleBonReceptions } from '@/src/api/scopedDocs'
 import { mapGRNArrayToInternalArray } from '@/src/Mappers/GRNMapper'
 import { mapBackendBAArrayToUIArray } from '@/src/Mappers/BonAchatMapper'
+import { sortByDateDesc } from '@/src/utils/sortByDate'
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
 import EmptyState from '@/components/EmptyState'
@@ -99,8 +100,8 @@ const GoodsReceiptNotes = () => {
          const transformed = mapGRNArrayToInternalArray(data)
          const purchase_order=await BonDAchatService.getAllBonsAchat()
          const trans=mapBackendBAArrayToUIArray(purchase_order)
-         setPurchaseOrders(trans)
-         setGrnList(transformed)
+         setPurchaseOrders(sortByDateDesc(trans))
+         setGrnList(sortByDateDesc(transformed))
        } catch (error) {
          console.error("Erreur lors du chargement des factures:", error);
          toast.error("Failed to load goods receipt notes. Please try again.")

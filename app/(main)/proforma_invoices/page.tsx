@@ -31,9 +31,11 @@ import CreateProformaInvoiceModal from './CreateProformaInvoiceModal'
 import PrintPreviewModal from './PrintPreviewModal'
 import { mapProformaToFacture, mapProformaToSalesOrder } from '@/src/api/transformation/ProformaTransformation'
 import { UpdatedSalesOrderResponse } from '@/src/api/models/UpdatedSalesOrder'
-import { FacturesProformaService, ClientsService } from '@/src/src2/api'
+import { FacturesProformaService } from '@/src/src2/api'
 import { getVisibleProformas } from '@/src/api/scopedDocs'
+import { getVisibleClients } from '@/src/api/scopedTiers'
 import { mapProformaArrayToUI } from '@/src/Mappers/ProformaMapper'
+import { sortByDateDesc } from '@/src/utils/sortByDate'
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
 import EmptyState from '@/components/EmptyState'
@@ -75,7 +77,7 @@ const ProformaInvoice = () => {
   const { showLoader, hideLoader, showError } = useLoading()
 
   useEffect(() => {
-    ClientsService.getAllClients()
+    getVisibleClients()
       .then((data) => setClients(data as unknown as UpdatedClientResponse[]))
       .catch(() => toast.error("Failed to load clients."));
   }, []);
@@ -87,7 +89,7 @@ const ProformaInvoice = () => {
       try {
         const data = await getVisibleProformas()
         const transformed = mapProformaArrayToUI(data);
-        setProformaInvoices(transformed);
+        setProformaInvoices(sortByDateDesc(transformed));
       } catch (error) {
         console.error("Erreur lors du chargement des devis:", error);
         toast.error("Failed to load proforma invoices. Please try again.")

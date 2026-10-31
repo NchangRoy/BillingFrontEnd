@@ -49,25 +49,30 @@ const AddContactModal = ({ isOpen, onClose }: Props) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40" onClick={() => onClose(false)} />
-      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+    <div className="fixed inset-0 z-[110] flex justify-end items-stretch">
+      {/* Background Overlay */}
+      <div className="absolute inset-0" onClick={() => onClose(false)} />
+
+      <div className="relative w-full max-w-lg bg-white shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-300">
+
+        {/* HEADER */}
+        <div className="px-8 py-4 border-b border-gray-100 flex justify-between items-center bg-white shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-secondary-super-light rounded-lg text-secondary-mid">
-              <UserPlus size={20} />
+              <UserPlus size={24} />
             </div>
             <div>
-              <h2 className="text-lg font-black text-secondary uppercase">Add Contact</h2>
-              <p className="text-xs text-gray-400">They&apos;ll get an email with a Telegram invite link.</p>
+              <h2 className="text-xl font-black text-secondary uppercase tracking-tight">Add Contact</h2>
+              <p className="text-xs text-gray-400 font-bold">They&apos;ll get an email with a Telegram invite link.</p>
             </div>
           </div>
-          <button onClick={() => onClose(false)} className="p-2 hover:bg-gray-100 rounded-full">
+          <button onClick={() => onClose(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
             <CloseIcon className="text-gray-400" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        {/* BODY */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-8 space-y-5 bg-gray-50/50">
           <div>
             <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 block">Name</label>
             <input
@@ -75,7 +80,7 @@ const AddContactModal = ({ isOpen, onClose }: Props) => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Jane Doe"
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-secondary-mid/20 focus:border-secondary-mid outline-none"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-secondary-mid/20 focus:border-secondary-mid outline-none bg-white"
               required
             />
           </div>
@@ -87,7 +92,7 @@ const AddContactModal = ({ isOpen, onClose }: Props) => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="jane@example.com"
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-secondary-mid/20 focus:border-secondary-mid outline-none"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-secondary-mid/20 focus:border-secondary-mid outline-none bg-white"
               required
             />
           </div>

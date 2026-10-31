@@ -46,17 +46,11 @@ const UploadSellerAvatarModal = ({ isOpen, onClose, sellerId, username, profileI
       const stored = await MediaService.uploadFile(undefined, { file });
       if (!stored.id) throw new Error("Upload succeeded but no file id was returned.");
       const photoUrl = MEDIA_FILE_URL(stored.id);
-      await Promise.all([
-        MediaService.createMediaAsset({
-          targetType: "SELLER",
-          targetId: sellerId,
-          fileId: stored.id,
-          mimeType: stored.contentType,
-          position: 0,
-          altText: username,
-        }),
-        SellerAdminService.updatePhoto(sellerId, { profileImageUrl: photoUrl }),
-      ]);
+      // Kernel only exposes a product-scoped media endpoint — there's no
+      // Kernel-side "SELLER" media target to register this against (see
+      // KernelMediaAdapter.createMediaAsset), so the seller's photo URL is
+      // just stored locally like everything else on the seller profile.
+      await SellerAdminService.updatePhoto(sellerId, { profileImageUrl: photoUrl });
       toast.success("Profile photo updated.");
       onUploaded(photoUrl);
       onClose();

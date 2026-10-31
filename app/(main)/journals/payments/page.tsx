@@ -12,6 +12,7 @@ import { getStoredSeller } from '@/src/api/session';
 import { toast } from 'sonner';
 import StackableMultiSelect from '@/components/StackableMultiSelect';
 import { exportRowsToCsv } from '@/src/api/Utils/exportCsv';
+import { sortByDateDesc } from '@/src/utils/sortByDate';
 
 const TYPE_OPTIONS: { value: FactureResponse.originType; label: string; icon: React.ElementType }[] = [
   { value: FactureResponse.originType.POS, label: "POS", icon: Store },
@@ -50,7 +51,7 @@ const InvoiceJournalPage = () => {
       SalesPointsService.getAll2(seller.organizationId),
     ])
       .then(([facturesRes, agenciesRes, salesPointsRes]) => {
-        setData(facturesRes);
+        setData(sortByDateDesc(facturesRes));
         setAgencies(agenciesRes);
         setSalesPoints(salesPointsRes);
       })
