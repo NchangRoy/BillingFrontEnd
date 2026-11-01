@@ -7,8 +7,8 @@ import {
   ArrowLeft, Save, RefreshCw, ChevronRight, Info, Check
 } from 'lucide-react';
 import { UpdatedDevisResponse } from '@/src/api/models/UpdatedDevisResponse';
-import { PortalAccessService } from '@/src/src2/api/services/ExternalServices.ts/tokenService';
-import { PortalAccessResponse } from '@/src/src2/api/models/PortalAccessResponse';
+import { PortalAccessControllerService } from '@/src/src2/api/services/PortalAccessControllerService';
+import { PortalAcessResponseDevisResponse } from '@/src/src2/api/models/PortalAcessResponseDevisResponse';
 import { LigneDevisResponse } from '@/src/api';
 
 interface PageProps {
@@ -18,7 +18,7 @@ interface PageProps {
 export default function QuotationActionPage({ params }: PageProps) {
   const { token } = use(params);
   
-  const [portalData, setPortalData] = useState<PortalAccessResponse | undefined>(undefined);
+  const [portalData, setPortalData] = useState<PortalAcessResponseDevisResponse | undefined>(undefined);
   const [originalQuotation, setOriginalQuotation] = useState<UpdatedDevisResponse | undefined>(undefined);
   
   const [loading, setLoading] = useState(true);
@@ -31,7 +31,7 @@ export default function QuotationActionPage({ params }: PageProps) {
     async function loadQuotation() {
       try {
         setLoading(true);
-        const response = await PortalAccessService.getQuotation(token);
+        const response = await PortalAccessControllerService.getQuotationInfo(token);
         if (response && response.data) {
           setPortalData(response);
           // Deep clone for comparison
@@ -86,7 +86,7 @@ export default function QuotationActionPage({ params }: PageProps) {
         setShowSuccess({ show: true, message: "Your modification request has been submitted successfully." });
         setIsEditing(false);
       } else {
-        await PortalAccessService.handleAction(token, actionType);
+        await PortalAccessControllerService.handleAction(token, actionType);
         setShowSuccess({ 
           show: true, 
           message: actionType === 'accept' ? "Quotation accepted and signed." : "Quotation rejected." 
