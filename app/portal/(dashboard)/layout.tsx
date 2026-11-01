@@ -1,4 +1,5 @@
 import PortalSidebar from "../PortalSidebar";
+import PortalTopBar from "../PortalTopBar";
 import PortalAuthGuard from "../PortalAuthGuard";
 
 export default function PortalDashboardLayout({
@@ -11,6 +12,7 @@ export default function PortalDashboardLayout({
       <div className="flex h-screen overflow-hidden bg-secondary-background">
         <PortalSidebar />
         <main className="flex-1 overflow-y-auto">
+          <PortalTopBar />
           <div className="min-h-full">{children}</div>
         </main>
       </div>

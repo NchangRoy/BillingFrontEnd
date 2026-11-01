@@ -42,3 +42,29 @@ OpenAPI.TOKEN = async () => getStoredSeller()?.accessToken ?? '';
 OpenAPI.HEADERS = async () => ({
   'X-Organization-ID': getStoredSeller()?.organizationId ?? '',
 });
+
+// Auto-logout on an expired session: Kernel tokens only last 15 minutes, and
+// nothing previously caught a 401 mid-session — a page just sat there
+// throwing "Unauthorized" toasts from the generated client's own ApiError
+// instead of sending the user back to a fresh login (see login/page.tsx's
+// 'expired=1' handling, which had no actual trigger wired up to it before
+// this). Can't hook this into the generated client itself (src/src2/api is
+// regenerated from the backend's OpenAPI doc — any hand-edit there is wiped
+// out on the next `npm run generate:api`), so this wraps the global fetch
+// instead: works for every call path (the generated client, pdfDownload.ts,
+// getProducts, anything), survives regeneration, and is a no-op once logged
+// out so it doesn't fire on the login page's own unauthenticated requests.
+if (typeof window !== 'undefined' && !(window as any).__billingSessionExpiryHookInstalled) {
+  (window as any).__billingSessionExpiryHookInstalled = true;
+  const nativeFetch = window.fetch.bind(window);
+  window.fetch = async (...args: Parameters<typeof fetch>) => {
+    const response = await nativeFetch(...args);
+    const requestUrl = typeof args[0] === 'string' ? args[0] : (args[0] as Request)?.url ?? '';
+    const isOwnBackend = requestUrl.startsWith(OpenAPI.BASE);
+    if (response.status === 401 && isOwnBackend && getStoredSeller()?.accessToken && !window.location.pathname.startsWith('/login')) {
+      clearSession();
+      window.location.href = '/login?expired=1';
+    }
+    return response;
+  };
+}

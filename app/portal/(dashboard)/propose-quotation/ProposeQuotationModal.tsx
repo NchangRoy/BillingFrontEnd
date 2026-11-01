@@ -5,6 +5,7 @@ import { X, Search, Trash2, Plus, ShoppingCart, Calculator, Tag, Receipt, Save, 
 import { toast } from 'sonner';
 import { PortalApi } from '@/src/api/portalApi';
 import { getPortalSession, PortalOrganizationOption } from '@/src/api/portalSession';
+import AuthenticatedImage from '@/components/AuthenticatedImage';
 
 const inputStyles = "w-full border border-gray-200 rounded-lg outline-none py-2 px-3 focus:ring-2 focus:ring-secondary-mid/10 focus:border-secondary-mid transition-all text-sm text-gray-700 bg-white shadow-sm placeholder:text-gray-300";
 const labelStyles = "text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1 block ml-0.5";
@@ -26,6 +27,7 @@ interface ProposeQuotationModalProps {
 }
 
 const ProposeQuotationModal: React.FC<ProposeQuotationModalProps> = ({ isOpen, onClose, onCreated }) => {
+  const portalSession = getPortalSession();
   const [products, setProducts] = useState<any[]>([]);
   const [myClient, setMyClient] = useState<any | null>(null);
 
@@ -225,95 +227,106 @@ const ProposeQuotationModal: React.FC<ProposeQuotationModalProps> = ({ isOpen, o
               {loadingCatalog && <span className="text-[10px] text-gray-400 font-bold uppercase">Loading catalog…</span>}
             </div>
 
-            <div className="grid grid-cols-12 gap-4 items-start">
-              <div className="col-span-12 md:col-span-6 relative">
-                <label className={labelStyles}>Product</label>
-                <div className="relative">
-                  <Search size={16} className="absolute left-3 top-2.5 text-gray-300" />
-                  <input
-                    type="text" className={`${inputStyles} pl-9`}
-                    value={productSearch}
-                    onChange={(e) => { setProductSearch(e.target.value); setShowResults(true); }}
-                    onFocus={() => setShowResults(true)}
-                    placeholder="Search product..."
+            <div className="flex flex-col md:flex-row gap-6 items-start">
+              {/* Large, prominent side image — not a tiny thumbnail, so the
+                  viewer can actually see what they're adding to the proposal. */}
+              <div className="w-full md:w-48 shrink-0">
+                <div className="w-full aspect-square rounded-2xl bg-gray-50 border-2 border-gray-200 overflow-hidden flex items-center justify-center">
+                  <AuthenticatedImage
+                    src={selectedProduct?.photo}
+                    alt={selectedProduct?.nomProduit || ""}
+                    className="w-full h-full object-cover"
+                    token={portalSession?.accessToken}
+                    organizationId={selectedOrg?.organizationId}
+                    fallback={<ImageOff size={48} className="text-gray-300" />}
                   />
                 </div>
-                {showResults && filteredProducts.length > 0 && (
-                  <div className="absolute z-50 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-2xl max-h-56 overflow-auto">
-                    {filteredProducts.map((p) => (
-                      <div
-                        key={p.idProduit}
-                        onClick={() => { setSelectedProduct(p); setProductSearch(p.nomProduit || ""); setShowResults(false); setSelectedSize(""); }}
-                        className="px-3 py-2 hover:bg-gray-50 cursor-pointer border-b last:border-none flex items-center gap-3"
-                      >
-                        <div className="w-9 h-9 rounded-lg bg-gray-100 overflow-hidden flex items-center justify-center shrink-0">
-                          {p.photo ? <img src={p.photo} alt={p.nomProduit} className="w-full h-full object-cover" /> : <ImageOff size={14} className="text-gray-300" />}
-                        </div>
-                        <span className="text-sm font-bold text-gray-700 truncate">{p.nomProduit}</span>
+                <p className="mt-2 text-center text-xs font-black text-gray-600 truncate">
+                  {selectedProduct?.nomProduit || "No product selected"}
+                </p>
+              </div>
+
+              <div className="flex-1 w-full space-y-6">
+                <div className="grid grid-cols-12 gap-4 items-start">
+                  <div className="col-span-12 md:col-span-6 relative">
+                    <label className={labelStyles}>Product</label>
+                    <div className="relative">
+                      <Search size={16} className="absolute left-3 top-2.5 text-gray-300" />
+                      <input
+                        type="text" className={`${inputStyles} pl-9`}
+                        value={productSearch}
+                        onChange={(e) => { setProductSearch(e.target.value); setShowResults(true); }}
+                        onFocus={() => setShowResults(true)}
+                        placeholder="Search product..."
+                      />
+                    </div>
+                    {showResults && filteredProducts.length > 0 && (
+                      <div className="absolute z-50 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-2xl max-h-56 overflow-auto">
+                        {filteredProducts.map((p) => (
+                          <div
+                            key={p.idProduit}
+                            onClick={() => { setSelectedProduct(p); setProductSearch(p.nomProduit || ""); setShowResults(false); setSelectedSize(""); }}
+                            className="px-3 py-2 hover:bg-gray-50 cursor-pointer border-b last:border-none flex items-center gap-3"
+                          >
+                            <div className="w-9 h-9 rounded-lg bg-gray-100 overflow-hidden flex items-center justify-center shrink-0">
+                              <AuthenticatedImage
+                                src={p.photo}
+                                alt={p.nomProduit}
+                                className="w-full h-full object-cover"
+                                token={portalSession?.accessToken}
+                                organizationId={selectedOrg?.organizationId}
+                                fallback={<ImageOff size={14} className="text-gray-300" />}
+                              />
+                            </div>
+                            <span className="text-sm font-bold text-gray-700 truncate">{p.nomProduit}</span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
                   </div>
-                )}
-              </div>
 
-              <div className="col-span-6 md:col-span-2">
-                <label className={labelStyles}>Qty</label>
-                <input type="number" min={1} className={inputStyles} value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} />
-              </div>
+                  <div className="col-span-6 md:col-span-2">
+                    <label className={labelStyles}>Qty</label>
+                    <input type="number" min={1} className={inputStyles} value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} />
+                  </div>
 
-              <div className="col-span-6 md:col-span-2">
-                <label className={labelStyles}>Unit Price</label>
-                <div className={`${inputStyles} bg-gray-50 text-gray-500 font-black flex items-center h-[38px]`}>
-                  {selectedProduct && selectedSize ? unitPrice.toLocaleString() : '--'}
+                  <div className="col-span-6 md:col-span-2">
+                    <label className={labelStyles}>Unit Price</label>
+                    <div className={`${inputStyles} bg-gray-50 text-gray-500 font-black flex items-center h-[38px]`}>
+                      {selectedProduct && selectedSize ? unitPrice.toLocaleString() : '--'}
+                    </div>
+                  </div>
+
+                  <div className="col-span-12 md:col-span-2 flex items-end">
+                    <button
+                      type="button" onClick={addLine} disabled={!selectedProduct || !selectedSize}
+                      className="w-full bg-secondary-mid hover:bg-secondary text-white rounded-xl h-[38px] shadow-lg disabled:opacity-30 flex items-center justify-center transition-all"
+                    >
+                      <Plus size={20} />
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              <div className="col-span-12 md:col-span-2 flex items-end">
-                <button
-                  type="button" onClick={addLine} disabled={!selectedProduct || !selectedSize}
-                  className="w-full bg-secondary-mid hover:bg-secondary text-white rounded-xl h-[38px] shadow-lg disabled:opacity-30 flex items-center justify-center transition-all"
-                >
-                  <Plus size={20} />
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-12 gap-6 mt-6 pt-6 border-t border-gray-50">
-              <div className="col-span-12 md:col-span-8">
-                <label className={labelStyles}>Available Tier (based on your account)</label>
-                <div className="flex flex-wrap gap-2 p-3 bg-gray-50/50 rounded-xl border border-dashed border-gray-200 min-h-[58px]">
-                  {selectedProduct ? (
-                    availableTiers.length > 0 ? availableTiers.map((s: any) => (
-                      <button
-                        key={s.size} type="button" onClick={() => setSelectedSize(s.size)}
-                        className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
-                          selectedSize === s.size ? "bg-secondary-mid text-white shadow-md scale-105" : "bg-white text-gray-400 border border-gray-100 shadow-sm"
-                        }`}
-                      >
-                        {s.size.replace('_', ' ')}
-                      </button>
-                    )) : (
-                      <span className="text-[10px] text-gray-400 italic font-medium">No tiers available for your account on this product.</span>
-                    )
-                  ) : (
-                    <span className="text-[10px] text-gray-400 italic font-medium">Select a product...</span>
-                  )}
-                </div>
-              </div>
-
-              <div className="col-span-12 md:col-span-4">
-                <label className={labelStyles}>Selected Product</label>
-                <div className="flex items-center gap-3 bg-gray-50 rounded-xl border border-gray-100 p-2 h-[58px]">
-                  {selectedProduct ? (
-                    <>
-                      <div className="w-10 h-10 rounded-lg bg-white overflow-hidden flex items-center justify-center shrink-0 border border-gray-100">
-                        {selectedProduct.photo ? <img src={selectedProduct.photo} alt="" className="w-full h-full object-cover" /> : <ImageOff size={16} className="text-gray-300" />}
-                      </div>
-                      <span className="text-xs font-bold text-gray-600 truncate">{selectedProduct.nomProduit}</span>
-                    </>
-                  ) : (
-                    <span className="text-[10px] text-gray-300 italic ml-2">No product selected</span>
-                  )}
+                <div className="pt-6 border-t border-gray-50">
+                  <label className={labelStyles}>Available Tier (based on your account)</label>
+                  <div className="flex flex-wrap gap-2 p-3 bg-gray-50/50 rounded-xl border border-dashed border-gray-200 min-h-[58px]">
+                    {selectedProduct ? (
+                      availableTiers.length > 0 ? availableTiers.map((s: any) => (
+                        <button
+                          key={s.size} type="button" onClick={() => setSelectedSize(s.size)}
+                          className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                            selectedSize === s.size ? "bg-secondary-mid text-white shadow-md scale-105" : "bg-white text-gray-400 border border-gray-100 shadow-sm"
+                          }`}
+                        >
+                          {s.size.replace('_', ' ')}
+                        </button>
+                      )) : (
+                        <span className="text-[10px] text-gray-400 italic font-medium">No tiers available for your account on this product.</span>
+                      )
+                    ) : (
+                      <span className="text-[10px] text-gray-400 italic font-medium">Select a product...</span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

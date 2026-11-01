@@ -16,9 +16,9 @@ import {
   XCircle,
   FileText,
   ChevronRight ,
-  Globe,
   Eye,
-  Share2
+  Share2,
+  Mail
 
 } from "lucide-react";
 import { toast } from 'sonner'
@@ -43,6 +43,7 @@ import { useLoading } from '@/components/LoadingContext'
 import ActionButton from '@/components/ActionButton'
 import PermissionBadge from '@/components/PermissionBadge'
 import ShareDocModal from '@/components/ShareDocModal'
+import SendDocumentModal from '@/components/SendDocumentModal'
 import SyncStatusIndicator from '@/components/SyncStatusIndicator'
 import { useCanEditDocuments } from '@/src/hooks/useCanEditDocuments'
 import { offlineDb } from '@/src/offline/db/database'
@@ -67,6 +68,7 @@ const Quotation = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState<boolean>(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
+  const [isSendDocModalOpen, setIsSendDocModalOpen] = useState<boolean>(false);
 
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [showTransformSub, setShowTransformSub] = useState<boolean>(false);
@@ -145,13 +147,6 @@ const Quotation = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleTransform = (q: UpdatedDevisResponse) => {
-    const invoice: UpdatedFactureResponse = mapDevisToFacture(q);
-    localStorage.setItem("invoice", JSON.stringify(invoice));
-    localStorage.setItem("modalOpen", "open");
-    router.push("/invoices");
-  };
-
   const statusOptions = Array.from(new Set(quotations.map(q => q.statut)));
 
   function handleTransformToProforma(quotation: UpdatedDevisResponse): void {
@@ -176,25 +171,6 @@ const Quotation = () => {
     localStorage.setItem("modalOpen", "open");
     router.push("/sales_orders");
   }
-
-  const handleSendToPortal = async (quotation: UpdatedDevisResponse) => {
-    if (!quotation.idDevis) return;
-    setActiveMenuId(null);
-    // Quotations created offline sit in the local outbox until they sync —
-    // sales-core has never heard of that id yet, so sending would 404.
-    const local = await offlineDb.devis.get(quotation.idDevis);
-    if (local && local.syncStatus !== 'synced') {
-      toast.info("This quotation hasn't finished syncing yet — try again in a moment.");
-      return;
-    }
-    try {
-      await DevisService.sendToPortal3(quotation.idDevis);
-      setQuotations(prev => prev.map(q => q.idDevis === quotation.idDevis ? { ...q, statut: 'ENVOYE' as any } : q));
-      toast.success(`${quotation.numeroDevis} sent — client can now view it in their portal.`);
-    } catch (error: any) {
-      toast.error(error?.body?.message || "Failed to send quotation to the client's portal.");
-    }
-  };
 
 
   return (
@@ -419,13 +395,13 @@ const Quotation = () => {
                           <Printer size={14} />
                         </ActionButton>
 
-                        {/* Send to Portal */}
+                        {/* Share */}
                         <ActionButton
-                          label="Send to Portal"
-                          onClick={() => handleSendToPortal(quotation)}
-                          className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-blue-700 transition-all"
+                          label="Share"
+                          onClick={() => { setClickedQuotation(quotation); setIsSendDocModalOpen(true); setActiveMenuId(null); }}
+                          className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-emerald-700 transition-all"
                         >
-                          <Globe size={14} />
+                          <Mail size={14} />
                         </ActionButton>
 
                         {/* Delete */}
@@ -461,6 +437,24 @@ const Quotation = () => {
         docType="DEVIS"
         docLabel={clickedQuotation?.numeroDevis ? `Quotation ${clickedQuotation.numeroDevis}` : undefined}
         onClose={() => setIsShareModalOpen(false)}
+      />
+      <SendDocumentModal
+        isOpen={isSendDocModalOpen}
+        thirdPartyId={clickedQuotation?.idClient}
+        docLabel={clickedQuotation?.numeroDevis ? `Quotation ${clickedQuotation.numeroDevis}` : undefined}
+        onClose={() => setIsSendDocModalOpen(false)}
+        onSend={async (contactEmail, contactName) => {
+          if (!clickedQuotation?.idDevis) return;
+          // Quotations created offline sit in the local outbox until they sync —
+          // sales-core has never heard of that id yet, so sending would 404.
+          const local = await offlineDb.devis.get(clickedQuotation.idDevis);
+          if (local && local.syncStatus !== 'synced') {
+            toast.info("This quotation hasn't finished syncing yet — try again in a moment.");
+            return;
+          }
+          await DevisService.sendToPortal4(clickedQuotation.idDevis, { contactEmail, contactName });
+          setQuotations(prev => prev.map(q => q.idDevis === clickedQuotation.idDevis ? { ...q, statut: 'ENVOYE' as any } : q));
+        }}
       />
     </div>
   )

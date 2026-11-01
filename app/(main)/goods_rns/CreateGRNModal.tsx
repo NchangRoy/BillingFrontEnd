@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import CloseIcon from "@mui/icons-material/Close";
-import { Save, Receipt, Truck } from "lucide-react";
+import { Save, Receipt, Truck, ClipboardList, ShoppingCart, ChevronRight, CheckCircle2 } from "lucide-react";
 
 // API & Types
 import { GoodsReceiptNoteResponse,GoodReceiptResponse } from "@/src/api/models/GoodsReceiptNote";
@@ -24,10 +24,13 @@ interface Props {
   grnData?: GoodsReceiptNoteResponse;
 }
 
+type Stage = "general" | "products";
+
 const CreateGRNModal = ({ isOpen, onClose, clientData, grnData }: Props) => {
   const [selectedClient, setSelectedClient] = useState<UpdatedClientResponse | undefined>(clientData);
   const [grn, setGrn] = useState<GoodsReceiptNoteResponse | undefined>();
   const [producers, setProducers] = useState<UpdatedClientResponse[]>([]);
+  const [stage, setStage] = useState<Stage>("general");
   const [seller, setSeller] = useState<UpdatedSellerResponse>();
 
   useEffect(() => {
@@ -53,7 +56,8 @@ const CreateGRNModal = ({ isOpen, onClose, clientData, grnData }: Props) => {
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
-      
+      setStage("general");
+
       if (grnData) {
         // Mode: EDIT
         setGrn(grnData);
@@ -133,6 +137,13 @@ const CreateGRNModal = ({ isOpen, onClose, clientData, grnData }: Props) => {
   // Calculate total received quantity for the footer display
   const totalReceived = grn?.lines?.reduce((acc, line) => acc + (line.receivedQuantity || 0), 0) || 0;
 
+  const generalInfoDone = !!selectedClient;
+  const productsDone = (grn?.lines?.length ?? 0) > 0;
+  const STAGES: { key: Stage; label: string; icon: typeof ClipboardList; done: boolean }[] = [
+    { key: "general", label: "General Info", icon: ClipboardList, done: generalInfoDone },
+    { key: "products", label: "Products & Totals", icon: ShoppingCart, done: productsDone },
+  ];
+
   return (
     <div className="fixed inset-0 z-[100] flex justify-end items-stretch">
       {/* Background Overlay */}
@@ -161,21 +172,54 @@ const CreateGRNModal = ({ isOpen, onClose, clientData, grnData }: Props) => {
           </button>
         </div>
 
+        {/* STAGE INDICATOR */}
+        <div className="px-8 py-4 border-b border-gray-100 bg-white shrink-0 flex items-center gap-3">
+          {STAGES.map((s, i) => {
+            const Icon = s.icon;
+            const isActive = stage === s.key;
+            return (
+              <React.Fragment key={s.key}>
+                {i > 0 && <ChevronRight size={16} className="text-gray-200 shrink-0" />}
+                <button
+                  type="button"
+                  onClick={() => setStage(s.key)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all ${
+                    isActive ? "border-secondary-mid bg-secondary-super-light/50" : "border-gray-100 bg-white hover:border-gray-200"
+                  }`}
+                >
+                  <span
+                    className={`flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-black shrink-0 ${
+                      s.done ? "bg-emerald-500 text-white" : isActive ? "bg-secondary-mid text-white" : "bg-gray-100 text-gray-400"
+                    }`}
+                  >
+                    {s.done ? <CheckCircle2 size={12} /> : i + 1}
+                  </span>
+                  <Icon size={15} className={isActive ? "text-secondary-mid" : "text-gray-400"} />
+                  <span className={`text-xs font-black uppercase tracking-widest ${isActive ? "text-secondary-mid" : "text-gray-500"}`}>
+                    {s.label}
+                  </span>
+                </button>
+              </React.Fragment>
+            );
+          })}
+        </div>
+
         {/* BODY */}
         <div className="flex-1 overflow-y-auto p-8 space-y-8 bg-gray-50/50">
-          <ClientHeader
-            producers={producers}
-            setMainSelectedProducer={setSelectedClient}
-            selectedProducer={selectedClient}
-            grn={grn as any} 
-            setGrn={setGrn as any}
-          />
-
-          <GRNDetails 
-            grn={grn} 
-            setGrn={setGrn} 
-          
-          />
+          {stage === "general" ? (
+            <ClientHeader
+              producers={producers}
+              setMainSelectedProducer={setSelectedClient}
+              selectedProducer={selectedClient}
+              grn={grn as any}
+              setGrn={setGrn as any}
+            />
+          ) : (
+            <GRNDetails
+              grn={grn}
+              setGrn={setGrn}
+            />
+          )}
         </div>
 
         {/* FOOTER */}
@@ -194,14 +238,23 @@ const CreateGRNModal = ({ isOpen, onClose, clientData, grnData }: Props) => {
               >
                 Discard
               </button>
-              <button 
-                onClick={handleSave}
-                disabled={!selectedClient || (grn?.lines?.length ?? 0) === 0}
-                className="flex items-center gap-2 bg-secondary-mid hover:bg-secondary text-white px-8 py-3 rounded-xl font-black text-sm shadow-lg disabled:opacity-50 disabled:grayscale transition-all active:scale-95"
-              >
-                <Save size={18} />
-                SAVE & GENERATE GRN
-              </button>
+              {stage === "general" ? (
+                <button
+                  onClick={() => setStage("products")}
+                  className="flex items-center gap-2 bg-secondary-mid hover:bg-secondary text-white px-8 py-3 rounded-xl font-black text-sm shadow-lg transition-all active:scale-95"
+                >
+                  Continue to Products <ChevronRight size={18} />
+                </button>
+              ) : (
+                <button
+                  onClick={handleSave}
+                  disabled={!selectedClient || (grn?.lines?.length ?? 0) === 0}
+                  className="flex items-center gap-2 bg-secondary-mid hover:bg-secondary text-white px-8 py-3 rounded-xl font-black text-sm shadow-lg disabled:opacity-50 disabled:grayscale transition-all active:scale-95"
+                >
+                  <Save size={18} />
+                  SAVE & GENERATE GRN
+                </button>
+              )}
            </div>
         </div>
       </div>

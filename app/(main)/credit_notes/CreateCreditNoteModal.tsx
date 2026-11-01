@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import CloseIcon from "@mui/icons-material/Close";
-import { Save, Undo2, AlertCircle, FileText } from "lucide-react";
+import { Save, Undo2, AlertCircle, FileText, ClipboardList, ShoppingCart, ChevronRight, CheckCircle2 } from "lucide-react";
 
 // API & Types
 import { UpdatedCreditNoteResponse, CreditNoteResponse } from "@/src/api/models/UpdatedCreditNoteResponse";
@@ -25,10 +25,13 @@ interface Props {
   creditNoteData?: UpdatedCreditNoteResponse;
 }
 
+type Stage = "general" | "products";
+
 const CreateCreditNoteModal = ({ isOpen, onClose, clientData, creditNoteData }: Props) => {
   const [selectedClient, setSelectedClient] = useState<UpdatedClientResponse | undefined>(clientData);
   const [creditNote, setCreditNote] = useState<UpdatedCreditNoteResponse | undefined>();
   const [clients, setClients] = useState<UpdatedClientResponse[]>([]);
+  const [stage, setStage] = useState<Stage>("general");
   const [seller, setSeller] = useState<UpdatedSellerResponse | null>(null);
 
   useEffect(() => {
@@ -47,7 +50,8 @@ const CreateCreditNoteModal = ({ isOpen, onClose, clientData, creditNoteData }: 
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
-      
+      setStage("general");
+
       if (creditNoteData) {
         // Mode: EDIT
         setCreditNote(creditNoteData);
@@ -134,12 +138,20 @@ const CreateCreditNoteModal = ({ isOpen, onClose, clientData, creditNoteData }: 
   }, [creditNoteData]);
 
   if (!isOpen) return null;
+
+  const generalInfoDone = !!selectedClient;
+  const productsDone = (creditNote?.lignesCreditNote?.length ?? 0) > 0;
+  const STAGES: { key: Stage; label: string; icon: typeof ClipboardList; done: boolean }[] = [
+    { key: "general", label: "General Info", icon: ClipboardList, done: generalInfoDone },
+    { key: "products", label: "Products & Totals", icon: ShoppingCart, done: productsDone },
+  ];
+
 return (
     <div className="fixed inset-0 z-[100] flex justify-end items-stretch">
       <div className="absolute inset-0 " onClick={() => onClose(false)} />
 
       <div className="relative w-full max-w-5xl bg-secondary-background shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-300">
-        
+
         {/* HEADER */}
         <div className="px-8 py-5 border-b border-secondary-light flex justify-between items-center bg-white">
           <div className="flex items-center gap-4">
@@ -165,20 +177,55 @@ return (
           </button>
         </div>
 
+        {/* STAGE INDICATOR */}
+        <div className="px-8 py-4 border-b border-secondary-light bg-white shrink-0 flex items-center gap-3">
+          {STAGES.map((s, i) => {
+            const Icon = s.icon;
+            const isActive = stage === s.key;
+            return (
+              <React.Fragment key={s.key}>
+                {i > 0 && <ChevronRight size={16} className="text-gray-200 shrink-0" />}
+                <button
+                  type="button"
+                  onClick={() => setStage(s.key)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all ${
+                    isActive ? "border-secondary-mid bg-secondary-super-light/50" : "border-gray-100 bg-white hover:border-gray-200"
+                  }`}
+                >
+                  <span
+                    className={`flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-black shrink-0 ${
+                      s.done ? "bg-emerald-500 text-white" : isActive ? "bg-secondary-mid text-white" : "bg-gray-100 text-gray-400"
+                    }`}
+                  >
+                    {s.done ? <CheckCircle2 size={12} /> : i + 1}
+                  </span>
+                  <Icon size={15} className={isActive ? "text-secondary-mid" : "text-gray-400"} />
+                  <span className={`text-xs font-black uppercase tracking-widest ${isActive ? "text-secondary-mid" : "text-gray-500"}`}>
+                    {s.label}
+                  </span>
+                </button>
+              </React.Fragment>
+            );
+          })}
+        </div>
+
         {/* BODY */}
         <div className="flex-1 overflow-y-auto p-8 space-y-8">
-          <ClientHeader 
-            clients={clients} 
-            setMainSelectedClient={setSelectedClient}
-            selectClient={selectedClient}
-            credit_note={creditNote as any} 
-            setCreditNote={setCreditNote as any}
-          />
-          <CreditNoteDetails 
-            creditNote={creditNote} 
-            setCreditNote={setCreditNote} 
-            client={selectedClient} 
-          />
+          {stage === "general" ? (
+            <ClientHeader
+              clients={clients}
+              setMainSelectedClient={setSelectedClient}
+              selectClient={selectedClient}
+              credit_note={creditNote as any}
+              setCreditNote={setCreditNote as any}
+            />
+          ) : (
+            <CreditNoteDetails
+              creditNote={creditNote}
+              setCreditNote={setCreditNote}
+              client={selectedClient}
+            />
+          )}
         </div>
 
         {/* FOOTER */}
@@ -194,14 +241,23 @@ return (
               <button onClick={() => onClose(false)} className="text-xs font-black text-secondary-gray hover:text-primary uppercase tracking-widest transition-colors">
                 Discard
               </button>
-              <button 
-                onClick={handleSave}
-                disabled={!selectedClient || (creditNote?.lignesCreditNote?.length ?? 0) === 0}
-                className="flex items-center gap-3 bg-secondary-mid hover:bg-primary text-white px-10 py-4 rounded-xl font-black text-sm shadow-xl shadow-secondary/20 transition-all active:scale-95 disabled:opacity-30"
-              >
-                <Save size={20} />
-                SAVE CREDIT NOTE
-              </button>
+              {stage === "general" ? (
+                <button
+                  onClick={() => setStage("products")}
+                  className="flex items-center gap-3 bg-secondary-mid hover:bg-primary text-white px-10 py-4 rounded-xl font-black text-sm shadow-xl shadow-secondary/20 transition-all active:scale-95"
+                >
+                  Continue to Products <ChevronRight size={18} />
+                </button>
+              ) : (
+                <button
+                  onClick={handleSave}
+                  disabled={!selectedClient || (creditNote?.lignesCreditNote?.length ?? 0) === 0}
+                  className="flex items-center gap-3 bg-secondary-mid hover:bg-primary text-white px-10 py-4 rounded-xl font-black text-sm shadow-xl shadow-secondary/20 transition-all active:scale-95 disabled:opacity-30"
+                >
+                  <Save size={20} />
+                  SAVE CREDIT NOTE
+                </button>
+              )}
            </div>
         </div>
       </div>

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import DropDown from "@mui/icons-material/ArrowDropDown"
 import SearchIcon from "@mui/icons-material/Search"
 import AddIcon from "@mui/icons-material/Add"
-import { Pencil, Trash2, MoreVertical, Printer, FileText, ReceiptText, Eye, Share2, Banknote, Globe } from "lucide-react";
+import { Pencil, Trash2, MoreVertical, Printer, FileText, ReceiptText, Eye, Share2, Banknote, Mail } from "lucide-react";
 import CreateInvoiceModal from './CreateInvoiceModal'
 import CreateInvoicePrintModal from './InvoicePrintPreviewModal'
 import RegisterPaymentModal from './RegisterPaymentModal'
@@ -26,6 +26,7 @@ import { useLoading } from '@/components/LoadingContext'
 import ActionButton from '@/components/ActionButton'
 import PermissionBadge from '@/components/PermissionBadge'
 import ShareDocModal from '@/components/ShareDocModal'
+import SendDocumentModal from '@/components/SendDocumentModal'
 import SyncStatusIndicator from '@/components/SyncStatusIndicator'
 import { useCanEditDocuments } from '@/src/hooks/useCanEditDocuments'
 import { offlineDb } from '@/src/offline/db/database'
@@ -53,6 +54,7 @@ const Factures = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState<boolean>(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
+  const [isSendDocModalOpen, setIsSendDocModalOpen] = useState<boolean>(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState<boolean>(false);
 
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
@@ -180,33 +182,21 @@ const Factures = () => {
       color: "text-purple-800"
     },
     {
-      label: "Send to Portal",
-      icon: <Globe size={14} />,
-      action: async (f: UpdatedFactureResponse) => {
-        if (!f.idFacture) return;
-        // Invoices created offline sit in the local outbox until they sync —
-        // sales-core has never heard of that id yet, so sending would 404.
-        const local = await offlineDb.factures.get(f.idFacture);
-        if (local && local.syncStatus !== 'synced') {
-          toast.info("This invoice hasn't finished syncing yet — try again in a moment.");
-          return;
-        }
-        FactureService.sendToPortal1(f.idFacture)
-          .then(() => {
-            setFactures(prev => prev.map(item => item.idFacture === f.idFacture ? { ...item, etat: 'ENVOYE' as any } : item));
-            toast.success(`${f.numeroFacture} sent — client can now view it in their portal.`);
-          })
-          .catch((error: any) => toast.error(error?.body?.message || "Failed to send invoice to the client's portal."));
+      label: "Share",
+      icon: <Mail size={14} />,
+      action: (f: UpdatedFactureResponse) => {
+        setClickedFacture(f);
+        setIsSendDocModalOpen(true);
       },
-      color: "text-blue-700",
+      color: "text-emerald-700",
     },
     {
       label: "Delete",
-      icon: <Trash2 size={14} />, 
+      icon: <Trash2 size={14} />,
       action: (f: UpdatedFactureResponse) => {
         setFactures(prev => prev.filter(item => item.idFacture !== f.idFacture));
       },
-      color: "text-red-600" 
+      color: "text-red-600"
     },
     { 
     label: "Comptabiliser", 
@@ -394,6 +384,24 @@ handleAccountingSync(f)
         docType="FACTURE"
         docLabel={clickedFacture?.numeroFacture ? `Invoice ${clickedFacture.numeroFacture}` : undefined}
         onClose={() => setIsShareModalOpen(false)}
+      />
+      <SendDocumentModal
+        isOpen={isSendDocModalOpen}
+        thirdPartyId={clickedFacture?.idClient}
+        docLabel={clickedFacture?.numeroFacture ? `Invoice ${clickedFacture.numeroFacture}` : undefined}
+        onClose={() => setIsSendDocModalOpen(false)}
+        onSend={async (contactEmail, contactName) => {
+          if (!clickedFacture?.idFacture) return;
+          // Invoices created offline sit in the local outbox until they sync —
+          // sales-core has never heard of that id yet, so sending would 404.
+          const local = await offlineDb.factures.get(clickedFacture.idFacture);
+          if (local && local.syncStatus !== 'synced') {
+            toast.info("This invoice hasn't finished syncing yet — try again in a moment.");
+            return;
+          }
+          await FactureService.sendToPortal1(clickedFacture.idFacture, { contactEmail, contactName });
+          setFactures(prev => prev.map(item => item.idFacture === clickedFacture.idFacture ? { ...item, etat: 'ENVOYE' as any } : item));
+        }}
       />
       {isPaymentModalOpen && clickedFacture && (
         <RegisterPaymentModal

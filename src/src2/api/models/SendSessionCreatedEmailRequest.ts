@@ -5,7 +5,7 @@
 export type SendSessionCreatedEmailRequest = {
     organizationId?: string;
     email: string;
-    username?: string;
+    firstName?: string;
     agency?: string;
     sessionType?: string;
     status?: string;

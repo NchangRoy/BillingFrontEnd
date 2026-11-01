@@ -17,14 +17,14 @@ import {
   FileText,
   ChevronRight,
   Eye,
-  Share2
+  Share2,
+  Mail
 } from "lucide-react";
 
 // API & Types
 import { UpdatedClientResponse } from '@/src/api/models/UpdatedClientResponse'
 
 import { UpdatedFactureResponse } from '@/src/api/models/UpdatedFactureResponse'
-import { mapDevisToFacture } from '@/src/api/transformation/DevisTransformation'
 import { UpdatedProformaInvoiceResponse,MOCK_PROFORMA_INVOICE } from '@/src/api/models/UpdatedProformaInvoiceResponse'
 // Components
 import CreateProformaInvoiceModal from './CreateProformaInvoiceModal'
@@ -43,6 +43,7 @@ import { useLoading } from '@/components/LoadingContext'
 import ActionButton from '@/components/ActionButton'
 import PermissionBadge from '@/components/PermissionBadge'
 import ShareDocModal from '@/components/ShareDocModal'
+import SendDocumentModal from '@/components/SendDocumentModal'
 import { useCanEditDocuments } from '@/src/hooks/useCanEditDocuments'
 import SyncStatusIndicator from '@/components/SyncStatusIndicator'
 
@@ -66,6 +67,7 @@ const ProformaInvoice = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState<boolean>(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
+  const [isSendDocModalOpen, setIsSendDocModalOpen] = useState<boolean>(false);
   
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [showTransformSub, setShowTransformSub] = useState<boolean>(false);
@@ -156,13 +158,6 @@ const ProformaInvoice = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
-  const handleTransform = (q: UpdatedProformaInvoiceResponse) => {
-    const invoice: UpdatedFactureResponse = mapDevisToFacture(q);
-    localStorage.setItem("invoice", JSON.stringify(invoice));
-    localStorage.setItem("modalOpen", "open");
-    router.push("/invoices");
-  };
 
   const statusOptions = Array.from(new Set(MOCK_PROFORMA_INVOICE.map(q => q.statut)));
 
@@ -394,6 +389,15 @@ const ProformaInvoice = () => {
                           <Printer size={14} />
                         </ActionButton>
 
+                        {/* Share */}
+                        <ActionButton
+                          label="Share"
+                          onClick={() => { setClickedProformaInvoice(ProformaInvoice); setIsSendDocModalOpen(true); setActiveMenuId(null); }}
+                          className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-emerald-700 transition-all"
+                        >
+                          <Mail size={14} />
+                        </ActionButton>
+
                         {/* Delete */}
                         <ActionButton
                           label="Delete"
@@ -426,6 +430,17 @@ const ProformaInvoice = () => {
         docType="FACTURE_PROFORMA"
         docLabel={clickedProformaInvoice?.numeroProformaInvoice ? `Proforma Invoice ${clickedProformaInvoice.numeroProformaInvoice}` : undefined}
         onClose={() => setIsShareModalOpen(false)}
+      />
+      <SendDocumentModal
+        isOpen={isSendDocModalOpen}
+        thirdPartyId={clickedProformaInvoice?.idClient}
+        docLabel={clickedProformaInvoice?.numeroProformaInvoice ? `Proforma Invoice ${clickedProformaInvoice.numeroProformaInvoice}` : undefined}
+        onClose={() => setIsSendDocModalOpen(false)}
+        onSend={async (contactEmail, contactName) => {
+          if (!clickedProformaInvoice?.idProformaInvoice) return;
+          await FacturesProformaService.sendToPortal2(clickedProformaInvoice.idProformaInvoice, { contactEmail, contactName });
+          setProformaInvoices(prev => prev.map(p => p.idProformaInvoice === clickedProformaInvoice.idProformaInvoice ? { ...p, statut: 'ENVOYE' as any } : p));
+        }}
       />
     </div>
   )

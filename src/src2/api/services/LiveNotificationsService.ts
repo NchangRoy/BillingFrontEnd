@@ -53,6 +53,17 @@ export class LiveNotificationsService {
         });
     }
     /**
+     * List notification rules (one per channel, typically) for the caller's organization
+     * @returns LiveNotificationResponse OK
+     * @throws ApiError
+     */
+    public static list(): CancelablePromise<Array<LiveNotificationResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/notifications/live-notifications',
+        });
+    }
+    /**
      * Create a notification for the caller's organization: contacts + flush delay
      * @param requestBody
      * @returns LiveNotificationResponse Created

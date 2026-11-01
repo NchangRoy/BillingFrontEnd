@@ -4,6 +4,7 @@
 /* eslint-disable */
 import type { FactureFournisseurCreateRequest } from '../models/FactureFournisseurCreateRequest';
 import type { FactureFournisseurResponse } from '../models/FactureFournisseurResponse';
+import type { ShareDocumentRequest } from '../models/ShareDocumentRequest';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -70,12 +71,15 @@ export class FactureFournisseurControllerService {
         });
     }
     /**
+     * Envoyer la facture fournisseur au fournisseur (ou à un contact choisi) via le portail (login requis)
      * @param id
+     * @param requestBody
      * @returns any OK
      * @throws ApiError
      */
-    public static sendToPortal2(
+    public static sendToPortal3(
         id: string,
+        requestBody?: ShareDocumentRequest,
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
@@ -83,6 +87,8 @@ export class FactureFournisseurControllerService {
             path: {
                 'id': id,
             },
+            body: requestBody,
+            mediaType: 'application/json',
         });
     }
     /**

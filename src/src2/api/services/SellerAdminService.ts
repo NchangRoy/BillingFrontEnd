@@ -6,6 +6,7 @@ import type { AssignAgencyRequest } from '../models/AssignAgencyRequest';
 import type { AssignAgencyResponse } from '../models/AssignAgencyResponse';
 import type { CreateSellerRequest } from '../models/CreateSellerRequest';
 import type { CreateSellerResponse } from '../models/CreateSellerResponse';
+import type { OrganizationEmployeeResponse } from '../models/OrganizationEmployeeResponse';
 import type { SellerListItemResponse } from '../models/SellerListItemResponse';
 import type { SellerUIPermissionsRequest } from '../models/SellerUIPermissionsRequest';
 import type { SellerUIPermissionsResponse } from '../models/SellerUIPermissionsResponse';
@@ -35,23 +36,6 @@ export class SellerAdminService {
             },
             body: requestBody,
             mediaType: 'application/json',
-        });
-    }
-    /**
-     * Regenerate a seller's POS quick-login PIN
-     * @param sellerId
-     * @returns SellerListItemResponse OK
-     * @throws ApiError
-     */
-    public static regeneratePin(
-        sellerId: string,
-    ): CancelablePromise<SellerListItemResponse> {
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/api/sellers/{sellerId}/pin/regenerate',
-            path: {
-                'sellerId': sellerId,
-            },
         });
     }
     /**
@@ -114,7 +98,8 @@ export class SellerAdminService {
         });
     }
     /**
-     * Create a seller
+     * Invite a new seller
+     * For someone who isn't a Kernel employee yet: invites them into the org via Kernel and creates the seller as PENDING.
      * @param requestBody
      * @returns CreateSellerResponse Created
      * @throws ApiError
@@ -165,6 +150,23 @@ export class SellerAdminService {
             },
             body: requestBody,
             mediaType: 'application/json',
+        });
+    }
+    /**
+     * Regenerate a seller's POS quick-login PIN
+     * @param sellerId
+     * @returns SellerListItemResponse OK
+     * @throws ApiError
+     */
+    public static regeneratePin(
+        sellerId: string,
+    ): CancelablePromise<SellerListItemResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/sellers/{sellerId}/pin/regenerate',
+            path: {
+                'sellerId': sellerId,
+            },
         });
     }
     /**
@@ -219,6 +221,41 @@ export class SellerAdminService {
             url: '/api/sellers/{sellerId}/agency',
             path: {
                 'sellerId': sellerId,
+            },
+        });
+    }
+    /**
+     * Add an existing Kernel employee as a seller
+     * No Kernel invite — the person already has credentials. Seller is created ACTIVE immediately.
+     * @param requestBody
+     * @returns CreateSellerResponse Created
+     * @throws ApiError
+     */
+    public static createFromEmployee(
+        requestBody: CreateSellerRequest,
+    ): CancelablePromise<CreateSellerResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/sellers/from-employee',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+    /**
+     * List this organization's Kernel employees
+     * Source for the "add from employee" picker — each entry flags whether it's already a seller.
+     * @param organizationId
+     * @returns OrganizationEmployeeResponse OK
+     * @throws ApiError
+     */
+    public static listOrganizationEmployees(
+        organizationId: string,
+    ): CancelablePromise<Array<OrganizationEmployeeResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/sellers/employees',
+            query: {
+                'organizationId': organizationId,
             },
         });
     }

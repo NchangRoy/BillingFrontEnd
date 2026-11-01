@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import CloseIcon from "@mui/icons-material/Close";
-import { Save, Truck } from "lucide-react";
+import { Save, Truck, ClipboardList, ShoppingCart, ChevronRight, CheckCircle2 } from "lucide-react";
 
 // API & Types
 import { FactureResponse, UpdatedSupplierFactureResponse } from "@/src/api/models/UpdatedSupplierFactureResponse";
@@ -25,11 +25,14 @@ interface Props {
   factureData?: UpdatedSupplierFactureResponse;
 }
 
+type Stage = "general" | "products";
+
 const CreateSupplierInvoiceModal = ({ isOpen, onClose, supplierData, factureData }: Props) => {
   const [selectedSupplier, setSelectedSupplier] = useState<UpdatedClientResponse | undefined>(supplierData);
   const [facture, setFacture] = useState<UpdatedSupplierFactureResponse | undefined>();
   const [seller, setSeller] = useState<UpdatedSellerResponse | null>(null);
   const [suppliers, setSuppliers] = useState<UpdatedClientResponse[]>([]);
+  const [stage, setStage] = useState<Stage>("general");
     useEffect(() => {
         const stored = localStorage.getItem("seller");
         if (stored) setSeller(JSON.parse(stored));
@@ -54,7 +57,8 @@ const CreateSupplierInvoiceModal = ({ isOpen, onClose, supplierData, factureData
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
-      
+      setStage("general");
+
       if (factureData) {
         setFacture(factureData);
         setSelectedSupplier(supplierData);
@@ -130,6 +134,13 @@ const CreateSupplierInvoiceModal = ({ isOpen, onClose, supplierData, factureData
 
   if (!isOpen) return null;
 
+  const generalInfoDone = !!selectedSupplier;
+  const productsDone = (facture?.lignesFacture?.length ?? 0) > 0;
+  const STAGES: { key: Stage; label: string; icon: typeof ClipboardList; done: boolean }[] = [
+    { key: "general", label: "General Info", icon: ClipboardList, done: generalInfoDone },
+    { key: "products", label: "Products & Totals", icon: ShoppingCart, done: productsDone },
+  ];
+
   return (
     <div className="fixed inset-0 z-[100] flex justify-end items-stretch">
       {/* Background Overlay - Using primary with low opacity for blur */}
@@ -167,22 +178,55 @@ const CreateSupplierInvoiceModal = ({ isOpen, onClose, supplierData, factureData
           </button>
         </div>
 
+        {/* STAGE INDICATOR */}
+        <div className="px-8 py-4 border-b border-secondary-light bg-white shrink-0 flex items-center gap-3">
+          {STAGES.map((s, i) => {
+            const Icon = s.icon;
+            const isActive = stage === s.key;
+            return (
+              <React.Fragment key={s.key}>
+                {i > 0 && <ChevronRight size={16} className="text-gray-200 shrink-0" />}
+                <button
+                  type="button"
+                  onClick={() => setStage(s.key)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all ${
+                    isActive ? "border-secondary-mid bg-secondary-super-light/50" : "border-gray-100 bg-white hover:border-gray-200"
+                  }`}
+                >
+                  <span
+                    className={`flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-black shrink-0 ${
+                      s.done ? "bg-emerald-500 text-white" : isActive ? "bg-secondary-mid text-white" : "bg-gray-100 text-gray-400"
+                    }`}
+                  >
+                    {s.done ? <CheckCircle2 size={12} /> : i + 1}
+                  </span>
+                  <Icon size={15} className={isActive ? "text-secondary-mid" : "text-gray-400"} />
+                  <span className={`text-xs font-black uppercase tracking-widest ${isActive ? "text-secondary-mid" : "text-gray-500"}`}>
+                    {s.label}
+                  </span>
+                </button>
+              </React.Fragment>
+            );
+          })}
+        </div>
+
         {/* BODY */}
         <div className="flex-1 overflow-y-auto p-8 space-y-8">
-          {/* Linked Components */}
-          <SupplierHeader
-            suppliers={suppliers}
-            selectedSupplier={selectedSupplier}
-            setSelectedSupplier={setSelectedSupplier}
-            invoice={facture}
-            setInvoice={setFacture}
-          />
-
-          <SupplierInvoiceDetails 
-            invoice={facture} 
-            setInvoice={setFacture} 
-            supplier={selectedSupplier} 
-          />
+          {stage === "general" ? (
+            <SupplierHeader
+              suppliers={suppliers}
+              selectedSupplier={selectedSupplier}
+              setSelectedSupplier={setSelectedSupplier}
+              invoice={facture}
+              setInvoice={setFacture}
+            />
+          ) : (
+            <SupplierInvoiceDetails
+              invoice={facture}
+              setInvoice={setFacture}
+              supplier={selectedSupplier}
+            />
+          )}
         </div>
 
         {/* FOOTER - Using your secondary-mid for the amount */}
@@ -206,14 +250,23 @@ const CreateSupplierInvoiceModal = ({ isOpen, onClose, supplierData, factureData
               >
                 Cancel
               </button>
-              <button 
-                onClick={handleSave}
-                disabled={!selectedSupplier || (facture?.lignesFacture?.length ?? 0) === 0}
-                className="flex items-center gap-3 bg-secondary hover:bg-primary text-white px-10 py-4 rounded-2xl font-black text-sm shadow-xl shadow-secondary/20 disabled:opacity-30 disabled:grayscale transition-all active:scale-95 uppercase tracking-wider"
-              >
-                <Save size={18} />
-                Confirm & Record Bill
-              </button>
+              {stage === "general" ? (
+                <button
+                  onClick={() => setStage("products")}
+                  className="flex items-center gap-3 bg-secondary hover:bg-primary text-white px-10 py-4 rounded-2xl font-black text-sm shadow-xl shadow-secondary/20 transition-all active:scale-95 uppercase tracking-wider"
+                >
+                  Continue to Products <ChevronRight size={18} />
+                </button>
+              ) : (
+                <button
+                  onClick={handleSave}
+                  disabled={!selectedSupplier || (facture?.lignesFacture?.length ?? 0) === 0}
+                  className="flex items-center gap-3 bg-secondary hover:bg-primary text-white px-10 py-4 rounded-2xl font-black text-sm shadow-xl shadow-secondary/20 disabled:opacity-30 disabled:grayscale transition-all active:scale-95 uppercase tracking-wider"
+                >
+                  <Save size={18} />
+                  Confirm & Record Bill
+                </button>
+              )}
            </div>
         </div>
       </div>

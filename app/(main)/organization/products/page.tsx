@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Search, Package, Tag, Barcode, Ruler, PackagePlus,
+  Search, Package, Tag, Ruler, PackagePlus,
   CheckCircle2, XCircle, ChevronRight, MoreVertical, ImagePlus, SlidersHorizontal
 } from "lucide-react";
 import { MediaService, ProductsService, ProductResponse } from "@/src/src2/api";
@@ -230,15 +230,9 @@ const ProductsAdminPage = () => {
                       </span>
                     </td>
                     <td className="px-8 py-5">
-                      <div className="flex flex-col gap-1 text-[11px] font-bold text-secondary-gray">
-                        {(product.productNumber || product.reference) && (
-                          <span className="font-mono">{product.productNumber || product.reference}</span>
-                        )}
-                        {product.codeBarre && (
-                          <span className="flex items-center gap-1"><Barcode size={10} /> {product.codeBarre}</span>
-                        )}
-                        {!product.productNumber && !product.reference && !product.codeBarre && "-"}
-                      </div>
+                      <span className="font-black text-primary">
+                        {product.productNumber || "-"}
+                      </span>
                     </td>
                     <td className="px-8 py-5">
                       <span className="font-black text-primary">

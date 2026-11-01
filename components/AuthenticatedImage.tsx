@@ -9,6 +9,9 @@ interface Props {
   className?: string;
   style?: React.CSSProperties;
   fallback?: React.ReactNode;
+  /** Overrides the seller-session token/org this normally reads — needed for any caller outside the seller auth realm (e.g. the client portal, which has its own session). */
+  token?: string;
+  organizationId?: string;
 }
 
 /**
@@ -19,7 +22,7 @@ interface Props {
  * Only kicks in for Billing's own media-proxy URLs; anything else (a raw Kernel
  * imageUri, a data: URL, a locally-created object URL) is rendered as-is.
  */
-const AuthenticatedImage = ({ src, alt, className, style, fallback }: Props) => {
+const AuthenticatedImage = ({ src, alt, className, style, fallback, token, organizationId }: Props) => {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -33,13 +36,15 @@ const AuthenticatedImage = ({ src, alt, className, style, fallback }: Props) => 
     setFailed(false);
     setBlobUrl(null);
     const seller = getStoredSeller();
+    const resolvedToken = token ?? seller?.accessToken ?? "";
+    const resolvedOrgId = organizationId ?? seller?.organizationId ?? "";
     let objectUrl: string | null = null;
     let cancelled = false;
 
     fetch(src as string, {
       headers: {
-        Authorization: `Bearer ${seller?.accessToken ?? ""}`,
-        "X-Organization-ID": seller?.organizationId ?? "",
+        Authorization: `Bearer ${resolvedToken}`,
+        "X-Organization-ID": resolvedOrgId,
       },
     })
       .then((res) => {
@@ -60,7 +65,7 @@ const AuthenticatedImage = ({ src, alt, className, style, fallback }: Props) => 
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [src, isProtectedMediaUrl]);
+  }, [src, isProtectedMediaUrl, token, organizationId]);
 
   if (!src || failed) return <>{fallback ?? null}</>;
 

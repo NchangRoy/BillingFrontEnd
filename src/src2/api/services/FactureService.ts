@@ -4,6 +4,7 @@
 /* eslint-disable */
 import type { FactureCreateRequest } from '../models/FactureCreateRequest';
 import type { FactureResponse } from '../models/FactureResponse';
+import type { ShareDocumentRequest } from '../models/ShareDocumentRequest';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -147,13 +148,15 @@ export class FactureService {
         });
     }
     /**
-     * Envoyer la facture au client via le portail (login requis)
+     * Envoyer la facture au client (ou à un contact choisi) via le portail (login requis)
      * @param factureId
+     * @param requestBody
      * @returns any OK
      * @throws ApiError
      */
     public static sendToPortal1(
         factureId: string,
+        requestBody?: ShareDocumentRequest,
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
@@ -161,6 +164,8 @@ export class FactureService {
             path: {
                 'factureId': factureId,
             },
+            body: requestBody,
+            mediaType: 'application/json',
         });
     }
     /**

@@ -37,6 +37,7 @@ export const mapBackendResponseToUI = (apiRes: BonLivraisonResponse): DeliveryNo
 
         // Status
         etat: mapBackendStatusToUI(apiRes.statut),
+        isPartial: apiRes.partial ?? false,
 
         // Line Items
         lines: apiRes.lignes?.map(l => ({
@@ -94,6 +95,13 @@ export const mapDeliveryNoteToRequest = (
 
         montantTTC: dn.totalAmount,
         notes: dn.termsAndConditions,
+        // Backend has no per-line ordered/remaining-quantity fields (only a
+        // single `quantite`), so the missing-quantity breakdown can't survive
+        // a round trip — but the document-level flag/status can, and without
+        // these the saved note looks like an ordinary complete delivery with
+        // no trace it was partial (and re-opening it wouldn't re-enable
+        // Partial Delivery mode, since `partial` was never sent either).
+        partial: dn.isPartial,
     };
 };
 
@@ -104,12 +112,16 @@ const mapUIStatusToBackend = (status: DeliveryNoteResponse.etat): BonLivraisonRe
     switch (status) {
         case DeliveryNoteResponse.etat.BROUILLON: return BonLivraisonRequest.statut.EN_PREPARATION;
         case DeliveryNoteResponse.etat.ENVOYE: return BonLivraisonRequest.statut.EXPEDIE;
+        case DeliveryNoteResponse.etat.PARTIELLE: return BonLivraisonRequest.statut.PARTIELLE;
         case DeliveryNoteResponse.etat.ANNULE: return BonLivraisonRequest.statut.ANNULE;
         default: return BonLivraisonRequest.statut.EN_PREPARATION;
     }
 };
 
 const mapBackendStatusToUI = (status?: BonLivraisonResponse.statut): DeliveryNoteResponse.etat => {
+    if (status === BonLivraisonResponse.statut.PARTIELLE) {
+        return DeliveryNoteResponse.etat.PARTIELLE;
+    }
     if (status === BonLivraisonResponse.statut.EXPEDIE || status === BonLivraisonResponse.statut.LIVRE) {
         return DeliveryNoteResponse.etat.ENVOYE;
     }

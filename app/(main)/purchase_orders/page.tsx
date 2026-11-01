@@ -16,9 +16,9 @@ import {
   CheckCircle2,
   XCircle,
   Package,
-  Globe,
   Eye,
-  Share2
+  Share2,
+  Mail
 } from "lucide-react";
 
 // Updated Imports for Purchase Orders
@@ -41,6 +41,7 @@ import { useLoading } from '@/components/LoadingContext'
 import ActionButton from '@/components/ActionButton'
 import PermissionBadge from '@/components/PermissionBadge'
 import ShareDocModal from '@/components/ShareDocModal'
+import SendDocumentModal from '@/components/SendDocumentModal'
 import { useCanEditDocuments } from '@/src/hooks/useCanEditDocuments'
 import SyncStatusIndicator from '@/components/SyncStatusIndicator'
 import { offlineDb } from '@/src/offline/db/database'
@@ -68,6 +69,7 @@ const PurchaseOrders = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState<boolean>(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
+  const [isSendDocModalOpen, setIsSendDocModalOpen] = useState<boolean>(false);
   const [showTransformSub, setShowTransformSub] = useState<boolean>(false);
   
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
@@ -127,26 +129,7 @@ const PurchaseOrders = () => {
     localStorage.setItem("GRN", JSON.stringify(grn));
     localStorage.setItem("modalOpen", "open");
     // Redirect to the Goods Receipt Note page
-    router.push('goods_rns'); 
-  };
-
-  const handleSendToPortal = async (order: PurchaseOrderResponse) => {
-    if (!order.idPO) return;
-    setActiveMenuId(null);
-    // Purchase orders created offline sit in the local outbox until they sync —
-    // sales-core has never heard of that id yet, so sending would 404.
-    const local = await offlineDb.bon_achats.get(order.idPO);
-    if (local && local.syncStatus !== 'synced') {
-      toast.info("This purchase order hasn't finished syncing yet — try again in a moment.");
-      return;
-    }
-    try {
-      await BonDAchatService.sendToPortal4(order.idPO);
-      setOrders(prev => prev.map(o => o.idPO === order.idPO ? { ...o, statut: 'ENVOYE' as any } : o));
-      toast.success(`${order.poNumber} sent — supplier can now view it in their portal.`);
-    } catch (error: any) {
-      toast.error(error?.body?.message || "Failed to send purchase order to the supplier's portal.");
-    }
+    router.push('/goods_rns');
   };
 
   const statusOptions = Object.values(PurcaseOrderResponse.statut);
@@ -339,12 +322,12 @@ const PurchaseOrders = () => {
                           className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-purple-800 transition-all"
                         ><Printer size={14} /></ActionButton>
 
-                        {/* Send to Portal */}
+                        {/* Share */}
                         <ActionButton
-                          label="Send to Portal"
-                          onClick={() => handleSendToPortal(order)}
-                          className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-blue-700 transition-all"
-                        ><Globe size={14} /></ActionButton>
+                          label="Share"
+                          onClick={() => { setClickedOrder(order); setIsSendDocModalOpen(true); setActiveMenuId(null); }}
+                          className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-50 text-emerald-700 transition-all"
+                        ><Mail size={14} /></ActionButton>
 
                         {/* Delete */}
                         <ActionButton
@@ -376,6 +359,24 @@ const PurchaseOrders = () => {
         docType="BON_ACHAT"
         docLabel={clickedOrder?.poNumber ? `Purchase Order ${clickedOrder.poNumber}` : undefined}
         onClose={() => setIsShareModalOpen(false)}
+      />
+      <SendDocumentModal
+        isOpen={isSendDocModalOpen}
+        thirdPartyId={clickedOrder?.supplierId}
+        docLabel={clickedOrder?.poNumber ? `Purchase Order ${clickedOrder.poNumber}` : undefined}
+        onClose={() => setIsSendDocModalOpen(false)}
+        onSend={async (contactEmail, contactName) => {
+          if (!clickedOrder?.idPO) return;
+          // Purchase orders created offline sit in the local outbox until they sync —
+          // sales-core has never heard of that id yet, so sending would 404.
+          const local = await offlineDb.bon_achats.get(clickedOrder.idPO);
+          if (local && local.syncStatus !== 'synced') {
+            toast.info("This purchase order hasn't finished syncing yet — try again in a moment.");
+            return;
+          }
+          await BonDAchatService.sendToPortal5(clickedOrder.idPO, { contactEmail, contactName });
+          setOrders(prev => prev.map(o => o.idPO === clickedOrder.idPO ? { ...o, statut: 'ENVOYE' as any } : o));
+        }}
       />
     </div>
   )

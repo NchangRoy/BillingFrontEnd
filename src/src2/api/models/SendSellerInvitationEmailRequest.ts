@@ -5,7 +5,7 @@
 export type SendSellerInvitationEmailRequest = {
     organizationId?: string;
     email: string;
-    username?: string;
+    firstName?: string;
     pin?: string;
     agency?: string;
     role?: string;

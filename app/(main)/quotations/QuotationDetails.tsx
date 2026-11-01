@@ -115,9 +115,12 @@ const QuotationDetails = ({ client, quotation, setQuotation }: Props) => {
     setCurrentRemiseLine(discountAmount);
   }, [selectedSize, selectedProduct, client?.ntva, quotation?.applyVat, quantity]);
 
-  // 3. Update existing lines when VAT toggle changes
+  // 3. Update existing lines when VAT toggle changes (or once the catalog
+  // finishes loading — lines populated before `produits` arrives would
+  // otherwise have their price/total silently zeroed on this pass, since the
+  // product lookup below always misses against an empty catalog).
   useEffect(() => {
-    if (!quotation?.lignesDevis?.length) return;
+    if (!quotation?.lignesDevis?.length || !produits.length) return;
 
     const useTaxedTier = (quotation.applyVat && client?.ntva);
     const now = new Date();
@@ -159,7 +162,7 @@ const QuotationDetails = ({ client, quotation, setQuotation }: Props) => {
     if (JSON.stringify(updatedLines) !== JSON.stringify(quotation.lignesDevis)) {
       setQuotation({ ...quotation, lignesDevis: updatedLines });
     }
-  }, [quotation?.applyVat, client?.ntva]);
+  }, [quotation?.applyVat, client?.ntva, produits]);
 
   // 4. Totals Calculation (HT, TVA, TTC)
   useEffect(() => {

@@ -33,6 +33,7 @@ export type SellerAuthResponse = {
     documentNumberingSettings?: Array<SettingResponse>;
     requiresOrganizationSelection?: boolean;
     availableOrganizations?: Array<KernelOrganizationResponse>;
+    requiresPlanSelection?: boolean;
     requiresTenantSelection?: boolean;
     availableTenants?: Array<KernelDiscoveredContext>;
     mfaRequired?: boolean;

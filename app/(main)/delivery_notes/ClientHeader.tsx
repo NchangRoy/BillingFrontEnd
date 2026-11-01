@@ -20,13 +20,14 @@ interface Props {
   selectClient?: UpdatedClientResponse;
   deliveryNote?: DeliveryNoteResponse;
   setDeliveryNote: (data: DeliveryNoteResponse) => void;
+  isPartial?: boolean;
 }
 
 const inputStyles = "w-full border border-gray-200 rounded-lg outline-none py-2 px-3 focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all text-sm text-gray-700 bg-white shadow-sm placeholder:text-gray-300";
 const readOnlyStyles = "w-full border border-gray-100 bg-gray-50 rounded-lg py-2 px-3 text-sm text-gray-600 cursor-not-allowed font-medium";
 const labelStyles = "text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1 block ml-0.5";
 
-const ClientHeader = ({ clients, setMainSelectedClient, selectClient, deliveryNote, setDeliveryNote }: Props) => {
+const ClientHeader = ({ clients, setMainSelectedClient, selectClient, deliveryNote, setDeliveryNote, isPartial }: Props) => {
   const [searchTerm, setSearchTerm] = useState(selectClient?.raisonSociale || "");
   const [filteredResults, setFilteredResults] = useState<UpdatedClientResponse[]>([]);
   const [selectedClient, setSelectedClient] = useState<UpdatedClientResponse | null>(selectClient || null);
@@ -114,7 +115,20 @@ const ClientHeader = ({ clients, setMainSelectedClient, selectClient, deliveryNo
     const transformed = transformSalesOrderToDeliveryNote(so);
     setSoSearchTerm(so.numeroSalesOrder);
     setShowSoDropdown(false);
-    
+
+    // If Partial Delivery was toggled on before a sales order is linked, the
+    // transform's lines only carry `quantity` — backfill the same
+    // quantiteTotal/quantiteLivree/quantiteRestante fields handlePartialToggle
+    // applies, otherwise the Items table shows blank Total/Delivered columns.
+    if (isPartial) {
+      transformed.lines = (transformed.lines || []).map(l => ({
+        ...l,
+        quantiteTotal: l.quantiteTotal ?? l.quantity ?? 0,
+        quantiteLivree: l.quantiteLivree ?? l.quantity ?? 0,
+        quantiteRestante: 0,
+      }));
+    }
+
     setDeliveryNote(transformed);
     setFormData({
       recipientName: transformed.recipientName || "",

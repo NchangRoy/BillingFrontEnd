@@ -6,6 +6,7 @@ import type { DevisCreateRequest } from '../models/DevisCreateRequest';
 import type { DevisResponse } from '../models/DevisResponse';
 import type { EmailRequest } from '../models/EmailRequest';
 import type { EnrichedDevisResponse } from '../models/EnrichedDevisResponse';
+import type { ShareDocumentRequest } from '../models/ShareDocumentRequest';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -127,13 +128,15 @@ export class DevisService {
         });
     }
     /**
-     * Envoyer le devis au client via le portail (login requis)
+     * Envoyer le devis au client (ou à un contact choisi) via le portail (login requis)
      * @param devisId
+     * @param requestBody
      * @returns any OK
      * @throws ApiError
      */
-    public static sendToPortal3(
+    public static sendToPortal4(
         devisId: string,
+        requestBody?: ShareDocumentRequest,
     ): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',
@@ -141,6 +144,8 @@ export class DevisService {
             path: {
                 'devisId': devisId,
             },
+            body: requestBody,
+            mediaType: 'application/json',
         });
     }
     /**

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import CloseIcon from "@mui/icons-material/Close";
-import { Save, Truck, Split, AlertTriangle, Package } from "lucide-react";
+import { Save, Truck, Split, AlertTriangle, Package, ClipboardList, MapPinned, ShoppingCart, ChevronRight, CheckCircle2 } from "lucide-react";
 
 import { DeliveryNoteResponse } from "@/src/api/models/DeliveryNoteResponse";
 import { UpdatedClientResponse } from "@/src/api/models/UpdatedClientResponse";
@@ -25,10 +25,13 @@ interface Props {
   deliveryNoteData?: DeliveryNoteResponse;
 }
 
+type Stage = "general" | "logistics" | "products";
+
 const CreateDeliveryNoteModal = ({ isOpen, onClose, clientData, deliveryNoteData }: Props) => {
   const [selectedClient, setSelectedClient] = useState<UpdatedClientResponse | undefined>(clientData);
   const [deliveryNote, setDeliveryNote] = useState<DeliveryNoteResponse | undefined>();
   const [isPartial, setIsPartial] = useState(false);
+  const [stage, setStage] = useState<Stage>("general");
   const [showBackOrderPrompt, setShowBackOrderPrompt] = useState(false);
   const [pendingPayload, setPendingPayload] = useState<DeliveryNoteResponse | null>(null);
   const [clients, setClients] = useState<UpdatedClientResponse[]>([]);
@@ -52,6 +55,7 @@ const CreateDeliveryNoteModal = ({ isOpen, onClose, clientData, deliveryNoteData
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
+      setStage("general");
       if (deliveryNoteData) {
         setDeliveryNote(deliveryNoteData);
         setSelectedClient(clientData);
@@ -222,6 +226,15 @@ const CreateDeliveryNoteModal = ({ isOpen, onClose, clientData, deliveryNoteData
 
   if (!isOpen) return null;
 
+  const generalInfoDone = !!selectedClient;
+  const logisticsDone = !!(deliveryNote?.recipientName || deliveryNote?.recipientAddress);
+  const productsDone = (deliveryNote?.lines?.length ?? 0) > 0;
+  const STAGES: { key: Stage; label: string; icon: typeof ClipboardList; done: boolean }[] = [
+    { key: "general", label: "General Info", icon: ClipboardList, done: generalInfoDone },
+    { key: "logistics", label: "Logistics", icon: MapPinned, done: logisticsDone },
+    { key: "products", label: "Items & Totals", icon: ShoppingCart, done: productsDone },
+  ];
+
   return (
     <div className="fixed inset-0 z-[100] flex justify-end items-stretch">
       <div className="absolute inset-0" onClick={() => onClose(false)} />
@@ -297,25 +310,64 @@ const CreateDeliveryNoteModal = ({ isOpen, onClose, clientData, deliveryNoteData
           </div>
         )}
 
+        {/* STAGE INDICATOR */}
+        <div className="px-8 py-4 border-b border-gray-100 bg-white shrink-0 flex items-center gap-3">
+          {STAGES.map((s, i) => {
+            const Icon = s.icon;
+            const isActive = stage === s.key;
+            return (
+              <React.Fragment key={s.key}>
+                {i > 0 && <ChevronRight size={16} className="text-gray-200 shrink-0" />}
+                <button
+                  type="button"
+                  onClick={() => setStage(s.key)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all ${
+                    isActive ? "border-secondary-mid bg-secondary-super-light/50" : "border-gray-100 bg-white hover:border-gray-200"
+                  }`}
+                >
+                  <span
+                    className={`flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-black shrink-0 ${
+                      s.done ? "bg-emerald-500 text-white" : isActive ? "bg-secondary-mid text-white" : "bg-gray-100 text-gray-400"
+                    }`}
+                  >
+                    {s.done ? <CheckCircle2 size={12} /> : i + 1}
+                  </span>
+                  <Icon size={15} className={isActive ? "text-secondary-mid" : "text-gray-400"} />
+                  <span className={`text-xs font-black uppercase tracking-widest ${isActive ? "text-secondary-mid" : "text-gray-500"}`}>
+                    {s.label}
+                  </span>
+                </button>
+              </React.Fragment>
+            );
+          })}
+        </div>
+
         {/* BODY */}
         <div className="flex-1 overflow-y-auto p-8 space-y-8 bg-secondary-super-light/10">
-          <ClientHeader
-            clients={clients}
-            setMainSelectedClient={setSelectedClient}
-            selectClient={selectedClient}
-            deliveryNote={deliveryNote}
-            setDeliveryNote={setDeliveryNote}
-          />
-          <DeliveryNoteLogistics
-            deliveryNote={deliveryNote}
-            setDeliveryNote={setDeliveryNote}
-            client={selectedClient}
-          />
-          <DeliveryNoteDetails
-            deliveryNote={deliveryNote}
-            setDeliveryNote={setDeliveryNote}
-            isPartial={isPartial}
-          />
+          {stage === "general" && (
+            <ClientHeader
+              clients={clients}
+              setMainSelectedClient={setSelectedClient}
+              selectClient={selectedClient}
+              deliveryNote={deliveryNote}
+              setDeliveryNote={setDeliveryNote}
+              isPartial={isPartial}
+            />
+          )}
+          {stage === "logistics" && (
+            <DeliveryNoteLogistics
+              deliveryNote={deliveryNote}
+              setDeliveryNote={setDeliveryNote}
+              client={selectedClient}
+            />
+          )}
+          {stage === "products" && (
+            <DeliveryNoteDetails
+              deliveryNote={deliveryNote}
+              setDeliveryNote={setDeliveryNote}
+              isPartial={isPartial}
+            />
+          )}
         </div>
 
         {/* FOOTER */}
@@ -339,14 +391,23 @@ const CreateDeliveryNoteModal = ({ isOpen, onClose, clientData, deliveryNoteData
             <button onClick={() => onClose(false)} className="text-xs font-black text-secondary-gray hover:text-primary uppercase tracking-widest transition-colors">
               Discard
             </button>
-            <button
-              onClick={handleSave}
-              disabled={!selectedClient || (deliveryNote?.lines?.length ?? 0) === 0}
-              className="flex items-center gap-3 bg-secondary-mid hover:bg-primary text-white px-10 py-4 rounded-xl font-black text-sm shadow-xl shadow-secondary/20 transition-all active:scale-95 disabled:opacity-30 disabled:grayscale"
-            >
-              <Save size={20} />
-              {isPartial ? 'SAVE PARTIAL DELIVERY' : 'SAVE DELIVERY NOTE'}
-            </button>
+            {stage !== "products" ? (
+              <button
+                onClick={() => setStage(stage === "general" ? "logistics" : "products")}
+                className="flex items-center gap-3 bg-secondary-mid hover:bg-primary text-white px-10 py-4 rounded-xl font-black text-sm shadow-xl shadow-secondary/20 transition-all active:scale-95"
+              >
+                Continue <ChevronRight size={18} />
+              </button>
+            ) : (
+              <button
+                onClick={handleSave}
+                disabled={!selectedClient || (deliveryNote?.lines?.length ?? 0) === 0}
+                className="flex items-center gap-3 bg-secondary-mid hover:bg-primary text-white px-10 py-4 rounded-xl font-black text-sm shadow-xl shadow-secondary/20 transition-all active:scale-95 disabled:opacity-30 disabled:grayscale"
+              >
+                <Save size={20} />
+                {isPartial ? 'SAVE PARTIAL DELIVERY' : 'SAVE DELIVERY NOTE'}
+              </button>
+            )}
           </div>
         </div>
       </div>

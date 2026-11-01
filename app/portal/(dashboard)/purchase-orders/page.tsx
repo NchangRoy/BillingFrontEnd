@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { Eye } from "lucide-react";
 import { PortalApi } from "@/src/api/portalApi";
 import { getPortalSession, getOrganizationName } from "@/src/api/portalSession";
 import TableSkeleton from "@/components/TableSkeleton";
 import EmptyState from "@/components/EmptyState";
 import PurchaseOrderActionModal from "./PurchaseOrderActionModal";
 
-const COLUMNS = ["Order #", "Organization", "Date", "Expected Delivery", "Status", "Total"];
+const COLUMNS = ["Order #", "Organization", "Date", "Expected Delivery", "Status", "Total", ""];
 
 const VISIBLE_STATUSES = new Set(["ENVOYE", "ACCEPTE", "REJETE"]);
 
@@ -84,6 +85,14 @@ export default function PortalPurchaseOrdersPage() {
                     </td>
                     <td className="px-8 py-5 font-black text-primary">
                       {po.grandTotal?.toLocaleString()}
+                    </td>
+                    <td className="px-8 py-5 text-right">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setSelected(po); }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest text-secondary-mid bg-secondary-super-light hover:bg-secondary-mid hover:text-white transition-all"
+                      >
+                        <Eye size={12} /> View
+                      </button>
                     </td>
                   </tr>
                 ))

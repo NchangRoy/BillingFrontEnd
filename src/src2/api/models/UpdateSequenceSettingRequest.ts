@@ -8,6 +8,9 @@ export type UpdateSequenceSettingRequest = {
     includeBranchCode?: boolean;
     branchCode?: string;
     includeTva?: boolean;
+    includeCategory?: boolean;
+    includeUnit?: boolean;
+    includeFamily?: boolean;
     includeDate?: boolean;
     randomSeq4?: boolean;
 };

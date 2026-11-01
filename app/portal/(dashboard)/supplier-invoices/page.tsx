@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { Eye } from "lucide-react";
 import { PortalApi } from "@/src/api/portalApi";
 import { getPortalSession, getOrganizationName } from "@/src/api/portalSession";
 import TableSkeleton from "@/components/TableSkeleton";
 import EmptyState from "@/components/EmptyState";
 import SupplierInvoicePreviewModal from "./SupplierInvoicePreviewModal";
 
-const COLUMNS = ["Invoice #", "Organization", "Date", "Due Date", "Status", "Total", "Remaining"];
+const COLUMNS = ["Invoice #", "Organization", "Date", "Due Date", "Status", "Total", "Remaining", ""];
 
 const STATUS_STYLES: Record<string, string> = {
   PAYEE: "bg-emerald-50 text-emerald-600 border-emerald-200",
@@ -82,6 +83,14 @@ export default function PortalSupplierInvoicesPage() {
                     </td>
                     <td className="px-8 py-5 font-bold text-secondary-gray">
                       {inv.montantRestant?.toLocaleString()} {inv.devise}
+                    </td>
+                    <td className="px-8 py-5 text-right">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setSelected(inv); }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest text-secondary-mid bg-secondary-super-light hover:bg-secondary-mid hover:text-white transition-all"
+                      >
+                        <Eye size={12} /> View
+                      </button>
                     </td>
                   </tr>
                 ))

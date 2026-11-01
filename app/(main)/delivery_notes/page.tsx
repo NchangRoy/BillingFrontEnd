@@ -32,6 +32,7 @@ import { BonDeLivraisonService } from '@/src/src2/api'
 import { getVisibleBonLivraisons } from '@/src/api/scopedDocs'
 import { getVisibleClients } from '@/src/api/scopedTiers'
 import { mapBackendArrayToDeliveryNoteList } from '@/src/Mappers/DeliveryNoteMapper'
+import { mapDeliveryNoteToFacture } from '@/src/api/transformation/deliveryOrderTransformation'
 import { sortByDateDesc } from '@/src/utils/sortByDate'
 import { toast } from 'sonner'
 import TableSkeleton from '@/components/TableSkeleton'
@@ -155,11 +156,10 @@ const DeliveryNotes = () => {
 
   // Navigation handlers for transformation
   const handleTransformToInvoice = (note: DeliveryNoteResponse) => {
-
-    
-    localStorage.setItem("GRN", JSON.stringify(note));
+    const invoice = mapDeliveryNoteToFacture(note);
+    localStorage.setItem("invoice", JSON.stringify(invoice));
     localStorage.setItem("modalOpen", "open");
-    router.push('/dashboard/finance/factures'); 
+    router.push('/invoices');
   };
 
   return (

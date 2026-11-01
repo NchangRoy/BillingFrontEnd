@@ -118,10 +118,13 @@ const sales_orderDetails
     setCurrentRemiseLine(discountAmount);
   }, [selectedSize, selectedProduct, client?.ntva, sales_order?.applyVat, quantity]);
 
-  // 3. Update existing lines when VAT toggle changes
+  // 3. Update existing lines when VAT toggle changes (or once the catalog
+  // finishes loading — a quotation selected before `produits` arrives would
+  // otherwise have every line's price/total silently zeroed on this pass,
+  // since the product lookup below always misses against an empty catalog).
   useEffect(() => {
-    if (!sales_order?.lignesSalesOrder?.length) return;
- 
+    if (!sales_order?.lignesSalesOrder?.length || !produits.length) return;
+
     const useTaxedTier = (sales_order.applyVat && client?.ntva);
     const now = new Date();
 
@@ -162,7 +165,7 @@ const sales_orderDetails
     if (JSON.stringify(updatedLines) !== JSON.stringify(sales_order.lignesSalesOrder)) {
       setSalesOrder({ ...sales_order, lignesSalesOrder: updatedLines });
     }
-  }, [sales_order?.applyVat, client?.ntva]);
+  }, [sales_order?.applyVat, client?.ntva, produits]);
 
   // 4. Totals Calculation (HT, TVA, TTC)
   useEffect(() => {

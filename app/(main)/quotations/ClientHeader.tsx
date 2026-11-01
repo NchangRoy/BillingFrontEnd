@@ -19,7 +19,7 @@ import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
 import { UpdatedFactureResponse } from '@/src/api/models/UpdatedFactureResponse';
 import { DevisService } from '@/src/src2/api/services/DevisService';
 import { mapBackendArrayToUpdatedDevisArray } from '@/src/Mappers/DevisMapper';
-import { getAcronym } from '@/src/src2/api/services/ExternalServices.ts/AcronymService';
+import { getAcronym } from '@/src/utils/acronym';
 import { toast } from 'sonner';
 interface Props {
   clients: UpdatedClientResponse[];

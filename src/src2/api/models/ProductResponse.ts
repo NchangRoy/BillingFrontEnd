@@ -13,6 +13,7 @@ export type ProductResponse = {
     categorie?: string;
     reference?: string;
     codeBarre?: string;
+    productNumber?: string;
     photo?: string;
     active?: boolean;
     createdAt?: string;

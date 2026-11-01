@@ -4,7 +4,6 @@
 /* eslint-disable */
 export type SellerListItemResponse = {
     id?: string;
-    username?: string;
     email?: string;
     firstName?: string;
     lastName?: string;
@@ -19,6 +18,7 @@ export type SellerListItemResponse = {
     salesPointId?: string;
     mustChangePassword?: boolean;
     pin?: string;
+    status?: string;
     createdAt?: string;
 };
 

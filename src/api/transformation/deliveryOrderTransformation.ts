@@ -1,5 +1,7 @@
 import { UpdatedSalesOrderResponse } from '../models/UpdatedSalesOrder';
 import { DeliveryNoteLineResponse, DeliveryNoteResponse } from '../models/DeliveryNoteResponse';
+import { UpdatedFactureResponse, FactureResponse } from '../models/UpdatedFactureResponse';
+import { LigneFactureResponse } from '../models/LigneFactureResponse';
 
 /**
  * Transforms a Sales Order into a Delivery Note.
@@ -51,5 +53,55 @@ export const transformSalesOrderToDeliveryNote = (
     termsAndConditions: so.notes || "Goods must be checked upon arrival. Claims made after delivery may not be accepted.",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
+  };
+};
+
+/**
+ * Transforms a Delivery Note into a Client Invoice (Facture).
+ * Use case: billing the client once goods have actually shipped.
+ */
+export const mapDeliveryNoteToFacture = (note: DeliveryNoteResponse): UpdatedFactureResponse => {
+  const now = new Date().toISOString();
+
+  const lignesFacture: LigneFactureResponse[] = (note.lines || []).map((ligne) => ({
+    idProduit: ligne.idProduit || ligne.productId,
+    nomProduit: ligne.description,
+    description: ligne.description,
+    quantite: ligne.quantity,
+    prixUnitaire: ligne.unitPrice,
+    montantTotal: ligne.amount,
+    remisePourcentage: 0,
+    isTaxLine: false,
+  }));
+
+  return {
+    dateFacturation: now.split('T')[0],
+    dateSysteme: now,
+    etat: FactureResponse.etat.BROUILLON,
+    type: "VENTE",
+
+    idClient: note.idClient,
+    nomClient: note.nomClient,
+    adresseClient: note.adresseClient,
+    emailClient: note.emailClient,
+    telephoneClient: note.telephoneClient,
+
+    montantHT: note.totalAmount,
+    montantTVA: 0,
+    montantTTC: note.totalAmount,
+    montantTotal: note.totalAmount,
+    montantRestant: note.totalAmount,
+    finalAmount: note.totalAmount,
+
+    applyVat: false,
+    devise: "XAF",
+    tauxChange: 1,
+
+    referenceCommande: note.SaleOrderNumber,
+    notes: `Facture générée à partir du bon de livraison ${note.deliveryNoteNumber ?? note.idDN ?? ''}.`,
+
+    lignesFacture,
+    createdAt: now,
+    updatedAt: now,
   };
 };

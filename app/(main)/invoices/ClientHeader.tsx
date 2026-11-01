@@ -20,7 +20,7 @@ import { DevisResponse } from '@/src/api';
 // different (if structurally identical) enum and fails assignment checks.
 import { FactureResponse } from '@/src/api/models/UpdatedFactureResponse';
 import { UpdatedSellerResponse } from '@/src/api/models/UpdatedSellerResponse';
-import { getAcronym } from '@/src/src2/api/services/ExternalServices.ts/AcronymService';
+import { getAcronym } from '@/src/utils/acronym';
 interface Props {
   clients: UpdatedClientResponse[];
   

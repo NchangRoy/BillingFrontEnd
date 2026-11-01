@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { Eye } from "lucide-react";
 import { PortalApi } from "@/src/api/portalApi";
 import { getPortalSession, getOrganizationName } from "@/src/api/portalSession";
 import TableSkeleton from "@/components/TableSkeleton";
@@ -110,20 +111,28 @@ export default function PortalInvoicesPage() {
                       {inv.montantRestant?.toLocaleString()} {inv.devise}
                     </td>
                     <td className="px-8 py-5">
-                      {inv.montantRestant > 0 && ONLINE_PAYABLE_METHODS.has(inv.modeReglement) && inv.referenceCommande && (
-                        <div className="flex flex-col items-end gap-1">
-                          <button
-                            onClick={(e) => handlePay(inv, e)}
-                            disabled={payingId === inv.idFacture}
-                            className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-widest transition-all disabled:opacity-60"
-                          >
-                            {payingId === inv.idFacture ? "Redirecting…" : "Pay"}
-                          </button>
-                          {payError && payError.id === inv.idFacture && (
-                            <p className="text-[10px] text-red-500 font-bold text-right max-w-[160px]">{payError.message}</p>
+                      <div className="flex flex-col items-end gap-1">
+                        <div className="flex items-center gap-2">
+                          {inv.montantRestant > 0 && ONLINE_PAYABLE_METHODS.has(inv.modeReglement) && inv.referenceCommande && (
+                            <button
+                              onClick={(e) => handlePay(inv, e)}
+                              disabled={payingId === inv.idFacture}
+                              className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-widest transition-all disabled:opacity-60"
+                            >
+                              {payingId === inv.idFacture ? "Redirecting…" : "Pay"}
+                            </button>
                           )}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setSelected(inv); }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest text-secondary-mid bg-secondary-super-light hover:bg-secondary-mid hover:text-white transition-all"
+                          >
+                            <Eye size={12} /> View
+                          </button>
                         </div>
-                      )}
+                        {payError && payError.id === inv.idFacture && (
+                          <p className="text-[10px] text-red-500 font-bold text-right max-w-[160px]">{payError.message}</p>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))

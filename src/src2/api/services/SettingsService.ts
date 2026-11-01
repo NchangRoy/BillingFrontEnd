@@ -10,6 +10,44 @@ import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
 export class SettingsService {
     /**
+     * Get product numbering configuration (category/unit/VAT segments)
+     * @param organizationId
+     * @returns SettingResponse OK
+     * @throws ApiError
+     */
+    public static getProductNumberingSettings(
+        organizationId: string,
+    ): CancelablePromise<SettingResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/settings/organization/{organizationId}/product-numbering',
+            path: {
+                'organizationId': organizationId,
+            },
+        });
+    }
+    /**
+     * Update product numbering configuration
+     * @param organizationId
+     * @param requestBody
+     * @returns SettingResponse OK
+     * @throws ApiError
+     */
+    public static updateProductNumberingSettings(
+        organizationId: string,
+        requestBody: UpdateSequenceSettingRequest,
+    ): CancelablePromise<SettingResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/settings/organization/{organizationId}/product-numbering',
+            path: {
+                'organizationId': organizationId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+    /**
      * Update document numbering configuration for a document type
      * @param organizationId
      * @param typeNumerotation

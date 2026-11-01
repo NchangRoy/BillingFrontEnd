@@ -89,14 +89,12 @@ export const PortalApi = {
   // the same way the seller-login flow does (denormalized onto a Seller row).
   getOrganizationBranding: () => portalFetch<any>('/api/portal/organization'),
 
-  // GET /api/products/organization/{id} has no auth gate (same as
-  // /api/organizations/{id}/branding), so it's fetched directly rather than
-  // through portalFetch's Bearer-token wrapper.
+  // Despite looking org-public like /api/organizations/{id}/branding, this
+  // one does require a bearer token — sales-core 500s with "insufficient
+  // rights" otherwise. Goes through portalFetch so the token/401-redirect
+  // handling is consistent with every other portal call.
   getProducts: (organizationId: string) =>
-    fetch(`${BASE_URL}/api/products/organization/${organizationId}`).then((res) => {
-      if (!res.ok) throw new Error(`Failed to load products: ${res.status}`);
-      return res.json();
-    }),
+    portalFetch<any[]>(`/api/products/organization/${organizationId}`),
 
   // Own client record (allowedSaleSizes, name, etc.) — getClientById by
   // itself is broken for some clients (a pre-existing Kernel-lookup bug), so

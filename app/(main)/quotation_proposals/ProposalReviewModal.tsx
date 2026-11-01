@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, CheckCircle2, XCircle } from 'lucide-react';
+import { X, CheckCircle2, XCircle, ClipboardList, Calculator, Tag, Receipt } from 'lucide-react';
 import { toast } from 'sonner';
 import { QuotationProposalsService } from '@/src/src2/api';
+import SummaryCard from '@/components/SummaryCard';
 
 interface ProposalReviewModalProps {
   isOpen: boolean;
@@ -41,57 +42,60 @@ const ProposalReviewModal: React.FC<ProposalReviewModalProps> = ({ isOpen, onClo
   };
 
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-      <div className="bg-white w-full max-w-2xl max-h-[90vh] rounded-[2rem] overflow-hidden flex flex-col shadow-2xl">
-        <div className="px-8 py-5 border-b border-gray-100 flex justify-between items-center">
-          <div>
-            <p className="text-sm font-black uppercase tracking-widest text-secondary">Proposal {proposal.numeroProposal}</p>
-            <p className="text-xs text-gray-400 font-bold">{proposal.nomClient}</p>
+    <div className="fixed inset-0 z-[150] flex justify-end items-stretch">
+      <div className="absolute inset-0" onClick={onClose} />
+
+      <div className="relative w-full max-w-xl bg-white shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-300">
+        <div className="px-8 py-4 border-b border-gray-100 flex justify-between items-center bg-white shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-secondary-super-light rounded-lg text-secondary-mid">
+              <ClipboardList size={24} />
+            </div>
+            <div>
+              <h2 className="text-xl font-black text-secondary uppercase tracking-tight">Proposal {proposal.numeroProposal}</h2>
+              <p className="text-xs text-gray-400 font-bold">{proposal.nomClient}</p>
+            </div>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
             <X size={20} className="text-gray-400" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-8 space-y-6">
-          <table className="w-full text-left">
-            <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>
-                <th className="px-4 py-3 text-[10px] font-black uppercase text-gray-400">Product</th>
-                <th className="px-4 py-3 text-[10px] font-black uppercase text-gray-400 text-center">Tier</th>
-                <th className="px-4 py-3 text-[10px] font-black uppercase text-gray-400 text-center">Qty</th>
-                <th className="px-4 py-3 text-[10px] font-black uppercase text-gray-400 text-right">Subtotal</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {(proposal.lignesProposal ?? []).map((line: any, idx: number) => (
-                <tr key={idx}>
-                  <td className="px-4 py-3 text-sm font-bold text-gray-700">{line.nomProduit}</td>
-                  <td className="px-4 py-3 text-center">
-                    <span className="text-[9px] font-black bg-gray-100 text-gray-500 px-2 py-1 rounded uppercase">
-                      {line.saleSize}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-center font-bold text-gray-600">{line.quantite}</td>
-                  <td className="px-4 py-3 text-right font-black text-secondary">{line.montantTotal?.toLocaleString()}</td>
+        <div className="flex-1 overflow-y-auto p-8 space-y-6 bg-gray-50/50">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <table className="w-full text-left">
+              <thead className="bg-gray-50 border-b border-gray-100">
+                <tr>
+                  <th className="px-6 py-4 text-[10px] font-black uppercase text-gray-400">Product</th>
+                  <th className="px-6 py-4 text-[10px] font-black uppercase text-gray-400 text-center">Tier</th>
+                  <th className="px-6 py-4 text-[10px] font-black uppercase text-gray-400 text-center">Qty</th>
+                  <th className="px-6 py-4 text-[10px] font-black uppercase text-gray-400 text-right">Subtotal</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {(proposal.lignesProposal ?? []).map((line: any, idx: number) => (
+                  <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="px-6 py-4">
+                      <p className="text-sm font-bold text-gray-700">{line.nomProduit}</p>
+                      <p className="text-[10px] text-gray-400 font-mono">{line.idProduit}</p>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className="text-[9px] font-black bg-gray-100 text-gray-500 px-2 py-1 rounded uppercase">
+                        {line.saleSize}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-center font-bold text-gray-600">{line.quantite}</td>
+                    <td className="px-6 py-4 text-right font-black text-secondary">{line.montantTotal?.toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           <div className="grid grid-cols-3 gap-4">
-            <div className="bg-gray-50 rounded-xl p-4">
-              <p className="text-[10px] font-black text-gray-400 uppercase">Total HT</p>
-              <p className="text-lg font-black text-secondary">{proposal.montantHT?.toLocaleString()}</p>
-            </div>
-            <div className="bg-gray-50 rounded-xl p-4">
-              <p className="text-[10px] font-black text-gray-400 uppercase">VAT</p>
-              <p className="text-lg font-black text-secondary">{proposal.montantTVA?.toLocaleString()}</p>
-            </div>
-            <div className="bg-secondary-mid/10 rounded-xl p-4">
-              <p className="text-[10px] font-black text-secondary-mid uppercase">Total TTC</p>
-              <p className="text-lg font-black text-secondary-mid">{proposal.montantTTC?.toLocaleString()} {proposal.devise}</p>
-            </div>
+            <SummaryCard title="Total HT" value={proposal.montantHT} icon={<Calculator />} variant="default" />
+            <SummaryCard title="VAT" value={proposal.montantTVA} icon={<Tag />} variant="emerald" />
+            <SummaryCard title="Total TTC" value={proposal.montantTTC} icon={<Receipt />} variant="dark" />
           </div>
 
           {proposal.commentary && (
@@ -118,7 +122,7 @@ const ProposalReviewModal: React.FC<ProposalReviewModalProps> = ({ isOpen, onClo
         </div>
 
         {isPending && (
-          <div className="p-6 border-t border-gray-100 flex justify-end gap-4">
+          <div className="p-6 border-t border-gray-100 bg-white flex justify-end gap-4 shrink-0 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
             <button
               onClick={() => handleDecision(false)}
               disabled={isSubmitting}

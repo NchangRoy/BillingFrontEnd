@@ -6,7 +6,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import { useRouter } from "next/navigation";
 import ClientHeader from "./ClientHeader";
 import ProformaInvoiceDetails from "./ProformaInvoiceDetails";
-import { CheckCircle2, Save,Receipt } from "lucide-react";
+import { CheckCircle2, Save, Receipt, ClipboardList, ShoppingCart, ChevronRight } from "lucide-react";
 import { DevisResponse } from "@/src/api";
 import { UpdatedClientResponse } from "@/src/api/models/UpdatedClientResponse";
 import { UpdatedProformaInvoiceResponse,MOCK_PROFORMA_INVOICE } from "@/src/api/models/UpdatedProformaInvoiceResponse";
@@ -36,9 +36,12 @@ interface headerData {
   nosRef?:string,
 }
 
+type Stage = "general" | "products";
+
 const CreateProformaInvoiceModal = ({ isOpen, onClose,clientData,ProformaInvoiceData}: Props) => {
   const [selectedClient, setSelectedClient] = useState<UpdatedClientResponse|undefined>(clientData);
-  
+  const [stage, setStage] = useState<Stage>("general");
+
   const [headerData, setHeaderData] = useState<headerData>();
 
   const [ProformaInvoice, setProformaInvoice] = useState<UpdatedProformaInvoiceResponse | undefined>();
@@ -66,7 +69,8 @@ const CreateProformaInvoiceModal = ({ isOpen, onClose,clientData,ProformaInvoice
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
-      
+      setStage("general");
+
       if (ProformaInvoiceData) {
         // Mode: EDIT
         setProformaInvoice(ProformaInvoiceData);
@@ -180,22 +184,29 @@ const CreateProformaInvoiceModal = ({ isOpen, onClose,clientData,ProformaInvoice
 
   if (!isOpen) return null;
 
+  const generalInfoDone = !!selectedClient;
+  const productsDone = (ProformaInvoice?.lignesDevis?.length ?? 0) > 0;
+  const STAGES: { key: Stage; label: string; icon: typeof ClipboardList; done: boolean }[] = [
+    { key: "general", label: "General Info", icon: ClipboardList, done: generalInfoDone },
+    { key: "products", label: "Products & Totals", icon: ShoppingCart, done: productsDone },
+  ];
+
   return (
   <div className="fixed inset-0 z-[100] flex justify-end items-stretch">
     {/* Background Overlay */}
-    <div 
-      className="absolute inset-0" 
-      onClick={() => onClose(false)} 
+    <div
+      className="absolute inset-0"
+      onClick={() => onClose(false)}
     />
 
     <div className="relative w-full max-w-5xl bg-white shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-300">
-      
+
       {/* HEADER - Adjusted for ProformaInvoice Branding */}
       <div className="px-8 py-4 border-b border-gray-100 flex justify-between items-center bg-white shrink-0">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-secondary-super-light rounded-lg text-secondary-mid">
             {/* Using Receipt or FileText as per your visual preference */}
-            <Receipt size={24} /> 
+            <Receipt size={24} />
           </div>
           <div>
             <h2 className="text-xl font-black text-secondary uppercase tracking-tight">
@@ -209,21 +220,55 @@ const CreateProformaInvoiceModal = ({ isOpen, onClose,clientData,ProformaInvoice
         </button>
       </div>
 
+      {/* STAGE INDICATOR */}
+      <div className="px-8 py-4 border-b border-gray-100 bg-white shrink-0 flex items-center gap-3">
+        {STAGES.map((s, i) => {
+          const Icon = s.icon;
+          const isActive = stage === s.key;
+          return (
+            <React.Fragment key={s.key}>
+              {i > 0 && <ChevronRight size={16} className="text-gray-200 shrink-0" />}
+              <button
+                type="button"
+                onClick={() => setStage(s.key)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all ${
+                  isActive ? "border-secondary-mid bg-secondary-super-light/50" : "border-gray-100 bg-white hover:border-gray-200"
+                }`}
+              >
+                <span
+                  className={`flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-black shrink-0 ${
+                    s.done ? "bg-emerald-500 text-white" : isActive ? "bg-secondary-mid text-white" : "bg-gray-100 text-gray-400"
+                  }`}
+                >
+                  {s.done ? <CheckCircle2 size={12} /> : i + 1}
+                </span>
+                <Icon size={15} className={isActive ? "text-secondary-mid" : "text-gray-400"} />
+                <span className={`text-xs font-black uppercase tracking-widest ${isActive ? "text-secondary-mid" : "text-gray-500"}`}>
+                  {s.label}
+                </span>
+              </button>
+            </React.Fragment>
+          );
+        })}
+      </div>
+
       {/* BODY - Matching Invoice Padding and Spacing */}
       <div className="flex-1 overflow-y-auto p-8 space-y-8 bg-gray-50/50">
-        <ClientHeader 
-          clients={clients} 
-          setMainSelectedClient={setSelectedClient}
-          selectClient={selectedClient}
-          ProformaInvoice={ProformaInvoice}
-          setProformaInvoice={setProformaInvoice}
-        />
-
-        <ProformaInvoiceDetails 
-          ProformaInvoice={ProformaInvoice} 
-          setProformaInvoice={setProformaInvoice} 
-          client={selectedClient} 
-        />
+        {stage === "general" ? (
+          <ClientHeader
+            clients={clients}
+            setMainSelectedClient={setSelectedClient}
+            selectClient={selectedClient}
+            ProformaInvoice={ProformaInvoice}
+            setProformaInvoice={setProformaInvoice}
+          />
+        ) : (
+          <ProformaInvoiceDetails
+            ProformaInvoice={ProformaInvoice}
+            setProformaInvoice={setProformaInvoice}
+            client={selectedClient}
+          />
+        )}
       </div>
 
       {/* FOOTER - Updated with Total Summary and Discard Logic */}
@@ -242,14 +287,23 @@ const CreateProformaInvoiceModal = ({ isOpen, onClose,clientData,ProformaInvoice
             >
               Discard
             </button>
-            <button 
-              onClick={handleSave}
-              disabled={!selectedClient || (ProformaInvoice?.lignesDevis?.length ?? 0) === 0}
-              className="flex items-center gap-2 bg-secondary-mid hover:bg-secondary text-white px-8 py-3 rounded-xl font-black text-sm shadow-lg disabled:opacity-50 disabled:grayscale transition-all active:scale-95"
-            >
-              <Save size={18} />
-              {ProformaInvoiceData?.idProformaInvoice ? "UPDATE ProformaInvoice" : "SAVE & GENERATE DEVIS"}
-            </button>
+            {stage === "general" ? (
+              <button
+                onClick={() => setStage("products")}
+                className="flex items-center gap-2 bg-secondary-mid hover:bg-secondary text-white px-8 py-3 rounded-xl font-black text-sm shadow-lg transition-all active:scale-95"
+              >
+                Continue to Products <ChevronRight size={18} />
+              </button>
+            ) : (
+              <button
+                onClick={handleSave}
+                disabled={!selectedClient || (ProformaInvoice?.lignesDevis?.length ?? 0) === 0}
+                className="flex items-center gap-2 bg-secondary-mid hover:bg-secondary text-white px-8 py-3 rounded-xl font-black text-sm shadow-lg disabled:opacity-50 disabled:grayscale transition-all active:scale-95"
+              >
+                <Save size={18} />
+                {ProformaInvoiceData?.idProformaInvoice ? "UPDATE ProformaInvoice" : "SAVE & GENERATE DEVIS"}
+              </button>
+            )}
          </div>
       </div>
     </div>

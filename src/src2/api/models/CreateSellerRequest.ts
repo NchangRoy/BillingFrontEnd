@@ -3,7 +3,6 @@
 /* tslint:disable */
 /* eslint-disable */
 export type CreateSellerRequest = {
-    username?: string;
     email: string;
     firstName?: string;
     lastName?: string;

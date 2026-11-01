@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import CloseIcon from "@mui/icons-material/Close";
-import { Save, FileText, ShoppingCart } from "lucide-react";
+import { Save, FileText, ShoppingCart, ClipboardList, MapPinned, ChevronRight, CheckCircle2 } from "lucide-react";
 
 // API & Types
 import { PurcaseOrderResponse, PurchaseOrderResponse } from "@/src/api/models/PurchaseOrderLine";
@@ -26,11 +26,14 @@ interface Props {
   orderData?: PurchaseOrderResponse;    // Existing PO if in edit mode
 }
 
+type Stage = "general" | "logistics" | "products";
+
 const CreatePurchaseOrderModal = ({ isOpen, onClose, producerData, orderData }: Props) => {
   const [selectedProducer, setSelectedProducer] = useState<UpdatedClientResponse | undefined>(producerData);
   const [purchaseOrder, setPurchaseOrder] = useState<PurchaseOrderResponse | undefined>();
   const [seller, setSeller] = useState<UpdatedSellerResponse>();
   const [producers, setProducers] = useState<UpdatedClientResponse[]>([]);
+  const [stage, setStage] = useState<Stage>("general");
 
   useEffect(() => {
     const stored = localStorage.getItem("seller");
@@ -55,7 +58,8 @@ const CreatePurchaseOrderModal = ({ isOpen, onClose, producerData, orderData }: 
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
-      
+      setStage("general");
+
       if (orderData) {
         // Mode: EDIT
         setPurchaseOrder(orderData);
@@ -140,16 +144,25 @@ const CreatePurchaseOrderModal = ({ isOpen, onClose, producerData, orderData }: 
 
   if (!isOpen) return null;
 
+  const generalInfoDone = !!selectedProducer;
+  const logisticsDone = !!purchaseOrder?.transportMethod;
+  const productsDone = (purchaseOrder?.lines?.length ?? 0) > 0;
+  const STAGES: { key: Stage; label: string; icon: typeof ClipboardList; done: boolean }[] = [
+    { key: "general", label: "General Info", icon: ClipboardList, done: generalInfoDone },
+    { key: "logistics", label: "Logistics", icon: MapPinned, done: logisticsDone },
+    { key: "products", label: "Items & Totals", icon: ShoppingCart, done: productsDone },
+  ];
+
   return (
     <div className="fixed inset-0 z-[100] flex justify-end items-stretch">
       {/* Background Overlay */}
-      <div 
-        className="absolute inset-0 bg-secondary/10 backdrop-blur-sm" 
-        onClick={() => onClose(false)} 
+      <div
+        className="absolute inset-0 bg-secondary/10 backdrop-blur-sm"
+        onClick={() => onClose(false)}
       />
 
       <div className="relative w-full max-w-5xl bg-white shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-300">
-        
+
         {/* HEADER */}
         <div className="px-8 py-4 border-b border-gray-100 flex justify-between items-center bg-white shrink-0">
           <div className="flex items-center gap-3">
@@ -168,28 +181,63 @@ const CreatePurchaseOrderModal = ({ isOpen, onClose, producerData, orderData }: 
           </button>
         </div>
 
+        {/* STAGE INDICATOR */}
+        <div className="px-8 py-4 border-b border-gray-100 bg-white shrink-0 flex items-center gap-3">
+          {STAGES.map((s, i) => {
+            const Icon = s.icon;
+            const isActive = stage === s.key;
+            return (
+              <React.Fragment key={s.key}>
+                {i > 0 && <ChevronRight size={16} className="text-gray-200 shrink-0" />}
+                <button
+                  type="button"
+                  onClick={() => setStage(s.key)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all ${
+                    isActive ? "border-secondary-mid bg-secondary-super-light/50" : "border-gray-100 bg-white hover:border-gray-200"
+                  }`}
+                >
+                  <span
+                    className={`flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-black shrink-0 ${
+                      s.done ? "bg-emerald-500 text-white" : isActive ? "bg-secondary-mid text-white" : "bg-gray-100 text-gray-400"
+                    }`}
+                  >
+                    {s.done ? <CheckCircle2 size={12} /> : i + 1}
+                  </span>
+                  <Icon size={15} className={isActive ? "text-secondary-mid" : "text-gray-400"} />
+                  <span className={`text-xs font-black uppercase tracking-widest ${isActive ? "text-secondary-mid" : "text-gray-500"}`}>
+                    {s.label}
+                  </span>
+                </button>
+              </React.Fragment>
+            );
+          })}
+        </div>
+
         {/* BODY */}
         <div className="flex-1 overflow-y-auto p-8 space-y-8 bg-gray-50/50">
-          {/* Producer Selection Header */}
-          <ProducerHeader
-            producers={producers}
-            setMainSelectedProducer={setSelectedProducer}
-            selectedProducer={selectedProducer}
-            purchaseOrder={purchaseOrder} 
-            setPurchaseOrder={setPurchaseOrder}
-          />
-          <PurchaseOrderLogistics
-          purchaseOrder={purchaseOrder} 
-            setPurchaseOrder={setPurchaseOrder} 
-            producer={selectedProducer} 
-          />
-
-          {/* Line Items and Financial Details */}
-          <PurchaseOrderDetails 
-            purchaseOrder={purchaseOrder} 
-            setPurchaseOrder={setPurchaseOrder} 
-            producer={selectedProducer} 
-          />
+          {stage === "general" && (
+            <ProducerHeader
+              producers={producers}
+              setMainSelectedProducer={setSelectedProducer}
+              selectedProducer={selectedProducer}
+              purchaseOrder={purchaseOrder}
+              setPurchaseOrder={setPurchaseOrder}
+            />
+          )}
+          {stage === "logistics" && (
+            <PurchaseOrderLogistics
+              purchaseOrder={purchaseOrder}
+              setPurchaseOrder={setPurchaseOrder}
+              producer={selectedProducer}
+            />
+          )}
+          {stage === "products" && (
+            <PurchaseOrderDetails
+              purchaseOrder={purchaseOrder}
+              setPurchaseOrder={setPurchaseOrder}
+              producer={selectedProducer}
+            />
+          )}
         </div>
 
         {/* FOOTER */}
@@ -208,14 +256,23 @@ const CreatePurchaseOrderModal = ({ isOpen, onClose, producerData, orderData }: 
               >
                 Cancel
               </button>
-              <button 
-                onClick={handleSave}
-                disabled={!selectedProducer || (purchaseOrder?.lines?.length ?? 0) === 0}
-                className="flex items-center gap-2 bg-secondary text-white px-8 py-3 rounded-xl font-black text-sm shadow-lg disabled:opacity-50 disabled:grayscale transition-all active:scale-95"
-              >
-                <Save size={18} />
-                SAVE & SUBMIT ORDER
-              </button>
+              {stage !== "products" ? (
+                <button
+                  onClick={() => setStage(stage === "general" ? "logistics" : "products")}
+                  className="flex items-center gap-2 bg-secondary text-white px-8 py-3 rounded-xl font-black text-sm shadow-lg transition-all active:scale-95"
+                >
+                  Continue <ChevronRight size={18} />
+                </button>
+              ) : (
+                <button
+                  onClick={handleSave}
+                  disabled={!selectedProducer || (purchaseOrder?.lines?.length ?? 0) === 0}
+                  className="flex items-center gap-2 bg-secondary text-white px-8 py-3 rounded-xl font-black text-sm shadow-lg disabled:opacity-50 disabled:grayscale transition-all active:scale-95"
+                >
+                  <Save size={18} />
+                  SAVE & SUBMIT ORDER
+                </button>
+              )}
            </div>
         </div>
       </div>

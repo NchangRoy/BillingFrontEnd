@@ -23,14 +23,13 @@ const emptyForm = {
   categorie: "",
   codeBarre: "",
   uom: "",
-  prixVente: "",
   cout: "",
   quantity: "",
   minStockLevel: "",
   maxStockLevel: "",
 };
 
-const inputWrapper = "flex items-center gap-3 bg-gray-50 border border-gray-100 px-4 py-3 rounded-xl focus-within:border-secondary-mid focus-within:bg-white focus-within:ring-4 focus-within:ring-secondary-mid/5 transition-all duration-200";
+const inputWrapper = "flex items-center gap-3 bg-gray-50 border-2 border-gray-300 px-4 py-3 rounded-xl focus-within:border-secondary-mid focus-within:bg-white focus-within:ring-4 focus-within:ring-secondary-mid/5 transition-all duration-200";
 const inputStyle = "bg-transparent border-none outline-none text-gray-700 w-full text-sm placeholder:text-gray-400";
 const label = "text-[11px] font-black uppercase tracking-widest text-gray-400 ml-1";
 
@@ -110,7 +109,6 @@ const CreateProductModal = ({ isOpen, onClose }: Props) => {
         categorie: form.categorie || undefined,
         codeBarre: form.codeBarre || undefined,
         uom: form.uom || undefined,
-        prixVente: form.prixVente ? Number(form.prixVente) : undefined,
         cout: form.cout ? Number(form.cout) : undefined,
         quantity: form.quantity ? Number(form.quantity) : undefined,
         minStockLevel: form.minStockLevel ? Number(form.minStockLevel) : undefined,
@@ -241,18 +239,10 @@ const CreateProductModal = ({ isOpen, onClose }: Props) => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className={label}>Unit Price</label>
-              <div className={inputWrapper}>
-                <input type="number" min={0} value={form.prixVente} onChange={(e) => update({ prixVente: e.target.value })} placeholder="0" className={inputStyle} />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className={label}>Cost</label>
-              <div className={inputWrapper}>
-                <input type="number" min={0} value={form.cout} onChange={(e) => update({ cout: e.target.value })} placeholder="0" className={inputStyle} />
-              </div>
+          <div className="space-y-2">
+            <label className={label}>Cost</label>
+            <div className={inputWrapper}>
+              <input type="number" min={0} value={form.cout} onChange={(e) => update({ cout: e.target.value })} placeholder="0" className={inputStyle} />
             </div>
           </div>
 
@@ -282,17 +272,6 @@ const CreateProductModal = ({ isOpen, onClose }: Props) => {
             </div>
           </div>
 
-          <div className="flex items-center justify-between gap-3 bg-white border border-gray-100 rounded-xl px-4 py-3">
-            <div>
-              <p className={label}>VAT Applicable</p>
-              <p className="text-[11px] text-gray-400 font-medium mt-1">Also feeds the "T"/"NT" numbering segment below.</p>
-            </div>
-            <button type="button" onClick={() => setVatApplicable((v) => !v)} className="relative inline-flex items-center">
-              <input type="checkbox" className="sr-only peer" checked={vatApplicable} readOnly />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary-mid" />
-            </button>
-          </div>
-
           <div className="space-y-2">
             <label className={label}>Product Number</label>
             <div className={inputWrapper}>
@@ -304,6 +283,17 @@ const CreateProductModal = ({ isOpen, onClose }: Props) => {
                 className={`${inputStyle} font-mono font-black text-secondary-mid`}
               />
             </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-3 bg-white border-2 border-gray-300 rounded-xl px-4 py-3">
+            <div>
+              <p className={label}>VAT Applicable</p>
+              <p className="text-[11px] text-gray-400 font-medium mt-1">Also feeds the "T"/"NT" numbering segment above.</p>
+            </div>
+            <button type="button" onClick={() => setVatApplicable((v) => !v)} className="relative inline-flex items-center">
+              <input type="checkbox" className="sr-only peer" checked={vatApplicable} readOnly />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary-mid" />
+            </button>
           </div>
 
           <button

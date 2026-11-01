@@ -2,6 +2,8 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { CreateProductRequest } from '../models/CreateProductRequest';
+import type { ProductDefinitionResponse } from '../models/ProductDefinitionResponse';
 import type { ProductResponse } from '../models/ProductResponse';
 import type { UpdatePhotoRequest } from '../models/UpdatePhotoRequest';
 import type { UpdateSaleSizesRequest } from '../models/UpdateSaleSizesRequest';
@@ -63,6 +65,22 @@ export class ProductsService {
         });
     }
     /**
+     * Create a new product in the organization's catalog
+     * @param requestBody
+     * @returns ProductResponse OK
+     * @throws ApiError
+     */
+    public static createProduct(
+        requestBody: CreateProductRequest,
+    ): CancelablePromise<ProductResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/products',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+    /**
      * Get product by ID
      * @param productId
      * @returns ProductResponse OK
@@ -94,6 +112,17 @@ export class ProductsService {
             path: {
                 'organizationId': organizationId,
             },
+        });
+    }
+    /**
+     * List the organization's catalog of defined products (no price/stock — for picking an existing one to provision as sellable)
+     * @returns ProductDefinitionResponse OK
+     * @throws ApiError
+     */
+    public static getProductDefinitions(): CancelablePromise<Array<ProductDefinitionResponse>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/products/definitions',
         });
     }
 }
