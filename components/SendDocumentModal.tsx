@@ -87,7 +87,8 @@ const SendDocumentModal = ({ isOpen, thirdPartyId, docLabel, onClose, onSend }: 
       await onSend(contact.email, displayName(contact));
       toast.success(`${docLabel || "Document"} shared with ${displayName(contact)}.`);
       onClose(true);
-    } catch {
+    } catch (err) {
+      console.error("Failed to send document:", err);
       toast.error("Failed to send. Please try again.");
     } finally {
       setIsSending(false);

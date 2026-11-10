@@ -159,7 +159,7 @@ const ClientHeader = ({ clients, setMainSelectedClient, selectClient, deliveryNo
         recipientAddress: formData.recipientAddress,
         recipientCity: formData.recipientCity,
         deliveryDate: formData.deliveryDate,
-        deliveryNoteNumber: deliveryNote.deliveryNoteNumber??generatedId
+        deliveryNoteNumber: deliveryNote.deliveryNoteNumber || generatedId
       });
     }
   }, [selectedClient, formData, generatedId]);

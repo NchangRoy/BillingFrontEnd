@@ -20,6 +20,7 @@ import { mapBackendArrayToUpdatedDevisArray } from '@/src/Mappers/DevisMapper';
 import { BonCommandeService } from '@/src/src2/api';
 import { mapBonCommandeListToSalesOrderList } from '@/src/Mappers/BonCommandeMapper';
 import { toast } from 'sonner';
+import { getAcronym } from '@/src/utils/acronym';
 
 interface Props {
   clients: UpdatedClientResponse[];
@@ -233,8 +234,8 @@ const [selectedClient, setSelectedClient] = useState<UpdatedClientResponse | nul
   // --- ID Generation ---
   useEffect(() => {
     if (!sales_order?.idSalesOrder) {
-      const agency = seller?.agency || "HQ";
-      const type = "SO"; 
+      const agency = getAcronym(seller?.agency || "HQ");
+      const type = "SO";
       const taxFlag = formData.applyVat && selectedClient?.ntva ? "T" : "NT";
       const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
       const suffix = Math.floor(Math.random() * 10000).toString().padStart(4, "0");
@@ -250,7 +251,7 @@ const [selectedClient, setSelectedClient] = useState<UpdatedClientResponse | nul
       setSalesOrder({
         ...sales_order,
         idClient: selectedClient.idClient,
-        numeroSalesOrder:sales_order.numeroSalesOrder??generatedId,
+        numeroSalesOrder: sales_order.numeroSalesOrder || generatedId,
         nomClient: selectedClient.raisonSociale,
         dateCreation: formData.creationDate,
         applyVat: formData.applyVat,
