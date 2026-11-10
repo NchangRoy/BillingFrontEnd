@@ -6,7 +6,11 @@ import { getPortalSession, clearPortalSession, PortalOrganizationOption } from '
 // tiny fetch wrapper instead of fighting over the same global config.
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
-async function portalFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
+async function portalFetch<T>(
+  path: string,
+  options: RequestInit = {},
+  { skipAuthRedirect = false }: { skipAuthRedirect?: boolean } = {},
+): Promise<T> {
   const session = getPortalSession();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -27,7 +31,13 @@ async function portalFetch<T>(path: string, options: RequestInit = {}): Promise<
   // fails every subsequent call with 401. Surfacing that as a generic
   // "failed to load" error is confusing, so send the user back to a fresh
   // login instead of leaving them staring at a broken page.
-  if (res.status === 401) {
+  //
+  // The login call itself must opt out (skipAuthRedirect): there's no
+  // session to have expired yet, so a 401 here just means the credentials
+  // were rejected — redirecting back to /portal/login?expired=1 hid that
+  // behind a misleading "session expired" message and looked like an
+  // infinite loop no matter what the user typed.
+  if (res.status === 401 && !skipAuthRedirect) {
     clearPortalSession();
     if (typeof window !== 'undefined') {
       window.location.href = '/portal/login?expired=1';
@@ -42,7 +52,11 @@ async function portalFetch<T>(path: string, options: RequestInit = {}): Promise<
   const body = text ? JSON.parse(text) : undefined;
 
   if (!res.ok) {
-    throw new Error((body && body.message) || `Request failed: ${res.status}`);
+    // Backend currently sends an empty message for a rejected login (see
+    // PortalAuthController's onStatus(401/403) handler) — without this
+    // fallback that surfaced as the unhelpful "Request failed: 401".
+    const fallback = res.status === 401 ? 'Invalid email or password.' : `Request failed: ${res.status}`;
+    throw new Error((body && body.message) || fallback);
   }
   return body as T;
 }
@@ -62,10 +76,14 @@ export const PortalApi = {
   // A person's normal Kernel actor login (email + password) — same identity
   // system as sellers, not a separate portal-only account.
   login: (email: string, password: string) =>
-    portalFetch<PortalAuthResponse>('/api/portal/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ principal: email, password }),
-    }),
+    portalFetch<PortalAuthResponse>(
+      '/api/portal/auth/login',
+      {
+        method: 'POST',
+        body: JSON.stringify({ principal: email, password }),
+      },
+      { skipAuthRedirect: true },
+    ),
 
   getQuotations: () => portalFetch<any[]>('/api/portal/quotations'),
   getInvoices: () => portalFetch<any[]>('/api/portal/invoices'),
